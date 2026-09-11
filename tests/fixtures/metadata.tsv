@@ -1,0 +1,7 @@
+id	biosample	assembly	sra	pdt	host	isolation_source	cluster_id	plasmid_id
+SAMN00000001	SAMN00000001			PDT000000001.1	Homo sapiens	wound drainage	ST15	IncF
+GCA_000000001.1	SAMN00000002	GCA_000000001.1			Homo sapiens	hospital drain	ST15	IncX3
+SRR0000001	SAMN00000003		SRR0000001		Gallus gallus	cloacal swab	ST11	
+PDT000000001.1	SAMN00000001			PDT000000001.1	Homo sapiens	wound drainage	ST15	IncF
+OVERRIDE_EMPTY	SAMN00000004				Homo sapiens	blood	ST258	
+UNKNOWN_SRC	SAMN00000005				unknown	unknown		

@@ -1,0 +1,5 @@
+# Mixed public NCBI IDs. Resolve with a local metadata TSV or NCBI.
+SAMN00000001
+GCA_000000001.1
+SRR0000001
+PDT000000001.1

@@ -1,0 +1,141 @@
+"""Shared vocabulary for v1 classification."""
+
+from __future__ import annotations
+
+L1_VALUES = (
+    "Human",
+    "Animal",
+    "Environmental",
+    "Food",
+    "Laboratory",
+    "Unclassified",
+)
+
+PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal")
+
+HEALTHCARE_YES = "yes"
+HEALTHCARE_NO = "no"
+
+SEED_LEXICON_VERSION = "1"
+
+UNKNOWN_EXACT = frozenset(
+    {
+        "",
+        "-",
+        ".",
+        "na",
+        "n/a",
+        "n.a",
+        "n.a.",
+        "none",
+        "null",
+        "nil",
+        "missing",
+        "unknown",
+        "unk",
+        "not applicable",
+        "not collected",
+        "not provided",
+        "not available",
+        "not recorded",
+        "not known",
+        "not specified",
+        "unspecified",
+        "unavailable",
+        "missing data",
+        "no data",
+        "none provided",
+    }
+)
+
+# If a value is "unknown" plus only these tails, it stays Unclassified.
+UNKNOWN_GENERIC_TAILS = frozenset(
+    {
+        "environment",
+        "environmental",
+        "source",
+        "origin",
+        "host",
+        "sample",
+        "isolate",
+        "type",
+        "location",
+        "site",
+    }
+)
+
+ID_COLUMN_ALIASES = (
+    "query_id",
+    "id",
+    "accession",
+    "isolate_id",
+    "sample_id",
+)
+
+BIOSAMPLE_ALIASES = ("biosample", "biosample_acc", "biosample_accession")
+ASSEMBLY_ALIASES = ("assembly", "asm_acc", "assembly_accession", "genome")
+SRA_ALIASES = ("sra", "srr", "run", "run_accession")
+PDT_ALIASES = ("pdt", "target_acc", "pdt_accession")
+
+HOST_ALIASES = ("host",)
+ISOLATION_SOURCE_ALIASES = (
+    "isolation_source",
+    "isolation source",
+    "source",
+    "sample_source",
+)
+HOST_DISEASE_ALIASES = ("host_disease", "host disease")
+SAMPLE_TYPE_ALIASES = ("sample_type", "source_type", "tissue")
+
+CLUSTER_ALIASES = ("cluster_id", "cluster", "poppunk_cluster")
+PLASMID_ALIASES = ("plasmid_id", "plasmid", "plasmid_replicon")
+
+RESOLVE_FIELDS = (
+    "query_id",
+    "id_type",
+    "biosample",
+    "assembly",
+    "sra",
+    "pdt",
+    "organism",
+    "host",
+    "isolation_source",
+    "host_disease",
+    "sample_type",
+    "geo_loc_name",
+    "collection_date",
+    "strain",
+    "isolate",
+    "resolve_status",
+    "resolve_reason",
+)
+
+CLASSIFY_EXTRA_FIELDS = (
+    "l1",
+    "healthcare_environment",
+    "paper_rollup",
+    "classify_status",
+    "classify_reason",
+    "lexicon_version",
+    "override_applied",
+    "lexicon_suggestion",
+)
+
+
+def derive_paper_rollup(l1: str, healthcare_environment: str) -> str:
+    """Map L1 + healthcare-environment onto the paper's 3-class rollup.
+
+    Food, Laboratory, and healthcare-environment roll to Environmental.
+    Unknown / Unclassified stays Unclassified and never becomes Environmental.
+    """
+    if l1 == "Unclassified":
+        return "Unclassified"
+    if healthcare_environment == HEALTHCARE_YES:
+        return "Environmental"
+    if l1 == "Human":
+        return "Human"
+    if l1 == "Animal":
+        return "Animal"
+    if l1 in {"Environmental", "Food", "Laboratory"}:
+        return "Environmental"
+    return "Unclassified"

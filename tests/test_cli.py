@@ -1,0 +1,47 @@
+from pathlib import Path
+
+import pytest
+
+from onehealth.cli import main
+
+
+def test_cli_help_exits_zero(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "resolve" in out
+    assert "classify" in out
+    assert "summarize" in out
+    assert "plot" in out
+
+
+def test_subcommand_help(capsys):
+    for command in ("resolve", "classify", "summarize", "plot"):
+        with pytest.raises(SystemExit) as exc:
+            main([command, "--help"])
+        assert exc.value.code == 0
+        assert command in capsys.readouterr().out
+
+
+def test_offline_pipeline(tmp_path: Path, fixtures: Path):
+    ids = fixtures / "ids.txt"
+    metadata = fixtures / "metadata.tsv"
+    overrides = fixtures / "overrides.tsv"
+    resolved = tmp_path / "resolved.tsv"
+    classified = tmp_path / "classified.tsv"
+    summary = tmp_path / "summary.tsv"
+    plot = tmp_path / "counts.png"
+
+    assert main(["resolve", str(ids), "-o", str(resolved), "--metadata", str(metadata), "--no-network"]) == 0
+    assert main(["classify", str(resolved), "-o", str(classified), "--overrides", str(overrides)]) == 0
+    assert main(["summarize", str(classified), "-o", str(summary)]) == 0
+    assert main(["plot", str(classified), "-o", str(plot)]) == 0
+
+    classified_text = classified.read_text(encoding="utf-8")
+    assert "wound drainage" in classified_text
+    assert plot.exists() and plot.stat().st_size > 0
+    assert "cluster_overlap" in summary.read_text(encoding="utf-8")
+    review = classified.with_name("classified.review.tsv")
+    assert review.exists()
+    assert "OVERRIDE_EMPTY" in review.read_text(encoding="utf-8")
