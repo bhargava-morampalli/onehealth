@@ -1,4 +1,4 @@
-from onehealth.summarize import summarize
+from onehealth.summarize import SOURCE_EVIDENCE_CORE, summarize
 
 
 def test_summarize_skips_overlap_without_cluster_or_plasmid_columns():
@@ -37,3 +37,78 @@ def test_summarize_plasmid_overlap_only_when_column_present():
     assert overlap[0]["mixed"] == "yes"
     assert "Human" in overlap[0]["l1_set"]
     assert "Food" in overlap[0]["l1_set"]
+
+
+def test_summarize_source_evidence_splits_ok_empty_from_unmatched_and_conflict():
+    rows = [
+        {
+            "l1": "Human",
+            "isolation_source": "blood",
+            "classify_status": "ok",
+            "classify_reason": "human-specimens",
+            "paper_rollup": "Human",
+            "healthcare_environment": "no",
+        },
+        {
+            "l1": "Animal",
+            "isolation_source": "",
+            "host": "Bos taurus",
+            "classify_status": "ok",
+            "classify_reason": "animal-hosts",
+            "paper_rollup": "Animal",
+            "healthcare_environment": "no",
+        },
+        {
+            "l1": "Unclassified",
+            "isolation_source": "",
+            "resolve_status": "ok",
+            "classify_status": "review",
+            "classify_reason": "missing_source",
+            "paper_rollup": "Unclassified",
+            "healthcare_environment": "no",
+        },
+        {
+            "l1": "Unclassified",
+            "isolation_source": "sink",
+            "classify_status": "review",
+            "classify_reason": "unmatched",
+            "paper_rollup": "Unclassified",
+            "healthcare_environment": "no",
+        },
+        {
+            "l1": "Unclassified",
+            "isolation_source": "urine",
+            "host": "chicken",
+            "classify_status": "review",
+            "classify_reason": "host_source_conflict",
+            "paper_rollup": "Unclassified",
+            "healthcare_environment": "no",
+        },
+    ]
+    summary = summarize(rows)
+    evidence = {row["key"]: row["count"] for row in summary if row["section"] == "source_evidence"}
+    for key in SOURCE_EVIDENCE_CORE:
+        assert key in evidence
+    assert evidence["ok_with_source"] == "1"
+    assert evidence["ok_empty_source"] == "2"
+    assert evidence["unmatched"] == "1"
+    assert evidence["conflict"] == "1"
+
+
+def test_summarize_always_emits_source_evidence_core_keys():
+    rows = [
+        {
+            "l1": "Human",
+            "isolation_source": "blood",
+            "classify_status": "ok",
+            "classify_reason": "human-specimens",
+            "paper_rollup": "Human",
+            "healthcare_environment": "no",
+        }
+    ]
+    summary = summarize(rows)
+    evidence = {row["key"]: int(row["count"]) for row in summary if row["section"] == "source_evidence"}
+    assert evidence["ok_with_source"] == 1
+    assert evidence["ok_empty_source"] == 0
+    assert evidence["unmatched"] == 0
+    assert evidence["conflict"] == 0

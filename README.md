@@ -27,7 +27,7 @@ uv run onehealth --help
 | --- | --- |
 | `onehealth resolve` | Map GCA/GCF, BioSample, SRA, and optional PDT IDs to BioSample metadata |
 | `onehealth classify` | Assign L1, `healthcare_environment`, and a paper rollup |
-| `onehealth summarize` | Count classes; add cluster/plasmid overlap only if those columns exist |
+| `onehealth summarize` | Count classes and source evidence (`ok` with a source vs `ok` with an empty source vs unmatched vs conflict); cluster/plasmid overlap only if those columns exist |
 | `onehealth plot` | Write L1 and paper-rollup bar charts |
 
 ```bash
@@ -62,6 +62,8 @@ Default **L1**: `Human | Animal | Environmental | Food | Laboratory | Unclassifi
 | Unclassified | * | Unclassified |
 
 Unknown, empty, or conflicting evidence stays `Unclassified` and goes to the review queue. `unknown` is never mapped to Environmental.
+
+KlebNET `Animal - food producing` is Animal, not Food. `animal feed` is not retail Food and has no L1 here, so it goes to review. A taxon-only `isolation_source` (`Escherichia coli`, `Bos taurus`) is review, not a specimen. Bare `sink` or `faucet` is not a hospital fixture; `hospital sink` / `hospital faucet` are.
 
 Matching is token-based, so `wound drainage` is Human and `hospital drain` is healthcare-environment. The word `drain` does not match `drainage`.
 

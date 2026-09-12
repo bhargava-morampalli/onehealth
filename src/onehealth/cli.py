@@ -57,7 +57,10 @@ def _build_parser() -> argparse.ArgumentParser:
     classify_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
     classify_p.set_defaults(handler=cmd_classify)
 
-    summarize_p = sub.add_parser("summarize", help="Count classes; overlap only if cluster/plasmid columns exist")
+    summarize_p = sub.add_parser(
+        "summarize",
+        help="Count classes and source evidence; overlap only if cluster/plasmid columns exist",
+    )
     summarize_p.add_argument("input", type=Path, help="Classified TSV")
     summarize_p.add_argument("-o", "--out", type=Path, required=True, help="Summary TSV")
     summarize_p.set_defaults(handler=cmd_summarize)

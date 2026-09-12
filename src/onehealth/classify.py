@@ -13,7 +13,7 @@ from onehealth.constants import (
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_unknown_value
+from onehealth.text import contains_phrase, is_blank, is_taxon_only_source, is_unknown_value, tokenize
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,26 @@ def classify_record(
             "unknown_source",
             lexicon.version,
             suggestion,
+            override_applied="no",
+        )
+
+    if is_taxon_only_source(view.get("isolation_source")):
+        return _review(
+            "Unclassified",
+            HEALTHCARE_NO,
+            "taxon_only_source",
+            lexicon.version,
+            "",
+            override_applied="no",
+        )
+
+    if _animal_feed(view):
+        return _review(
+            "Unclassified",
+            HEALTHCARE_NO,
+            "animal_feed",
+            lexicon.version,
+            "",
             override_applied="no",
         )
 
@@ -174,6 +194,27 @@ def _missing_source(view: dict[str, str]) -> bool:
     return is_blank(view.get("isolation_source")) and is_blank(view.get("host")) and is_blank(
         view.get("sample_type")
     )
+
+
+_ANIMAL_FEED_PHRASES = (
+    ("animal", "feed"),
+    ("livestock", "feed"),
+    ("cattle", "feed"),
+    ("poultry", "feed"),
+    ("swine", "feed"),
+    ("pig", "feed"),
+    ("chicken", "feed"),
+    ("fish", "feed"),
+)
+
+
+def _animal_feed(view: dict[str, str]) -> bool:
+    """KlebNET animal feed is not retail Food and has no L1 here — review."""
+    for field in ("isolation_source", "sample_type"):
+        tokens = tokenize(view.get(field, ""))
+        if any(contains_phrase(tokens, phrase) for phrase in _ANIMAL_FEED_PHRASES):
+            return True
+    return False
 
 
 def _unknown_blocks_environment(view: dict[str, str]) -> bool:

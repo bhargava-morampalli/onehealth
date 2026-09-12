@@ -100,6 +100,15 @@ rules:
       - wound
       - pus
       - abscess
+      - bronchial
+      - bronchial lavage
+      - bronchial wash
+      - hospital carriage
+      - patient carriage
+      - nasal carriage
+      - rectal carriage
+      - gut carriage
+      - asymptomatic carriage
       - rectal swab
       - nasal swab
       - throat swab
@@ -122,7 +131,16 @@ rules:
       - hospital sink
       - icu sink
       - ward sink
-      - faucet
+      - clinical sink
+      - healthcare sink
+      - hospital faucet
+      - icu faucet
+      - ward faucet
+      - clinical faucet
+      - healthcare faucet
+      - hospital tap
+      - icu tap
+      - ward tap
       - tap water hospital
       - bedside
       - ventilator
@@ -134,6 +152,21 @@ rules:
     l1: Environmental
     healthcare_environment: "yes"
     priority: 85
+    note: Bare sink or faucet is not a hospital fixture. Those stay unmatched.
+
+  # --- KlebNET animal source types that contain the word food ---
+  - id: animal-food-producing
+    fields: [isolation_source, sample_type, host]
+    phrases:
+      - animal food producing
+      - food producing animal
+      - food producing animals
+      - food-producing animal
+      - food-producing animals
+    l1: Animal
+    healthcare_environment: "no"
+    priority: 88
+    note: KlebNET Animal - food producing is livestock, not Food.
 
   # --- food ---
   - id: food-products
@@ -173,6 +206,8 @@ rules:
       - culture collection
       - in vitro
       - lab culture
+      - experimentally derived
+      - experimentally-derived
     exact: [laboratory, lab, type strain]
     l1: Laboratory
     healthcare_environment: "no"
@@ -193,6 +228,8 @@ rules:
       - sludge
       - effluent
       - surface water
+      - fresh water
+      - freshwater
       - groundwater
       - well water
       - irrigation
@@ -253,6 +290,10 @@ rules:
       - avian
       - bird
       - wildlife
+      - livestock
+      - companion
+      - companion animal
+      - companion animals
     l1: Animal
     healthcare_environment: "no"
     priority: 40
