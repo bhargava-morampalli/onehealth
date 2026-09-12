@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from onehealth.constants import RESOLVE_FIELDS
-from onehealth.ids import ParsedId, parse_id
+from onehealth.ids import ParsedId, assembly_join_keys, is_sra_study, parse_id
 from onehealth.io_tsv import get_field, metadata_view, read_tsv, row_match_ids
 from onehealth.ncbi import (
     HttpError,
@@ -45,6 +45,11 @@ def resolve_ids(
             row["resolve_reason"] = "unknown_id"
             resolved.append(row)
             continue
+        if parsed.id_type == "sra" and is_sra_study(parsed.normalized):
+            row["resolve_status"] = "review"
+            row["resolve_reason"] = "sra_study_ambiguous"
+            resolved.append(row)
+            continue
         if not allow_network or client is None:
             row["resolve_status"] = "review"
             row["resolve_reason"] = "missing_metadata"
@@ -58,12 +63,13 @@ def resolve_ids(
             resolved.append(row)
             continue
         row.update(fetched)
-        if row.get("resolve_status") != "review" and (
-            row.get("host") or row.get("isolation_source") or row.get("biosample")
-        ):
+        if fetched.get("resolve_status") == "review":
+            row["resolve_status"] = "review"
+            row["resolve_reason"] = fetched.get("resolve_reason") or "ncbi_incomplete"
+        elif _single_biosample(row.get("biosample")):
             row["resolve_status"] = "ok"
-            row["resolve_reason"] = row.get("resolve_reason") or "ncbi"
-        elif row.get("resolve_status") != "review":
+            row["resolve_reason"] = fetched.get("resolve_reason") or row.get("resolve_reason") or "ncbi"
+        else:
             row["resolve_status"] = "review"
             row["resolve_reason"] = row.get("resolve_reason") or "ncbi_incomplete"
         resolved.append(row)
@@ -85,6 +91,13 @@ def _blank_row(parsed: ParsedId) -> dict[str, str]:
     row["resolve_status"] = "review"
     row["resolve_reason"] = ""
     return row
+
+
+def _single_biosample(value: str | None) -> bool:
+    text = (value or "").strip()
+    if not text or "," in text:
+        return False
+    return True
 
 
 def _index_local(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
@@ -111,13 +124,18 @@ def _index_local(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
         query = get_field(row, ("query_id", "id", "accession"))
         if query:
             keys.add(parse_id(query).normalized.upper() or query.upper())
-        for key in keys:
+        expanded = set(keys)
+        for key in list(keys):
+            expanded.update(assembly_join_keys(key))
+        for key in expanded:
             index[key.upper()] = view
     return index
 
 
 def _lookup_local(parsed: ParsedId, index: dict[str, dict[str, str]]) -> dict[str, str] | None:
-    for key in filter(None, {parsed.normalized.upper(), parsed.raw.strip().upper()}):
+    candidates = {parsed.normalized.upper(), parsed.raw.strip().upper()}
+    candidates.update(assembly_join_keys(parsed.normalized))
+    for key in filter(None, candidates):
         if key in index:
             hit = dict(index[key])
             if parsed.id_type == "assembly":
@@ -160,7 +178,7 @@ def _fetch(parsed: ParsedId, client: NCBIClient) -> dict[str, str]:
     else:
         return {"resolve_status": "review", "resolve_reason": "unknown_id"}
 
-    unique = list(dict.fromkeys(biosamples))
+    unique = list(dict.fromkeys(item.strip() for item in biosamples if item and item.strip()))
     if len(unique) > 1:
         return {
             **out,
@@ -168,10 +186,18 @@ def _fetch(parsed: ParsedId, client: NCBIClient) -> dict[str, str]:
             "resolve_status": "review",
             "resolve_reason": "multiple_biosamples",
         }
+    if not unique:
+        return {**out, "resolve_status": "review", "resolve_reason": "ncbi_incomplete"}
 
-    report = client.biosample_report(unique[0])
+    known = unique[0]
+    report = client.biosample_report(known)
     if report is None:
-        return {**out, "biosample": unique[0], "resolve_status": "review", "resolve_reason": "biosample_not_found"}
-    out.update(attributes_from_biosample(report))
-    out.setdefault("biosample", unique[0])
+        report = client.biosample_xml_report(known)
+    if report is None:
+        return {**out, "biosample": known, "resolve_status": "review", "resolve_reason": "biosample_not_found"}
+    attrs = attributes_from_biosample(report)
+    if not attrs.get("biosample"):
+        attrs.pop("biosample", None)
+    out.update(attrs)
+    out["biosample"] = out.get("biosample") or known
     return out

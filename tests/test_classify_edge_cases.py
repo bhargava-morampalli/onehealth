@@ -77,6 +77,16 @@ def test_empty_source_goes_to_review(lexicon):
     assert result.classify_reason == "missing_source"
 
 
+def test_blank_isolation_source_column_does_not_hide_source(lexicon):
+    result = classify_record(
+        {"isolation_source": "", "source": "hospital sink", "host": ""},
+        lexicon,
+    )
+    assert result.l1 == "Environmental"
+    assert result.healthcare_environment == "yes"
+    assert result.classify_status == "ok"
+
+
 def test_human_blood_is_human(lexicon):
     result = _cls(lexicon, "blood", host="Homo sapiens")
     assert result.l1 == "Human"

@@ -9,6 +9,8 @@ def test_parse_mixed_public_ids():
             "SAMN12345678",
             "SAMEA1234567",
             "SRR1234567",
+            "SRS212581",
+            "SRP020237",
             "PDT000123456.1",
             "not-an-id",
         ]
@@ -19,9 +21,22 @@ def test_parse_mixed_public_ids():
         "biosample",
         "biosample",
         "sra",
+        "sra",
+        "sra",
         "pdt",
         "unknown",
     ]
+
+
+def test_srs_is_sra_sample_srp_is_study():
+    from onehealth.ids import is_sra_study
+
+    assert parse_id("SRS212581").id_type == "sra"
+    assert parse_id("ERS1932678").id_type == "sra"
+    assert is_sra_study("SRP020237") is True
+    assert is_sra_study("ERP000001") is True
+    assert is_sra_study("SRR390728") is False
+    assert is_sra_study("SRS212581") is False
 
 
 def test_parse_assembly_without_version():

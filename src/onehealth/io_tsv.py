@@ -81,10 +81,16 @@ def first_present(row: dict[str, str], aliases: Iterable[str]) -> str | None:
 
 
 def get_field(row: dict[str, str], aliases: Iterable[str]) -> str:
-    key = first_present(row, aliases)
-    if key is None:
-        return ""
-    return (row.get(key) or "").strip()
+    """Return the first non-empty alias. A blank isolation_source must not hide source."""
+    lower = {key.lower(): key for key in row}
+    for alias in aliases:
+        key = lower.get(alias.lower())
+        if key is None:
+            continue
+        value = (row.get(key) or "").strip()
+        if value:
+            return value
+    return ""
 
 
 def row_match_ids(row: dict[str, str]) -> set[str]:
