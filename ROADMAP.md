@@ -62,7 +62,8 @@ Two older anchors are still the reference points:
 | Time between linked isolates | Recent vs historical links | Years apart [L2] | ✓ (median, per-pair table) |
 | Threshold calibration | Choose a defensible threshold | cutpointR on epidemiologically linked pairs [L2, L4] | Roadmap |
 | Resistome and plasmid sharing | Genes move on plasmids | Jaccard similarity [L4]; plasmid clusters [L3] | Roadmap |
-| Structure-aware association | Clones are not independent | GWAS (pyseer) [T3] | Out of scope; documented caveat |
+| Clone-collapsed (dereplicated) tests | Outbreak clusters inflate per-isolate tests | One representative per cluster of closely related genomes [L11] | ✓ (`--dereplicate`) |
+| Structure-aware association | Lineages can still share features after dereplication | GWAS (pyseer) [T3] | Out of scope; documented caveat |
 | Dated phylogenies | When did lineages cross? | BactDate etc. [L2] | Out of scope |
 
 ---
@@ -152,7 +153,7 @@ Ordered by value to a study, with a rough size. Items 1–4 make the existing an
 | # | Item | Why | Size |
 |---|---|---|---|
 | 1 | **Threshold calibration.** Given known linked pairs (same patient, household or ward), choose the SNP threshold that best separates linked from unlinked pairs, as cutpointR did in [L2, L4]. | Replaces a borrowed default with a data-driven one. | S |
-| 2 | **Clone-collapsed association tests.** Optionally count one isolate per genomic cluster before the feature and lineage tests. | Isolates from one clone are not independent; per-isolate tests overstate significance. pyseer [T3] stays the strict option. | S |
+| 2 | ~~**Clone-collapsed association tests.**~~ **Done:** `--dereplicate` keeps one isolate per genomic cluster per source, as in [L11]. On the demonstration data, intrinsic blaSHV-1 went from q = 0.012 to q = 0.21, while the simulated source-associated genes stayed significant. | Isolates from one clone are not independent; per-isolate tests overstate significance. pyseer [T3] stays the strict option. | S |
 | 3 | **Time- and place-stratified permutation null.** Shuffle source labels only within year and region strata. | The current null ignores sampling time and place, so separated sampling also looks like a barrier. | S |
 | 4 | **Run file.** `onehealth run study.yaml` captures inputs, threshold, grouping, seed and lexicon version in one file stored with the report. | A standardised, reviewable record of each analysis. | S |
 | 5 | **Resistome and plasmid sharing.** Jaccard similarity of AMR gene sets [L4], and sharing of plasmid clusters from MOB-suite or Pling [L3] between sources. | Genes often move on plasmids even when strains do not [L1, L3]. | M |
@@ -168,7 +169,7 @@ Ordered by value to a study, with a rough size. Items 1–4 make the existing an
 
 - **Shared lineage is not transmission.** Close genomic relatives are evidence of a connection, not of its direction, route or timing [L10]. The report words its findings accordingly.
 - **Sampling drives results.** Unequal sampling across sources, years and places shapes every comparison. The sampling section comes first for that reason.
-- **Clonal structure inflates per-isolate tests.** On the demonstration data, intrinsic genes present in about 97% of isolates still came out "significant", because absences cluster within clones. Roadmap item 2 addresses this.
+- **Clonal structure inflates per-isolate tests.** On the demonstration data, intrinsic genes present in about 97% of isolates came out "significant", because absences cluster within clones. Run with `--dereplicate` to test one isolate per genomic cluster; lineage-level structure remains, which only a GWAS models.
 - **Thresholds are not portable.** SNP counts depend on the reference, masking and calling pipeline. Always read the sensitivity sweep.
 - **Feature absence must be explicit.** Only isolates listed in the features file count as genotyped. AMRFinderPlus lists hits only, so an isolate with no hits must appear with an empty feature row, or it will be treated as not genotyped.
 - **MDR is not derived automatically.** Counting drug classes from raw gene lists would include intrinsic genes (for *K. pneumoniae*, blaSHV, fosA and oqxAB), making almost every isolate "MDR". Supply MDR from Kleborate's class counts as a feature instead [T1, M7].
@@ -192,6 +193,7 @@ Literature was retrieved from PubMed.
 - **L8** Xing J et al. (2026, preprint) Longitudinal cross-species transmission of microbiomes and resistomes across farmers, animals and environment. *medRxiv*. <https://doi.org/10.64898/2026.05.06.26352545>
 - **L9** David S et al. (2019) Epidemic of carbapenem-resistant *Klebsiella pneumoniae* in Europe is driven by nosocomial spread. *Nat Microbiol* 4:1919–1929. <https://doi.org/10.1038/s41564-019-0492-8>
 - **L10** Ludden C et al. (2019) One Health genomic surveillance of *Escherichia coli* demonstrates distinct lineages and mobile genetic elements in isolates from humans versus livestock. *mBio* 10:e02693-18. <https://doi.org/10.1128/mBio.02693-18>
+- **L11** Vezina B, Morampalli BR, Nguyen HA, Gomez-Simmonds A, Peleg AY, Macesic N (2025) The rise and global spread of IMP carbapenemases (1996–2023): a genomic epidemiology study. *Nat Commun* 17:183. <https://doi.org/10.1038/s41467-025-66874-7>
 
 **Methods**
 

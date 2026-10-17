@@ -186,3 +186,45 @@ def test_read_lineages_from_kleborate_v3_and_poppunk(tmp_path: Path):
     poppunk = tmp_path / "clusters.csv"
     poppunk.write_text("Taxon,Cluster\nISO1,4\n", encoding="utf-8")
     assert read_lineages(poppunk) == {"ISO1": "4"}
+
+
+# --- dereplication -------------------------------------------------------------------------
+
+
+def test_dereplicate_keeps_one_isolate_per_cluster_per_source():
+    rows = [_row(i, "Human") for i in range(3)] + [_row(3, "Animal"), _row(4, "Human"), _row(5, "Food")]
+    names = [f"ISO{i}" for i in range(5)]  # ISO5 has no distances
+    d = np.full((5, 5), 5000.0)
+    np.fill_diagonal(d, 0)
+    # 0-1-2 form a human cluster by single linkage (0-2 is 30 SNPs apart); 3 is an animal 1 SNP from 0.
+    for i, j, v in [(0, 1, 2), (1, 2, 4), (0, 2, 30), (0, 3, 1)]:
+        d[i, j] = d[j, i] = v
+    derep, summary = A.dereplicate(A.build_dataset(rows), names, d, threshold=5)
+    kept = sorted(iso.key for iso in derep.classified)
+    assert kept == ["SAMN0", "SAMN3", "SAMN4", "SAMN5"]  # lowest key of the human cluster; animal never merged
+    assert (summary.isolates_before, summary.isolates_after) == (6, 4)
+    assert (summary.clusters_collapsed, summary.not_in_matrix) == (1, 1)
+
+
+def test_dereplication_removes_clonal_inflation_of_feature_tests():
+    # Two sources of 10 clusters each; within a cluster all isolates are identical, so a feature
+    # carried by 1 of 10 animal clusters (cloned 10x) looks source-associated until clusters collapse.
+    rows, names, presence = [], [], {}
+    for k in range(20):
+        source = "Human" if k < 10 else "Animal"
+        for copy in range(10 if k == 10 else 1):
+            i = len(rows)
+            rows.append(_row(i, source))
+            names.append(f"ISO{i}")
+            presence[f"ISO{i}"] = {"gene"} if k == 10 else set()
+    n = len(rows)
+    clone = [int(name[3:]) for name in names]
+    cluster = [10 if 10 <= c < 20 else c for c in clone]
+    d = np.array([[0.0 if a == b else 5000.0 for b in cluster] for a in cluster])
+    ds = A.build_dataset(rows)
+    raw = A.feature_prevalence(ds, presence, {}, permutations=999)
+    derep, _ = A.dereplicate(ds, names, d, threshold=5)
+    collapsed = A.feature_prevalence(derep, presence, {}, permutations=999)
+    assert raw.tests[0]["p"] < 0.05
+    assert collapsed.tests[0]["p"] > 0.2
+    assert n == 29 and len(derep.classified) == 20

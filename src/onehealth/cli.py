@@ -91,6 +91,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="SNP threshold for close relatives (default 21, K. pneumoniae; choose one for your organism and pipeline)",
     )
     report_p.add_argument("--group-by", choices=("source", "paper_rollup"), default="source")
+    report_p.add_argument(
+        "--dereplicate",
+        action="store_true",
+        help="Lineage and feature analyses use one isolate per genomic cluster per source (within --threshold SNPs); "
+        "needs --distances",
+    )
     report_p.add_argument("--permutations", type=int, default=9999, help="Permutations for every test (default 9999)")
     report_p.add_argument("--seed", type=int, default=1, help="Random seed (default 1)")
     report_p.add_argument("--title", default="One Health population report")
@@ -102,6 +108,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def cmd_report(args: argparse.Namespace) -> int:
     from onehealth.report import build_report  # matplotlib/numpy load only when needed
+
+    if args.dereplicate and not args.distances:
+        print("onehealth report: --dereplicate needs --distances", file=sys.stderr)
+        return 2
 
     path = build_report(
         read_tsv(args.input),
@@ -116,6 +126,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         seed=args.seed,
         title=args.title,
         note=args.note,
+        dereplicate=args.dereplicate,
     )
     print(f"wrote {path}", file=sys.stderr)
     return 0

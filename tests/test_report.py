@@ -59,3 +59,19 @@ def test_report_without_optional_inputs_skips_those_sections(tmp_path: Path):
     assert "Lineage diversity" in page
     assert "Clusters that span sources" not in page
     assert "features by source" not in page
+
+
+def test_report_dereplicate_uses_representatives_and_needs_distances(tmp_path: Path, capsys):
+    classified, features, distances = _write_inputs(tmp_path)
+    out = tmp_path / "report"
+    assert main(["report", str(classified), "-o", str(out), "--dereplicate", "--permutations", "19"]) == 2
+    assert "--dereplicate needs --distances" in capsys.readouterr().err
+    code = main([
+        "report", str(classified), "-o", str(out), "--features", str(features), "--distances", str(distances),
+        "--threshold", "5", "--permutations", "19", "--dereplicate",
+    ])
+    assert code == 0
+    page = (out / "report.html").read_text(encoding="utf-8")
+    assert "dereplicated: yes" in page and "After dereplication" in page
+    assert "Vezina B, Morampalli BR" in page
+    assert "one representative per genomic cluster per source" in page

@@ -577,6 +577,7 @@ def build_report(
     seed: int = 1,
     title: str = "One Health population report",
     note: str = "",
+    dereplicate: bool = False,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir, tables_dir = out_dir / "figures", out_dir / "tables"
@@ -600,6 +601,19 @@ def build_report(
     kpis.append(("With a source class", f"{len(classified):,} ({100 * len(classified) / max(1, len(dataset.isolates)):.0f}%)"))
     kpis.append(("Source groups", str(len(groups_present))))
 
+    names, matrix = read_distance_matrix(distances_path) if distances_path else ([], None)
+    # Lineage and feature analyses can run on one representative per genomic cluster per source.
+    population, derep = dataset, None
+    if dereplicate:
+        if matrix is None:
+            raise ValueError("--dereplicate needs --distances")
+        population, derep = A.dereplicate(dataset, names, matrix, threshold)
+        kpis.append(("After dereplication", f"{derep.isolates_after:,} of {derep.isolates_before:,}"))
+        if derep.not_in_matrix:
+            quality.append(f"{derep.not_in_matrix} classified isolates have no distances and were kept as their own "
+                           "representatives during dereplication.")
+    derep_note = " Counts use one representative per genomic cluster per source (dereplicated)." if derep else ""
+
     # 1. Sampling
     counts = A.source_counts(dataset)
     if counts:
@@ -617,15 +631,22 @@ def build_report(
         methods.append(
             f"Isolates were grouped by One Health source ({'L1 class with healthcare environment split out' if by == 'source' else 'paper rollup'}); "
             f"rows sharing a BioSample were counted once ({dataset.duplicates} duplicate rows collapsed).")
+    if derep:
+        methods.append(
+            f"Lineage and feature analyses used one representative per genomic cluster per source: isolates from the "
+            f"same source within {threshold:g} SNPs were joined by single linkage and the isolate with the lowest "
+            f"identifier was kept ({derep.isolates_before} to {derep.isolates_after} isolates; "
+            f"{derep.clusters_collapsed} clusters collapsed), following the dereplication in Vezina et al. "
+            f"{refs.cite('vezina')}. Isolates from different sources were never merged, and linkage analyses used all isolates.")
 
     # 2. Lineages
-    typed = [iso for iso in classified if iso.lineage]
-    if dataset.lineage_column and typed:
-        div = A.diversity(dataset)
-        rare = A.rarefaction_curves(dataset)
-        lineage_rows = A.lineage_sources(dataset)
-        summary = A.lineage_sharing_summary(dataset)
-        enrichment = A.lineage_enrichment(dataset, permutations=permutations, seed=seed)
+    typed = [iso for iso in population.classified if iso.lineage]
+    if population.lineage_column and typed:
+        div = A.diversity(population)
+        rare = A.rarefaction_curves(population)
+        lineage_rows = A.lineage_sources(population)
+        summary = A.lineage_sharing_summary(population)
+        enrichment = A.lineage_enrichment(population, permutations=permutations, seed=seed)
         significant = [r for r in enrichment if r["q"] < 0.05]
         enriched = {r["lineage"] for r in significant if r["direction"] == "enriched"}
         share = 100 * summary["shared_lineages"] / max(1, summary["lineages"])
@@ -641,7 +662,7 @@ def build_report(
             "Overlapping intervals mean the sources are not clearly different.",
             _render(fig_diversity(div), stem, figures_dir),
             f"Simpson's index D is the chance that two isolates drawn from a source belong to different lineages "
-            f"{r_hg}; lines are 95% confidence intervals {r_gr}.",
+            f"{r_hg}; lines are 95% confidence intervals {r_gr}.{derep_note}",
             _table_html(div, [("source", "Source"), ("isolates", "Isolates"), ("lineages", "Lineages"),
                               ("simpson", "Simpson D"), ("ci_low", "95% CI low"), ("ci_high", "95% CI high")]),
             _write_table(tables_dir, stem, div)))
@@ -651,7 +672,7 @@ def build_report(
             "Curves that are still rising have not reached saturation, so more sampling would find more lineages.",
             _render(fig_rarefaction(rare, groups_present), stem, figures_dir),
             f"Expected number of lineages in random subsamples of each source (rarefaction {r_hu}). Compare sources at "
-            "the same x value; raw lineage counts favour the larger sample.",
+            f"the same x value; raw lineage counts favour the larger sample.{derep_note}",
             _table_html(rare, [("source", "Source"), ("isolates_sampled", "Isolates sampled"),
                                ("expected_lineages", "Expected lineages")]),
             _write_table(tables_dir, stem, rare)))
@@ -664,21 +685,21 @@ def build_report(
                if significant else "No lineage was significantly enriched in a source."),
             _render(fig_lineages(lineage_rows, groups_present, enriched), stem, figures_dir),
             f"The 20 most common lineages, split by source. Enrichment uses {permutations:,} permutations of source "
-            f"labels with Benjamini–Hochberg correction {r_th}{r_ps}.",
+            f"labels with Benjamini–Hochberg correction {r_th}{r_ps}.{derep_note}",
             _table_html(enrichment or lineage_rows,
                         [("lineage", "Lineage"), ("source", "Source"), ("observed", "Observed"), ("expected", "Expected"),
                          ("ratio", "Obs/Exp"), ("p", "p"), ("q", "q (BH)"), ("direction", "Direction")]
                         if enrichment else [("lineage", "Lineage"), ("isolates", "Isolates"), ("sources", "Sources")]),
             _write_table(tables_dir, "04_lineage_sources", lineage_rows),
             extra_downloads=[_write_table(tables_dir, "04_lineage_enrichment", enrichment)] if enrichment else []))
-        inter = A.lineage_intersections(dataset)
+        inter = A.lineage_intersections(population)
         stem = "05_lineage_overlap"
         sections.append(_section(
             stem, "Lineage overlap between sources",
             "Each column is a combination of sources; the bar counts lineages found in exactly that combination.",
             _render(fig_upset(inter, groups_present), stem, figures_dir),
             f"An UpSet-style view of lineage sharing, the overlap measure reported by Hetland et al. {r_he}. "
-            "Sharing a lineage does not imply recent transmission; see the genomic linkage sections.",
+            f"Sharing a lineage does not imply recent transmission; see the genomic linkage sections.{derep_note}",
             _table_html(inter, [("sources", "Sources"), ("lineages", "Lineages")]),
             _write_table(tables_dir, stem, inter)))
         methods.append(
@@ -693,7 +714,7 @@ def build_report(
     # 3. Features
     if features_path:
         presence, classes = read_features(features_path)
-        result = A.feature_prevalence(dataset, presence, classes, permutations=permutations, seed=seed)
+        result = A.feature_prevalence(population, presence, classes, permutations=permutations, seed=seed)
         if result.unmatched:
             quality.append(f"{len(result.unmatched)} isolates in the features file matched no classified isolate "
                            f"(e.g. {', '.join(result.unmatched[:3])}).")
@@ -709,9 +730,11 @@ def build_report(
                 _render(fig, stem, figures_dir),
                 f"Cell shade is the percentage of genotyped isolates from that source carrying the feature; hover or "
                 f"open the table for counts and Wilson 95% intervals {r_wi}. Tests are permutation chi-squared tests of "
-                f"independence from source {r_ch}, BH-corrected. Isolates from one clone are not independent, so these "
-                "tests overstate significance when clones dominate; a GWAS that models population structure (pyseer) "
-                "is the stricter check.",
+                f"independence from source {r_ch}, BH-corrected.{derep_note} "
+                + ("Dereplication removes outbreak clusters, but lineages can still share features; a GWAS that models "
+                   "population structure (pyseer) is the stricter check." if derep else
+                   "Isolates from one clone are not independent, so these tests overstate significance when clones "
+                   "dominate; rerun with --dereplicate, or use a GWAS that models population structure (pyseer)."),
                 _table_html(result.tests, [("feature", "Feature"), ("class", "Class"),
                                            ("isolates_with_feature", "Isolates"), ("percent_overall", "% overall"),
                                            ("chi2", "Chi-squared"), ("p", "p"), ("q", "q (BH)")]),
@@ -725,7 +748,6 @@ def build_report(
 
     # 4. Genomic linkage
     if distances_path:
-        names, matrix = read_distance_matrix(distances_path)
         link = A.linkage(dataset, names, matrix, threshold=threshold, permutations=permutations, seed=seed)
         if link.unmatched:
             quality.append(f"{len(link.unmatched)} names in the distance matrix matched no isolate "
@@ -830,8 +852,8 @@ def build_report(
     if dataset.duplicates:
         quality.append(f"{dataset.duplicates} rows repeated an isolate already listed (same BioSample) and were collapsed.")
 
-    page = _page(title, note, kpis, sections, quality, methods, refs, dict(threshold=threshold, by=by,
-                                                                             permutations=permutations, seed=seed))
+    page = _page(title, note, kpis, sections, quality, methods, refs,
+                 dict(threshold=threshold, by=by, permutations=permutations, seed=seed, dereplicate=bool(derep)))
     path = out_dir / "report.html"
     path.write_text(page, encoding="utf-8")
     return path
@@ -854,6 +876,7 @@ def _section(stem, heading, finding, svg, caption, table, download, extra_downlo
 
 class References:
     LIBRARY = {
+        "vezina": "Vezina B, Morampalli BR, Nguyen HA, Gomez-Simmonds A, Peleg AY, Macesic N (2025) The rise and global spread of IMP carbapenemases (1996–2023): a genomic epidemiology study. Nat Commun 17:183. https://doi.org/10.1038/s41467-025-66874-7",
         "thorpe": "Thorpe HA et al. (2022) A large-scale genomic snapshot of Klebsiella spp. isolates in Northern Italy reveals limited transmission between clinical and non-clinical settings. Nat Microbiol 7:2054–2067. https://doi.org/10.1038/s41564-022-01263-0",
         "hetland": "Hetland MAK et al. (2025) A genome-wide One Health study of Klebsiella pneumoniae in Norway reveals overlapping populations but few recent transmission events across reservoirs. Genome Med 17:42. https://doi.org/10.1186/s13073-025-01466-0",
         "muloi": "Muloi DM et al. (2022) Population genomics of Escherichia coli in livestock-keeping households across a rapidly developing urban landscape. Nat Microbiol 7:581–589. https://doi.org/10.1038/s41564-022-01079-y",
@@ -890,7 +913,8 @@ def _page(title, note, kpis, sections, quality, methods, refs, params) -> str:
     issues = "".join(f"<li>{html.escape(q)}</li>" for q in quality) or "<li>No data-quality issues were detected.</li>"
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     param_text = (f"grouping: {params['by']}; SNP threshold: {params['threshold']:g}; permutations: "
-                  f"{params['permutations']:,}; random seed: {params['seed']}")
+                  f"{params['permutations']:,}; random seed: {params['seed']}; "
+                  f"dereplicated: {'yes' if params['dereplicate'] else 'no'}")
     return f"""<!doctype html>
 <html lang="en">
 <head>

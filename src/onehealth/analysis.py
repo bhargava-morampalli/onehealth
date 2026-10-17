@@ -520,19 +520,7 @@ def linkage(
     of the two sources, and compared with a null in which source labels are
     permuted across isolates (sampling effort held fixed; cf. Muloi et al. 2022).
     """
-    mapping, unmatched = match_names(names, dataset)
-    by_key = {iso.key: iso for iso in dataset.isolates}
-    index: list[int] = []
-    isolates: list[Isolate] = []
-    seen: set[str] = set()
-    for i, name in enumerate(names):
-        key = mapping.get(name)
-        if key is None or key in seen:
-            continue
-        seen.add(key)
-        index.append(i)
-        isolates.append(by_key[key])
-    sub = matrix[np.ix_(index, index)] if index else np.zeros((0, 0))
+    isolates, sub, unmatched = _matched_isolates(dataset, names, matrix)
     groups = [g for g in dataset.groups if any(iso.source == g for iso in isolates)]
     n_s = len(groups)
     src = np.array([groups.index(iso.source) if iso.source in groups else -1 for iso in isolates], dtype=np.int64)
@@ -689,6 +677,75 @@ def linkage(
         distances_within=within,
         distances_between=between,
     )
+
+
+def _matched_isolates(
+    dataset: Dataset, names: list[str], matrix: np.ndarray
+) -> tuple[list[Isolate], np.ndarray, list[str]]:
+    """Isolates found in a distance matrix (first occurrence of each), their sub-matrix, and unmatched names."""
+    mapping, unmatched = match_names(names, dataset)
+    by_key = {iso.key: iso for iso in dataset.isolates}
+    index: list[int] = []
+    isolates: list[Isolate] = []
+    seen: set[str] = set()
+    for i, name in enumerate(names):
+        key = mapping.get(name)
+        if key is None or key in seen:
+            continue
+        seen.add(key)
+        index.append(i)
+        isolates.append(by_key[key])
+    sub = matrix[np.ix_(index, index)] if index else np.zeros((0, 0))
+    return isolates, sub, unmatched
+
+
+@dataclass
+class Dereplication:
+    threshold: float
+    isolates_before: int
+    isolates_after: int
+    clusters_collapsed: int  # clusters with more than one isolate
+    not_in_matrix: int  # classified isolates kept as-is because they have no distances
+
+
+def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshold: float) -> tuple[Dataset, Dereplication]:
+    """Keep one isolate per genomic cluster per source.
+
+    Isolates from the same source within `threshold` SNPs are joined by single
+    linkage and represented by one isolate (the lowest key, so the choice is
+    reproducible). This removes the pseudo-replication that outbreak clusters add
+    to per-isolate tests, as in the IMP-cluster dereplication of Vezina et al. 2025.
+    Isolates from different sources are never merged, so cross-source sharing is
+    not hidden. Isolates without distances are kept unchanged.
+    """
+    isolates, sub, _ = _matched_isolates(dataset, names, matrix)
+    iu, ju = np.triu_indices(len(isolates), k=1)
+    values = sub[iu, ju] if len(isolates) else np.zeros(0)
+    sources = np.array([iso.source for iso in isolates], dtype=object)
+    link = np.isfinite(values) & (values <= threshold) & (sources[iu] == sources[ju])
+    clusters = _components(len(isolates), iu[link], ju[link])
+    members: dict[int, list[str]] = {}
+    for iso, cid in zip(isolates, clusters.tolist()):
+        members.setdefault(cid, []).append(iso.key)
+    dropped = {key for keys in members.values() for key in sorted(keys)[1:]}
+    kept = [iso for iso in dataset.isolates if iso.key not in dropped]
+    in_matrix = {iso.key for iso in isolates}
+    result = Dataset(
+        isolates=kept,
+        groups=dataset.groups,
+        lineage_column=dataset.lineage_column,
+        rows=dataset.rows,
+        duplicates=dataset.duplicates,
+        unclassified=sum(1 for iso in kept if not iso.source),
+    )
+    summary = Dereplication(
+        threshold=threshold,
+        isolates_before=len(dataset.classified),
+        isolates_after=len(result.classified),
+        clusters_collapsed=sum(1 for keys in members.values() if len(keys) > 1),
+        not_in_matrix=sum(1 for iso in dataset.classified if iso.key not in in_matrix),
+    )
+    return result, summary
 
 
 def _components(n: int, a: np.ndarray, b: np.ndarray) -> np.ndarray:
