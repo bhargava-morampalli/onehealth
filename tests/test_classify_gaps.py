@@ -33,14 +33,14 @@ def test_animal_feed_is_review_not_food(lexicon):
     result = _cls(lexicon, "animal feed")
     assert result.l1 == "Unclassified"
     assert result.classify_status == "review"
-    assert result.classify_reason == "animal_feed"
+    assert result.classify_reason == "animal-feed"
     assert result.l1 != "Food"
 
 
 def test_livestock_feed_is_review_not_food(lexicon):
     result = _cls(lexicon, "livestock feed")
     assert result.classify_status == "review"
-    assert result.classify_reason == "animal_feed"
+    assert result.classify_reason == "animal-feed"
 
 
 def test_livestock_is_animal(lexicon):
@@ -101,7 +101,7 @@ def test_bare_sink_is_not_healthcare_environment(lexicon):
     result = _cls(lexicon, "sink")
     assert result.classify_status == "review"
     assert result.classify_reason == "unmatched"
-    assert result.healthcare_environment == "no"
+    assert result.healthcare_environment == ""
     assert result.l1 == "Unclassified"
 
 
@@ -116,7 +116,7 @@ def test_bare_faucet_is_not_healthcare_environment(lexicon):
     result = _cls(lexicon, "faucet")
     assert result.classify_status == "review"
     assert result.classify_reason == "unmatched"
-    assert result.healthcare_environment == "no"
+    assert result.healthcare_environment == ""
     assert result.l1 != "Environmental"
 
 

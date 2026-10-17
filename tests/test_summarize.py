@@ -90,7 +90,9 @@ def test_summarize_source_evidence_splits_ok_empty_from_unmatched_and_conflict()
     for key in SOURCE_EVIDENCE_CORE:
         assert key in evidence
     assert evidence["ok_with_source"] == "1"
-    assert evidence["ok_empty_source"] == "2"
+    # Only classify ok rows are "ok_*". The resolve-ok / classify-review row is missing_source.
+    assert evidence["ok_empty_source"] == "1"
+    assert evidence["missing_source"] == "1"
     assert evidence["unmatched"] == "1"
     assert evidence["conflict"] == "1"
 
@@ -112,3 +114,24 @@ def test_summarize_always_emits_source_evidence_core_keys():
     assert evidence["ok_empty_source"] == 0
     assert evidence["unmatched"] == 0
     assert evidence["conflict"] == 0
+
+
+def test_unclassified_does_not_make_a_cluster_mixed_and_count_is_isolates():
+    rows = [
+        {"l1": "Human", "cluster_id": "A"},
+        {"l1": "Human", "cluster_id": "A"},
+        {"l1": "Unclassified", "cluster_id": "A"},
+    ]
+    overlap = [row for row in summarize(rows) if row["section"] == "cluster_overlap"]
+    assert overlap == [{"section": "cluster_overlap", "key": "A", "count": "3", "l1_set": "Human", "mixed": "no"}]
+
+
+def test_dataset_section_reports_rows_that_share_a_biosample():
+    rows = [
+        {"query_id": "SAMN1", "biosample": "SAMN1"},
+        {"query_id": "PDT1.1", "biosample": "SAMN1"},
+        {"query_id": "GCA_1.1", "biosample": "SAMN2"},
+        {"query_id": "not-an-id", "biosample": ""},
+    ]
+    dataset = {row["key"]: row["count"] for row in summarize(rows) if row["section"] == "dataset"}
+    assert dataset == {"rows": "4", "unique_isolates": "3", "rows_sharing_a_biosample": "1"}

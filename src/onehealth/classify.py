@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
-from onehealth.constants import (
-    CLASSIFY_EXTRA_FIELDS,
-    HEALTHCARE_NO,
-    HEALTHCARE_YES,
-    derive_paper_rollup,
-)
+from onehealth.constants import CLASSIFY_EXTRA_FIELDS, HEALTHCARE_NO, HEALTHCARE_YES, derive_paper_rollup
 from onehealth.io_tsv import metadata_view
-from onehealth.lexicon import Lexicon, RuleHit, best_hits, match_rules
+from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import contains_phrase, is_blank, is_taxon_only_source, is_unknown_value, tokenize
+from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value
+
+# Unclassified rows carry no healthcare-environment call.
+HEALTHCARE_UNKNOWN = ""
 
 
 @dataclass(frozen=True)
@@ -36,95 +34,11 @@ def classify_record(
     lexicon: Lexicon,
     overrides: dict[str, list[OverrideRow]] | None = None,
 ) -> Classification:
-    view = metadata_view(record)
-    hits = match_rules(view, lexicon)
-    suggestion = _from_hits(hits, view, lexicon.version)
-
+    auto = _classify_with_lexicon(metadata_view(record), lexicon)
     override = lookup_override(record, overrides or {})
-    if override is not None:
-        return _apply_override(override, suggestion, lexicon.version)
-
-    if _missing_source(view):
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "missing_source",
-            lexicon.version,
-            suggestion,
-            override_applied="no",
-        )
-
-    if _unknown_blocks_environment(view):
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "unknown_source",
-            lexicon.version,
-            suggestion,
-            override_applied="no",
-        )
-
-    if is_taxon_only_source(view.get("isolation_source")):
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "taxon_only_source",
-            lexicon.version,
-            "",
-            override_applied="no",
-        )
-
-    if _animal_feed(view):
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "animal_feed",
-            lexicon.version,
-            "",
-            override_applied="no",
-        )
-
-    winners = best_hits(hits)
-    if not winners:
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "unmatched",
-            lexicon.version,
-            suggestion,
-            override_applied="no",
-        )
-
-    l1_set = {hit.rule.l1 for hit in winners}
-    hc_set = {hit.rule.healthcare_environment for hit in winners}
-    if len(l1_set) > 1 or len(hc_set) > 1:
-        if _allowed_host_env_split(winners):
-            env_hit = next(hit for hit in winners if hit.rule.healthcare_environment == HEALTHCARE_YES)
-            return _ok(env_hit.rule.l1, env_hit.rule.healthcare_environment, env_hit.rule.rule_id, lexicon.version)
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "rule_conflict:" + ",".join(sorted(hit.rule.rule_id for hit in winners)),
-            lexicon.version,
-            suggestion,
-            override_applied="no",
-        )
-
-    winner = winners[0]
-    # Host vs source disagreement at different priorities is resolved by priority.
-    # Same-priority leftovers already handled. Check complementary host/source conflict
-    # when both sides produced different L1 at any priority and source is not healthcare-env.
-    if _host_source_conflict(hits):
-        return _review(
-            "Unclassified",
-            HEALTHCARE_NO,
-            "host_source_conflict",
-            lexicon.version,
-            suggestion,
-            override_applied="no",
-        )
-
-    return _ok(winner.rule.l1, winner.rule.healthcare_environment, winner.rule.rule_id, lexicon.version)
+    if override is None:
+        return auto
+    return _apply_override(override, auto.lexicon_suggestion, lexicon.version)
 
 
 def classify_rows(
@@ -134,9 +48,8 @@ def classify_rows(
 ) -> list[dict[str, str]]:
     classified: list[dict[str, str]] = []
     for row in rows:
-        result = classify_record(row, lexicon, overrides)
         merged = dict(row)
-        merged.update(result.as_row())
+        merged.update(classify_record(row, lexicon, overrides).as_row())
         classified.append(merged)
     return classified
 
@@ -145,112 +58,102 @@ def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
     extra = list(CLASSIFY_EXTRA_FIELDS)
     if not rows:
         return extra
-    names: list[str] = []
-    for key in rows[0]:
-        if key not in extra:
-            names.append(key)
-    names.extend(extra)
-    return names
+    return [key for key in rows[0] if key not in extra] + extra
+
+
+def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classification:
+    version = lexicon.version
+    hits = match_rules(view, lexicon)
+
+    # An unknown marker ("unknown", "missing: lab stock") or a bare taxon name
+    # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
+    # Drop it and let host / source_type decide, as if the field were blank.
+    source = view.get("isolation_source", "")
+    if is_unknown_value(source) or is_taxon_only_source(source):
+        hits = [hit for hit in hits if hit.field != "isolation_source"]
+
+    winners = best_hits(hits)
+    if not winners:
+        return _review(_no_evidence_reason(view), version)
+
+    l1s = {hit.rule.l1 for hit in winners}
+    if len(l1s) > 1 or len({hit.rule.healthcare_environment for hit in winners}) > 1:
+        reason = "rule_conflict:" + ",".join(sorted(hit.rule.rule_id for hit in winners))
+        return _review(reason, version, l1s)
+
+    rule = winners[0].rule
+    if rule.l1 == "Unclassified":
+        return _review(rule.rule_id, version)
+    if all(hit.rule.host_dependent for hit in winners):
+        return _classify_specimen(rule, hits, view, version)
+
+    conflict = _host_source_conflict(hits)
+    if conflict:
+        return _review("host_source_conflict", version, conflict)
+    return _ok(rule.l1, rule.healthcare_environment, rule.rule_id, version)
+
+
+def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, str], version: str) -> Classification:
+    """Blood, urine, faeces, wound, "clinical": the host decides Human vs Animal.
+
+    Anatomical entities are species-neutral (Uberon), so "pig faeces" or a
+    Bos taurus host with "faeces" is Animal, not Human.
+    """
+    deciders = [hit for hit in hits if not hit.rule.host_dependent and hit.rule.l1 in {"Human", "Animal"}]
+    candidates = {hit.rule.l1 for hit in deciders}
+    if len(candidates) > 1:
+        return _review("host_source_conflict", version, candidates)
+    if deciders:
+        decider = best_hits(deciders)[0]
+        return _ok(decider.rule.l1, HEALTHCARE_NO, f"{rule.rule_id}+{decider.rule.rule_id}", version)
+    if not is_unknown_value(view.get("host")):
+        # A host the lexicon cannot place (plant, unlisted species): do not assume Human.
+        return _review("host_unrecognised", version, {rule.l1})
+    return _ok(rule.l1, rule.healthcare_environment, f"{rule.rule_id}+no_host", version)
+
+
+def _host_source_conflict(hits: list[RuleHit]) -> set[str]:
+    """L1s in conflict between the host field and the source fields, or empty."""
+    source_hits = best_hits([hit for hit in hits if hit.field != "host"])
+    host_hits = best_hits([hit for hit in hits if hit.field == "host"])
+    source_l1 = {hit.rule.l1 for hit in source_hits}
+    host_l1 = {hit.rule.l1 for hit in host_hits}
+    if not source_l1 or not host_l1 or source_l1 == host_l1:
+        return set()
+    # Submitters often record host = Homo sapiens for hospital sink or surface swabs.
+    if host_l1 == {"Human"} and any(hit.rule.healthcare_environment == HEALTHCARE_YES for hit in source_hits):
+        return set()
+    return source_l1 | host_l1
+
+
+def _no_evidence_reason(view: dict[str, str]) -> str:
+    source = view.get("isolation_source", "")
+    if is_taxon_only_source(source):
+        return "taxon_only_source"
+    if not is_blank(source) and is_unknown_value(source):
+        return "unknown_source"
+    if is_blank(source) and is_unknown_value(view.get("host")):
+        # NCBI sample_type ("whole organism", "pure culture") is material, not source.
+        return "missing_source"
+    return "unmatched"
 
 
 def _apply_override(override: OverrideHit, suggestion: str, version: str) -> Classification:
-    if override.status == "applied" and override.row is not None:
-        row = override.row
-        healthcare = row.healthcare_environment or HEALTHCARE_NO
-        paper = row.paper_rollup or derive_paper_rollup(row.l1, healthcare)
-        return Classification(
-            l1=row.l1,
-            healthcare_environment=healthcare,
-            paper_rollup=paper,
-            classify_status="ok",
-            classify_reason="override",
-            lexicon_version=version,
-            override_applied="yes",
-            lexicon_suggestion=suggestion,
-        )
-    reason = override.reason
-    return _review(
-        "Unclassified",
-        HEALTHCARE_NO,
-        reason,
-        version,
-        suggestion,
-        override_applied="no",
+    if override.status != "applied" or override.row is None:
+        return _review(override.reason, version, {suggestion} if suggestion else set())
+    row = override.row
+    default_hc = HEALTHCARE_UNKNOWN if row.l1 == "Unclassified" else HEALTHCARE_NO
+    healthcare = row.healthcare_environment or default_hc
+    return Classification(
+        l1=row.l1,
+        healthcare_environment=healthcare,
+        paper_rollup=row.paper_rollup or derive_paper_rollup(row.l1, healthcare),
+        classify_status="ok",
+        classify_reason="override",
+        lexicon_version=version,
+        override_applied="yes",
+        lexicon_suggestion=suggestion,
     )
-
-
-def _from_hits(hits: list[RuleHit], view: dict[str, str], version: str) -> str:
-    if _missing_source(view) or _unknown_blocks_environment(view):
-        return "Unclassified"
-    winners = best_hits(hits)
-    if len(winners) == 1:
-        return winners[0].rule.l1
-    if winners and len({hit.rule.l1 for hit in winners}) == 1:
-        return winners[0].rule.l1
-    return ""
-
-
-def _missing_source(view: dict[str, str]) -> bool:
-    return is_blank(view.get("isolation_source")) and is_blank(view.get("host")) and is_blank(
-        view.get("sample_type")
-    )
-
-
-_ANIMAL_FEED_PHRASES = (
-    ("animal", "feed"),
-    ("livestock", "feed"),
-    ("cattle", "feed"),
-    ("poultry", "feed"),
-    ("swine", "feed"),
-    ("pig", "feed"),
-    ("chicken", "feed"),
-    ("fish", "feed"),
-)
-
-
-def _animal_feed(view: dict[str, str]) -> bool:
-    """KlebNET animal feed is not retail Food and has no L1 here — review."""
-    for field in ("isolation_source", "sample_type"):
-        tokens = tokenize(view.get(field, ""))
-        if any(contains_phrase(tokens, phrase) for phrase in _ANIMAL_FEED_PHRASES):
-            return True
-    return False
-
-
-def _unknown_blocks_environment(view: dict[str, str]) -> bool:
-    """Unknown isolation_source stays Unclassified; never map to Environmental."""
-    source = view.get("isolation_source", "")
-    host = view.get("host", "")
-    if not is_unknown_value(source):
-        return False
-    if not is_blank(host) and not is_unknown_value(host):
-        return False
-    return True
-
-
-def _allowed_host_env_split(winners: list[RuleHit]) -> bool:
-    l1s = {hit.rule.l1 for hit in winners}
-    healthcare = {hit.rule.healthcare_environment for hit in winners}
-    if HEALTHCARE_YES in healthcare and l1s <= {"Human", "Environmental"}:
-        return True
-    return False
-
-
-def _host_source_conflict(hits: list[RuleHit]) -> bool:
-    source_hits = best_hits([hit for hit in hits if hit.field == "isolation_source"])
-    host_hits = best_hits([hit for hit in hits if hit.field == "host"])
-    if not source_hits or not host_hits:
-        return False
-    source_l1 = {hit.rule.l1 for hit in source_hits}
-    host_l1 = {hit.rule.l1 for hit in host_hits}
-    if source_l1 == host_l1:
-        return False
-    if any(hit.rule.healthcare_environment == HEALTHCARE_YES for hit in source_hits) and host_l1 == {"Human"}:
-        return False
-    # Specimen from an animal host is Animal, not a conflict with a human-anatomy word
-    # only when the source rule is a generic human specimen AND host is Animal.
-    # Those still need review if both are confident and disagree (e.g. human stool vs chicken).
-    return True
 
 
 def _ok(l1: str, healthcare: str, reason: str, version: str) -> Classification:
@@ -266,21 +169,15 @@ def _ok(l1: str, healthcare: str, reason: str, version: str) -> Classification:
     )
 
 
-def _review(
-    l1: str,
-    healthcare: str,
-    reason: str,
-    version: str,
-    suggestion: str,
-    override_applied: str,
-) -> Classification:
+def _review(reason: str, version: str, candidates: set[str] | None = None) -> Classification:
+    """Unclassified. lexicon_suggestion lists the competing L1s, if any, for the curator."""
     return Classification(
-        l1=l1,
-        healthcare_environment=healthcare,
-        paper_rollup=derive_paper_rollup(l1, healthcare),
+        l1="Unclassified",
+        healthcare_environment=HEALTHCARE_UNKNOWN,
+        paper_rollup="Unclassified",
         classify_status="review",
         classify_reason=reason,
         lexicon_version=version,
-        override_applied=override_applied,
-        lexicon_suggestion=suggestion,
+        override_applied="no",
+        lexicon_suggestion="|".join(sorted(candidates or ())),
     )

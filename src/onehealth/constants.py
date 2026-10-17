@@ -11,12 +11,12 @@ L1_VALUES = (
     "Unclassified",
 )
 
-PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal")
+PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal", "Unclassified")
 
 HEALTHCARE_YES = "yes"
 HEALTHCARE_NO = "no"
 
-SEED_LEXICON_VERSION = "1"
+SEED_LEXICON_VERSION = "2"
 
 UNKNOWN_EXACT = frozenset(
     {
@@ -40,6 +40,7 @@ UNKNOWN_EXACT = frozenset(
         "not recorded",
         "not known",
         "not specified",
+        "restricted access",
         "unspecified",
         "unavailable",
         "missing data",
@@ -85,7 +86,10 @@ ISOLATION_SOURCE_ALIASES = (
     "sample_source",
 )
 HOST_DISEASE_ALIASES = ("host_disease", "host disease")
-SAMPLE_TYPE_ALIASES = ("sample_type", "source_type", "tissue")
+# NCBI `source_type` is a controlled One Health category (human, animal, food,
+# environmental, other). NCBI `sample_type` is the material ("whole organism",
+# "pure culture"), so it is read last.
+SAMPLE_TYPE_ALIASES = ("source_type", "tissue", "sample_type")
 
 CLUSTER_ALIASES = ("cluster_id", "cluster", "poppunk_cluster")
 PLASMID_ALIASES = ("plasmid_id", "plasmid", "plasmid_replicon")

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from onehealth import __version__
 from onehealth.classify import classify_fieldnames, classify_rows
-from onehealth.constants import SEED_LEXICON_VERSION
+from onehealth.constants import RESOLVE_FIELDS, SEED_LEXICON_VERSION
 from onehealth.io_tsv import read_id_list, read_tsv, write_tsv
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
@@ -68,10 +68,57 @@ def _build_parser() -> argparse.ArgumentParser:
     plot_p = sub.add_parser("plot", help="Bar charts of L1 and paper-rollup counts")
     plot_p.add_argument("input", type=Path, help="Classified TSV")
     plot_p.add_argument("-o", "--out", type=Path, required=True, help="PNG path")
-    plot_p.add_argument("--by", choices=("l1", "paper_rollup"), default="l1")
     plot_p.set_defaults(handler=cmd_plot)
 
+    report_p = sub.add_parser(
+        "report",
+        help="Standard One Health analyses with an HTML report, figures and tables",
+        description=(
+            "Lineage diversity and sharing, resistance/virulence by source, and genomic linkage "
+            "between sources, written as report.html plus figures/ (SVG, PNG) and tables/ (TSV)."
+        ),
+    )
+    report_p.add_argument("input", type=Path, help="Classified TSV (from onehealth classify)")
+    report_p.add_argument("-o", "--out", type=Path, required=True, help="Output directory")
+    report_p.add_argument("--features", type=Path, help="Long table: isolate, feature[, class] (AMRFinderPlus --name output fits)")
+    report_p.add_argument("--distances", type=Path, help="Pairwise SNP distances from snp-dists (square or -m long format)")
+    report_p.add_argument("--lineages", type=Path, help="Typing table with an ST/lineage/cluster column (Kleborate, mlst, PopPUNK)")
+    report_p.add_argument("--lineage-column", help="Lineage column in the input (default: first of st, mlst, lineage, cluster ...)")
+    report_p.add_argument(
+        "--threshold",
+        type=float,
+        default=21,
+        help="SNP threshold for close relatives (default 21, K. pneumoniae; choose one for your organism and pipeline)",
+    )
+    report_p.add_argument("--group-by", choices=("source", "paper_rollup"), default="source")
+    report_p.add_argument("--permutations", type=int, default=9999, help="Permutations for every test (default 9999)")
+    report_p.add_argument("--seed", type=int, default=1, help="Random seed (default 1)")
+    report_p.add_argument("--title", default="One Health population report")
+    report_p.add_argument("--note", default="", help="Banner text under the title, e.g. the dataset description")
+    report_p.set_defaults(handler=cmd_report)
+
     return parser
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    from onehealth.report import build_report  # matplotlib/numpy load only when needed
+
+    path = build_report(
+        read_tsv(args.input),
+        args.out,
+        features_path=args.features,
+        distances_path=args.distances,
+        lineages_path=args.lineages,
+        lineage_column=args.lineage_column,
+        threshold=args.threshold,
+        by=args.group_by,
+        permutations=args.permutations,
+        seed=args.seed,
+        title=args.title,
+        note=args.note,
+    )
+    print(f"wrote {path}", file=sys.stderr)
+    return 0
 
 
 def cmd_resolve(args: argparse.Namespace) -> int:
@@ -80,28 +127,18 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     client = None
     allow_network = not args.no_network
     if allow_network:
+        if not args.email:
+            print(
+                "warning: NCBI asks E-utilities users to send --email (and tool) so it can "
+                "contact you before blocking an IP",
+                file=sys.stderr,
+            )
         client = NCBIClient(email=args.email, api_key=args.api_key)
     rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network)
-    # Preserve optional cluster/plasmid columns from local metadata when present.
-    fieldnames = list(rows[0].keys()) if rows else [
-        "query_id",
-        "id_type",
-        "biosample",
-        "assembly",
-        "sra",
-        "pdt",
-        "organism",
-        "host",
-        "isolation_source",
-        "host_disease",
-        "sample_type",
-        "geo_loc_name",
-        "collection_date",
-        "strain",
-        "isolate",
-        "resolve_status",
-        "resolve_reason",
-    ]
+    # Union over all rows, so optional cluster/plasmid columns survive even when
+    # the first row has none.
+    extra = sorted({key for row in rows for key in row} - set(RESOLVE_FIELDS))
+    fieldnames = [*RESOLVE_FIELDS, *extra]
     write_tsv(args.out, rows, fieldnames)
     _write_review(args.review or _sidecar(args.out, "review"), rows, fieldnames, status_field="resolve_status")
     _print_counts("resolve", rows, "resolve_status")
@@ -131,7 +168,7 @@ def cmd_summarize(args: argparse.Namespace) -> int:
 
 def cmd_plot(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
-    plot_counts(rows, args.out, by=args.by)
+    plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
 

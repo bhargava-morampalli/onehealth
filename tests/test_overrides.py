@@ -54,3 +54,40 @@ def test_invalid_override_l1_goes_to_review(tmp_path: Path, lexicon):
     result = classify_record({"query_id": "SAMN1", "isolation_source": "blood"}, lexicon, load_overrides(path))
     assert result.classify_status == "review"
     assert result.classify_reason == "override_invalid_l1"
+
+
+def test_override_on_gcf_applies_to_gca_twin(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("id\tl1\nGCF_000005845.2\tLaboratory\n", encoding="utf-8")
+    record = {"query_id": "GCA_000005845.2", "assembly": "GCA_000005845.2", "isolation_source": "urine"}
+    result = classify_record(record, lexicon, load_overrides(path))
+    assert (result.l1, result.override_applied) == ("Laboratory", "yes")
+
+
+def test_override_on_other_assembly_version_does_not_apply(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("id\tl1\nGCA_000005845.2\tLaboratory\n", encoding="utf-8")
+    record = {"query_id": "GCA_000005845.1", "isolation_source": "urine"}
+    assert classify_record(record, lexicon, load_overrides(path)).override_applied == "no"
+
+
+def test_override_l1_is_case_insensitive(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("id\tl1\nSAMN1\tanimal\n", encoding="utf-8")
+    result = classify_record({"query_id": "SAMN1", "isolation_source": "blood"}, lexicon, load_overrides(path))
+    assert (result.l1, result.classify_status) == ("Animal", "ok")
+
+
+def test_invalid_override_paper_rollup_goes_to_review(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("id\tl1\tpaper_rollup\nSAMN1\tHuman\tHospital\n", encoding="utf-8")
+    result = classify_record({"query_id": "SAMN1", "isolation_source": "blood"}, lexicon, load_overrides(path))
+    assert result.classify_reason == "override_invalid_paper_rollup"
+    assert result.paper_rollup == "Unclassified"
+
+
+def test_override_blank_healthcare_equals_no(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("id\tl1\thealthcare_environment\nSAMN1\tHuman\t\nSAMN1\tHuman\tno\n", encoding="utf-8")
+    result = classify_record({"query_id": "SAMN1"}, lexicon, load_overrides(path))
+    assert result.classify_reason == "override"

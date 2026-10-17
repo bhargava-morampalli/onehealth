@@ -45,3 +45,15 @@ def test_offline_pipeline(tmp_path: Path, fixtures: Path):
     review = classified.with_name("classified.review.tsv")
     assert review.exists()
     assert "OVERRIDE_EMPTY" in review.read_text(encoding="utf-8")
+
+
+def test_resolve_keeps_cluster_column_when_first_row_has_none(tmp_path: Path):
+    ids = tmp_path / "ids.txt"
+    ids.write_text("not-an-id\nSAMN1\n", encoding="utf-8")
+    metadata = tmp_path / "meta.tsv"
+    metadata.write_text("biosample\tisolation_source\tcluster_id\nSAMN1\turine\tST15\n", encoding="utf-8")
+    out = tmp_path / "resolved.tsv"
+    assert main(["resolve", str(ids), "-o", str(out), "--metadata", str(metadata), "--no-network"]) == 0
+    header, _, second = out.read_text(encoding="utf-8").splitlines()
+    assert "cluster_id" in header.split("\t")
+    assert "ST15" in second.split("\t")

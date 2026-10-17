@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from onehealth.constants import RESOLVE_FIELDS
+from onehealth.constants import (
+    ASSEMBLY_ALIASES,
+    BIOSAMPLE_ALIASES,
+    ID_COLUMN_ALIASES,
+    PDT_ALIASES,
+    RESOLVE_FIELDS,
+    SRA_ALIASES,
+)
 from onehealth.ids import ParsedId, assembly_join_keys, is_sra_study, parse_id
 from onehealth.io_tsv import get_field, metadata_view, read_tsv, row_match_ids
 from onehealth.ncbi import (
@@ -33,7 +40,12 @@ def resolve_ids(
     for raw in ids:
         parsed = parse_id(raw)
         row = _blank_row(parsed)
-        local = _lookup_local(parsed, index)
+        local, conflict = _lookup_local(parsed, index)
+        if conflict:
+            row["resolve_status"] = "review"
+            row["resolve_reason"] = "local_metadata_conflict"
+            resolved.append(row)
+            continue
         if local is not None:
             row.update(local)
             row["resolve_status"] = "ok"
@@ -100,54 +112,73 @@ def _single_biosample(value: str | None) -> bool:
     return True
 
 
-def _index_local(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
-    index: dict[str, dict[str, str]] = {}
+_ID_COLUMNS = {
+    alias.lower()
+    for alias in (*ID_COLUMN_ALIASES, *BIOSAMPLE_ALIASES, *ASSEMBLY_ALIASES, *SRA_ALIASES, *PDT_ALIASES)
+}
+
+
+def _local_view(row: dict[str, str]) -> dict[str, str]:
+    """Standard fields plus any other local column (ST, patient ID, ...), minus identifiers."""
+    view = metadata_view(row)
+    standard = {
+        "biosample": view["biosample"],
+        "assembly": view["assembly"],
+        "sra": view["sra"],
+        "pdt": view["pdt"],
+        "organism": get_field(row, ("organism", "organism_name", "tax_name")),
+        "host": view["host"],
+        "isolation_source": view["isolation_source"],
+        "host_disease": view["host_disease"],
+        "sample_type": view["sample_type"],
+        "geo_loc_name": get_field(row, ("geo_loc_name", "geo_loc", "country")),
+        "collection_date": get_field(row, ("collection_date", "collection date")),
+        "strain": get_field(row, ("strain",)),
+        "isolate": get_field(row, ("isolate",)),
+        "cluster_id": view["cluster_id"],
+        "plasmid_id": view["plasmid_id"],
+    }
+    extras = {
+        key: value
+        for key, value in row.items()
+        if key and value and key not in standard and key not in RESOLVE_FIELDS and key.lower() not in _ID_COLUMNS
+    }
+    return {**standard, **extras}
+
+
+def _index_local(rows: list[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
+    """Map every identifier on a local row to the distinct metadata rows carrying it."""
+    index: dict[str, list[dict[str, str]]] = {}
     for row in rows:
-        view = {
-            "biosample": metadata_view(row)["biosample"],
-            "assembly": metadata_view(row)["assembly"],
-            "sra": metadata_view(row)["sra"],
-            "pdt": metadata_view(row)["pdt"],
-            "organism": get_field(row, ("organism", "organism_name", "tax_name")),
-            "host": metadata_view(row)["host"],
-            "isolation_source": metadata_view(row)["isolation_source"],
-            "host_disease": metadata_view(row)["host_disease"],
-            "sample_type": metadata_view(row)["sample_type"],
-            "geo_loc_name": get_field(row, ("geo_loc_name", "geo_loc", "country")),
-            "collection_date": get_field(row, ("collection_date", "collection date")),
-            "strain": get_field(row, ("strain",)),
-            "isolate": get_field(row, ("isolate",)),
-            "cluster_id": metadata_view(row)["cluster_id"],
-            "plasmid_id": metadata_view(row)["plasmid_id"],
-        }
-        keys = row_match_ids(row)
-        query = get_field(row, ("query_id", "id", "accession"))
-        if query:
-            keys.add(parse_id(query).normalized.upper() or query.upper())
-        expanded = set(keys)
-        for key in list(keys):
-            expanded.update(assembly_join_keys(key))
-        for key in expanded:
-            index[key.upper()] = view
+        view = _local_view(row)
+        for key in row_match_ids(row):
+            bucket = index.setdefault(key, [])
+            if view not in bucket:
+                bucket.append(view)
     return index
 
 
-def _lookup_local(parsed: ParsedId, index: dict[str, dict[str, str]]) -> dict[str, str] | None:
-    candidates = {parsed.normalized.upper(), parsed.raw.strip().upper()}
-    candidates.update(assembly_join_keys(parsed.normalized))
-    for key in filter(None, candidates):
-        if key in index:
-            hit = dict(index[key])
-            if parsed.id_type == "assembly":
-                hit["assembly"] = hit.get("assembly") or parsed.normalized
-            elif parsed.id_type == "biosample":
-                hit["biosample"] = hit.get("biosample") or parsed.normalized
-            elif parsed.id_type == "sra":
-                hit["sra"] = hit.get("sra") or parsed.normalized
-            elif parsed.id_type == "pdt":
-                hit["pdt"] = hit.get("pdt") or parsed.normalized
-            return {k: v for k, v in hit.items() if v or k in RESOLVE_FIELDS}
-    return None
+def _lookup_local(
+    parsed: ParsedId, index: dict[str, list[dict[str, str]]]
+) -> tuple[dict[str, str] | None, bool]:
+    """Return (metadata, conflict). Exact accession first, then versionless / GCA-GCF twin.
+
+    Two different local rows for the same key are a conflict, not "last row wins".
+    """
+    exact = [parsed.normalized.upper(), parsed.raw.strip().upper()]
+    related = sorted(assembly_join_keys(parsed.normalized))
+    for key in [*exact, *related]:
+        views = index.get(key) if key else None
+        if not views:
+            continue
+        if len(views) > 1:
+            return None, True
+        hit = dict(views[0])
+        column = parsed.id_type if parsed.id_type in {"assembly", "biosample", "sra", "pdt"} else ""
+        if column:
+            hit[column] = hit.get(column) or parsed.normalized
+        return {k: v for k, v in hit.items() if v or k in RESOLVE_FIELDS}, False
+    return None, False
 
 
 def _fetch(parsed: ParsedId, client: NCBIClient) -> dict[str, str]:

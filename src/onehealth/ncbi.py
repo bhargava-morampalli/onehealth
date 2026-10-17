@@ -11,8 +11,9 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from onehealth.constants import UNKNOWN_EXACT
 from onehealth.ids import parse_id, pdt_stem
-from onehealth.text import is_unknown_value
+from onehealth.text import normalize_text
 
 DATASETS_BASE = "https://api.ncbi.nlm.nih.gov/datasets/v2"
 EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -34,6 +35,10 @@ class HttpError(RuntimeError):
     pass
 
 
+class _Retryable(Exception):
+    pass
+
+
 class Fetcher(Protocol):
     def get_json(self, url: str, headers: dict[str, str] | None = None) -> dict[str, Any]: ...
 
@@ -41,14 +46,32 @@ class Fetcher(Protocol):
 
 
 class UrllibFetcher:
-    def __init__(self, delay_s: float = 0.35) -> None:
+    """Rate-limited GET. NCBI allows 3 requests/s without an API key.
+
+    HTTP 429 (rate limit), 5xx and network errors are retried a few times, so a
+    transient NCBI hiccup does not turn into a random review row.
+    """
+
+    def __init__(self, delay_s: float = 0.35, retries: int = 3, backoff_s: float = 2.0) -> None:
         self.delay_s = delay_s
+        self.retries = retries
+        self.backoff_s = backoff_s
         self._last = 0.0
 
     def get_json(self, url: str, headers: dict[str, str] | None = None) -> dict[str, Any]:
         return json.loads(self.get_text(url, headers=headers))
 
     def get_text(self, url: str, headers: dict[str, str] | None = None) -> str:
+        for attempt in range(self.retries + 1):
+            try:
+                return self._get_once(url, headers)
+            except _Retryable as exc:
+                if attempt == self.retries:
+                    raise HttpError(str(exc)) from exc
+                time.sleep(self.backoff_s * (attempt + 1))
+        raise AssertionError("unreachable")
+
+    def _get_once(self, url: str, headers: dict[str, str] | None) -> str:
         self._pause()
         request = urllib.request.Request(url, headers=headers or {"Accept": "application/json"})
         try:
@@ -56,9 +79,13 @@ class UrllibFetcher:
                 return response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
-            raise HttpError(f"HTTP {exc.code} for {url}: {body[:200]}") from exc
+            # No query string: it carries api_key and email, and this text lands in the TSV.
+            message = " ".join(f"HTTP {exc.code} for {_endpoint(url)}: {body[:200]}".split())
+            if exc.code == 429 or exc.code >= 500:
+                raise _Retryable(message) from exc
+            raise HttpError(message) from exc
         except urllib.error.URLError as exc:
-            raise HttpError(f"Network error for {url}: {exc.reason}") from exc
+            raise _Retryable(f"Network error for {_endpoint(url)}: {exc.reason}") from exc
 
     def _pause(self) -> None:
         now = time.monotonic()
@@ -66,6 +93,10 @@ class UrllibFetcher:
         if wait > 0:
             time.sleep(wait)
         self._last = time.monotonic()
+
+
+def _endpoint(url: str) -> str:
+    return url.split("?", 1)[0]
 
 
 @dataclass
@@ -118,17 +149,16 @@ class NCBIClient:
         return biosamples
 
     def pdt_to_biosample(self, accession: str) -> list[str]:
-        """Resolve PDT as an assembly *name*, not a BioSample accession."""
+        """Resolve PDT as an assembly *name*, not a BioSample accession.
+
+        Exact name first. Otherwise any assembly named PDTstem.N (a retired or
+        unversioned PDT); several distinct BioSamples become multiple_biosamples.
+        """
         found = self._assembly_name_biosamples(accession)
         if found:
             return found
         stem = pdt_stem(accession)
-        if stem and stem.upper() != accession.upper():
-            found = self._assembly_name_biosamples(stem)
-            if found:
-                return found
-            return self._assembly_wildcard_biosamples(stem)
-        return []
+        return self._assembly_wildcard_biosamples(stem) if stem else []
 
     def _assembly_name_biosamples(self, name: str) -> list[str]:
         return self._biosamples_from_assembly_uids(
@@ -234,13 +264,15 @@ def attributes_from_biosample(report: dict[str, Any]) -> dict[str, str]:
         "host": str(report.get("host") or attrs.get("host") or ""),
         "isolation_source": str(report.get("isolation_source") or attrs.get("isolation_source") or ""),
         "host_disease": str(report.get("host_disease") or attrs.get("host_disease") or ""),
+        # source_type is NCBI's One Health category (human/animal/food/environmental);
+        # sample_type is the material (whole organism, pure culture), so it comes last.
         "sample_type": str(
-            report.get("sample_type")
-            or attrs.get("sample_type")
-            or report.get("source_type")
+            report.get("source_type")
             or attrs.get("source_type")
             or report.get("tissue")
             or attrs.get("tissue")
+            or report.get("sample_type")
+            or attrs.get("sample_type")
             or ""
         ),
         "geo_loc_name": str(report.get("geo_loc_name") or attrs.get("geo_loc_name") or ""),
@@ -293,10 +325,15 @@ def parse_biosample_xml(text: str) -> dict[str, Any] | None:
 
 
 def _blank_unknown_fields(fields: dict[str, str]) -> dict[str, str]:
+    """Blank whole-value null tokens ("missing", "not collected"). Keep any other text.
+
+    Partial values such as "unknown river" are kept verbatim for the curator;
+    classify treats them as unknown.
+    """
     cleaned = dict(fields)
     for name in _TEXT_FIELDS:
-        value = cleaned.get(name, "")
-        cleaned[name] = "" if is_unknown_value(value) else str(value or "").strip()
+        value = str(cleaned.get(name) or "").strip()
+        cleaned[name] = "" if normalize_text(value) in UNKNOWN_EXACT else value
     cleaned["biosample"] = str(cleaned.get("biosample") or "").strip()
     return cleaned
 

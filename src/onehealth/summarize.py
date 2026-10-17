@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 
 from onehealth.constants import CLUSTER_ALIASES, ISOLATION_SOURCE_ALIASES, PLASMID_ALIASES
-from onehealth.io_tsv import find_column, get_field
+from onehealth.io_tsv import find_column, get_field, isolate_key
 from onehealth.text import is_blank
 
 # Always printed so classify_status=ok is not read as "source known".
@@ -19,6 +19,7 @@ SOURCE_EVIDENCE_CORE = (
 
 def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     out: list[dict[str, str]] = []
+    out.extend(_dataset(rows))
     out.extend(_counts(rows, "l1", "l1"))
     out.extend(_counts(rows, "paper_rollup", "paper_rollup"))
     out.extend(_counts(rows, "healthcare_environment", "healthcare_environment"))
@@ -41,80 +42,55 @@ def summary_fieldnames() -> list[str]:
     return ["section", "key", "count", "l1_set", "mixed"]
 
 
-def _counts(rows: list[dict[str, str]], field: str, section: str) -> list[dict[str, str]]:
-    counter: Counter[str] = Counter((row.get(field) or "") for row in rows)
-    result = []
-    for key, count in sorted(counter.items(), key=lambda item: (-item[1], item[0])):
-        result.append(
-            {
-                "section": section,
-                "key": key,
-                "count": str(count),
-                "l1_set": "",
-                "mixed": "",
-            }
-        )
-    return result
+def _row(section: str, key: str, count: int, l1_set: str = "", mixed: str = "") -> dict[str, str]:
+    return {"section": section, "key": key, "count": str(count), "l1_set": l1_set, "mixed": mixed}
 
 
-def _source_evidence(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    """Split ok/review so empty NCBI source is not confused with a lexicon miss."""
-    counter: Counter[str] = Counter(_evidence_key(row) for row in rows)
-    keys = list(SOURCE_EVIDENCE_CORE)
-    extras = sorted(key for key in counter if key not in SOURCE_EVIDENCE_CORE)
-    keys.extend(extras)
+def _dataset(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Counts below are per input row. Rows that share a BioSample are the same isolate."""
+    isolates = {isolate_key(row) for row in rows}
     return [
-        {
-            "section": "source_evidence",
-            "key": key,
-            "count": str(counter.get(key, 0)),
-            "l1_set": "",
-            "mixed": "",
-        }
-        for key in keys
+        _row("dataset", "rows", len(rows)),
+        _row("dataset", "unique_isolates", len(isolates)),
+        _row("dataset", "rows_sharing_a_biosample", len(rows) - len(isolates)),
     ]
 
 
+def _counts(rows: list[dict[str, str]], field: str, section: str) -> list[dict[str, str]]:
+    counter: Counter[str] = Counter((row.get(field) or "") for row in rows)
+    return [_row(section, key, count) for key, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))]
+
+
+def _source_evidence(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    """ok rows split by whether isolation_source was filled; review rows by reason."""
+    counter: Counter[str] = Counter(_evidence_key(row) for row in rows)
+    keys = list(SOURCE_EVIDENCE_CORE) + sorted(key for key in counter if key not in SOURCE_EVIDENCE_CORE)
+    return [_row("source_evidence", key, counter.get(key, 0)) for key in keys]
+
+
 def _evidence_key(row: dict[str, str]) -> str:
-    source = get_field(row, ISOLATION_SOURCE_ALIASES)
     status = (row.get("classify_status") or "").strip()
     reason = (row.get("classify_reason") or "").strip()
-    resolve_status = (row.get("resolve_status") or "").strip()
-
+    if status == "ok":
+        return "ok_empty_source" if is_blank(get_field(row, ISOLATION_SOURCE_ALIASES)) else "ok_with_source"
     if "conflict" in reason:
         return "conflict"
-    if reason == "unmatched":
-        return "unmatched"
-    if is_blank(source):
-        if status == "ok" or resolve_status == "ok":
-            return "ok_empty_source"
-        if reason == "missing_source":
-            return "missing_source"
-        return "empty_source"
-    if status == "ok":
-        return "ok_with_source"
-    if reason:
-        return reason
-    return "review"
+    return reason or "review"
 
 
 def _overlap(rows: list[dict[str, str]], column: str, section: str) -> list[dict[str, str]]:
-    groups: dict[str, set[str]] = {}
+    """Per cluster: isolates (count) and the classified L1s present.
+
+    Unclassified is not a source, so it never makes a cluster mixed.
+    Shared cluster or plasmid is not evidence of transmission on its own.
+    """
+    members: dict[str, list[str]] = {}
     for row in rows:
         key = (row.get(column) or "").strip()
-        if not key:
-            continue
-        groups.setdefault(key, set()).add(row.get("l1") or "")
+        if key:
+            members.setdefault(key, []).append(row.get("l1") or "")
     result = []
-    for key, l1s in sorted(groups.items()):
-        cleaned = sorted(item for item in l1s if item)
-        result.append(
-            {
-                "section": section,
-                "key": key,
-                "count": str(len(cleaned)),
-                "l1_set": ",".join(cleaned),
-                "mixed": "yes" if len(cleaned) > 1 else "no",
-            }
-        )
+    for key, l1s in sorted(members.items()):
+        classified = sorted({l1 for l1 in l1s if l1 and l1 != "Unclassified"})
+        result.append(_row(section, key, len(l1s), ",".join(classified), "yes" if len(classified) > 1 else "no"))
     return result

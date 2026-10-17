@@ -323,3 +323,132 @@ def test_versioned_genome_empty_report_retries_stem():
     assert rows[0]["resolve_status"] == "ok"
     assert rows[0]["biosample"] == "SAMN02604091"
     assert rows[0]["assembly"] == "GCA_000005845.2"
+
+
+def test_local_exact_accession_beats_versionless_match():
+    local = [
+        {"assembly": "GCA_000005845.1", "isolation_source": "urine"},
+        {"assembly": "GCA_000005845.2", "isolation_source": "river water"},
+    ]
+    rows = resolve_ids(["GCA_000005845.1", "GCA_000005845.2"], local_rows=local)
+    assert [row["isolation_source"] for row in rows] == ["urine", "river water"]
+
+
+def test_conflicting_local_rows_for_same_key_go_to_review():
+    local = [
+        {"assembly": "GCA_000005845.2", "isolation_source": "urine"},
+        {"assembly": "GCF_000005845.2", "isolation_source": "river water"},
+    ]
+    rows = resolve_ids(["GCA_000005845"], local_rows=local)
+    assert rows[0]["resolve_status"] == "review"
+    assert rows[0]["resolve_reason"] == "local_metadata_conflict"
+
+
+def test_identical_local_rows_are_not_a_conflict():
+    local = [
+        {"id": "SAMN1", "biosample": "SAMN1", "isolation_source": "urine"},
+        {"id": "PDT1.1", "biosample": "SAMN1", "isolation_source": "urine"},
+    ]
+    assert resolve_ids(["SAMN1"], local_rows=local)[0]["resolve_status"] == "ok"
+
+
+def test_unversioned_pdt_tries_assembly_name_wildcard():
+    client = _client(
+        {
+            "PDT000002407%2A": {"esearchresult": {"idlist": ["9"]}},
+            "db=assembly&id=9": {"result": {"9": {"assemblyname": "PDT000002407.4", "biosampleaccn": "SAMN02344983"}}},
+        }
+    )
+    assert client.pdt_to_biosample("PDT000002407") == ["SAMN02344983"]
+
+
+def test_partial_unknown_text_is_kept_but_null_tokens_are_blanked():
+    attrs = attributes_from_biosample(
+        {"accession": "SAMN1", "host": "not collected", "isolation_source": "unknown river"}
+    )
+    assert attrs["host"] == ""
+    assert attrs["isolation_source"] == "unknown river"
+
+
+def test_ncbi_source_type_preferred_over_material_sample_type():
+    attrs = attributes_from_biosample(
+        {
+            "accession": "SAMN1",
+            "attributes": [
+                {"name": "sample_type", "value": "whole organism"},
+                {"name": "source_type", "value": "animal"},
+            ],
+        }
+    )
+    assert attrs["sample_type"] == "animal"
+
+
+def test_fetcher_retries_rate_limit_then_succeeds(monkeypatch):
+    import io
+    import urllib.error
+
+    from onehealth import ncbi
+
+    calls = []
+
+    class _Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def fake_urlopen(request, timeout):
+        calls.append(request.full_url)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError(request.full_url, 429, "Too Many Requests", {}, io.BytesIO(b""))
+        return _Response(b'{"ok": 1}')
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    assert ncbi.UrllibFetcher(delay_s=0).get_json("https://example.org/x") == {"ok": 1}
+    assert len(calls) == 2
+
+
+def test_fetcher_does_not_retry_client_errors(monkeypatch):
+    import io
+    import urllib.error
+
+    import pytest
+
+    from onehealth import ncbi
+
+    calls = []
+
+    def fake_urlopen(request, timeout):
+        calls.append(1)
+        raise urllib.error.HTTPError(request.full_url, 400, "Bad Request", {}, io.BytesIO(b""))
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(ncbi.HttpError):
+        ncbi.UrllibFetcher(delay_s=0).get_text("https://example.org/x")
+    assert len(calls) == 1
+
+
+def test_http_error_text_does_not_leak_api_key(monkeypatch):
+    import io
+    import urllib.error
+
+    import pytest
+
+    from onehealth import ncbi
+
+    def fake_urlopen(request, timeout):
+        raise urllib.error.HTTPError(request.full_url, 400, "Bad", {}, io.BytesIO(b"bad\trequest\n"))
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(ncbi.HttpError) as exc:
+        ncbi.UrllibFetcher(delay_s=0).get_text("https://eutils.example/esearch.fcgi?term=x&api_key=SECRET")
+    assert "SECRET" not in str(exc.value)
+    assert "\t" not in str(exc.value) and "\n" not in str(exc.value)
+
+
+def test_local_extra_columns_are_carried_through():
+    local = [{"biosample": "SAMN1", "isolation_source": "urine", "ST": "ST258", "host_subject_id": "P1"}]
+    row = resolve_ids(["SAMN1"], local_rows=local)[0]
+    assert (row["ST"], row["host_subject_id"]) == ("ST258", "P1")

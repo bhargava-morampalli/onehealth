@@ -9,29 +9,30 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import MaxNLocator  # noqa: E402
+
+from onehealth.constants import L1_VALUES, PAPER_ROLLUP_VALUES  # noqa: E402
 
 
-def plot_counts(rows: list[dict[str, str]], dest: Path, by: str = "l1") -> None:
-    if by not in {"l1", "paper_rollup"}:
-        raise ValueError("plot --by must be l1 or paper_rollup")
+def plot_counts(rows: list[dict[str, str]], dest: Path) -> None:
+    """Two panels: L1 and paper rollup. Categories keep a fixed order, zeros included."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-    _bar(axes[0], rows, "l1", "L1 source class")
-    _bar(axes[1], rows, "paper_rollup", "Paper rollup")
-    if by == "paper_rollup":
-        axes[1].set_title("Paper rollup (requested)")
+    _bar(axes[0], rows, "l1", L1_VALUES, "L1 source class")
+    _bar(axes[1], rows, "paper_rollup", PAPER_ROLLUP_VALUES, "Paper rollup")
     fig.tight_layout()
     fig.savefig(dest, dpi=120)
     plt.close(fig)
 
 
-def _bar(axis, rows: list[dict[str, str]], field: str, title: str) -> None:
+def _bar(axis, rows: list[dict[str, str]], field: str, order: tuple[str, ...], title: str) -> None:
     counter = Counter((row.get(field) or "Unclassified") for row in rows)
-    labels = list(counter.keys())
-    values = [counter[label] for label in labels]
+    labels = list(order) + sorted(set(counter) - set(order))
+    values = [counter.get(label, 0) for label in labels]
     axis.bar(range(len(labels)), values, color="#3b6d8c")
     axis.set_xticks(range(len(labels)), labels, rotation=30, ha="right")
-    axis.set_ylabel("Isolates")
+    axis.set_ylabel("Rows")
+    axis.yaxis.set_major_locator(MaxNLocator(integer=True))
     axis.set_title(title)
-    if not labels:
+    if not rows:
         axis.text(0.5, 0.5, "No rows", ha="center", va="center", transform=axis.transAxes)

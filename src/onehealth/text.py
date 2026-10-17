@@ -46,7 +46,8 @@ def is_unknown_value(value: str | None) -> bool:
     tokens = tokenize(normalized)
     if not tokens:
         return True
-    if tokens[0] in {"unknown", "unk"}:
+    # INSDC missing-value terms come as "missing" or "missing: <reason>".
+    if tokens[0] in {"unknown", "unk", "missing"}:
         return True
     if tokens[-1] in {"unknown", "unk"} and set(tokens[:-1]).issubset(UNKNOWN_GENERIC_TAILS):
         return True
@@ -230,6 +231,31 @@ _NON_TAXON_TOKENS = frozenset(
         "pooled",
         "mixed",
         "from",
+        "ventilator",
+        "tubing",
+        "circuit",
+        "indoor",
+        "outdoor",
+        "ambient",
+        "sea",
+        "breast",
+        "products",
+        "specimen",
+        "nasal",
+        "rectal",
+        "throat",
+        "gut",
+        "asymptomatic",
+        "shower",
+        "floor",
+        "bathroom",
+        "biofilm",
+        "trap",
+        "setting",
+        "env",
+        "collection",
+        "vitro",
+        "ward",
     }
 )
 

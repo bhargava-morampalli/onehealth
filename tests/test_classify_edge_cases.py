@@ -39,12 +39,18 @@ def test_drain_token_does_not_match_drainage():
     assert contains_phrase(tokenize("wound drainage"), tuple(tokenize("wound drainage"))) is True
 
 
-def test_clinical_is_healthcare_env_not_human(lexicon):
+def test_bare_clinical_is_a_patient_sample_not_healthcare_environment(lexicon):
+    # NCBI "clinical" = host-associated patient sample (Pathogen.cl package).
     result = _cls(lexicon, "clinical")
-    assert result.l1 == "Environmental"
-    assert result.healthcare_environment == "yes"
-    assert result.paper_rollup == "Environmental"
-    assert result.l1 != "Human"
+    assert result.l1 == "Human"
+    assert result.healthcare_environment == "no"
+    assert result.paper_rollup == "Human"
+    assert result.classify_reason == "clinical-sample+no_host"
+
+
+def test_clinical_isolate_follows_the_host(lexicon):
+    assert _cls(lexicon, "clinical isolate", host="Homo sapiens").l1 == "Human"
+    assert _cls(lexicon, "Clinical isolate.", host="Bos taurus").l1 == "Animal"
 
 
 def test_clinical_environment_is_healthcare_env_not_human(lexicon):

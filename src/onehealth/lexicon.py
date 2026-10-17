@@ -10,7 +10,10 @@ from typing import Any
 import yaml
 
 from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, SEED_LEXICON_VERSION
-from onehealth.text import contains_phrase, normalize_text, tokenize
+from onehealth.text import contains_phrase, tokenize
+
+# Metadata fields a rule may read (keys of io_tsv.metadata_view).
+RULE_FIELDS = ("isolation_source", "host", "sample_type", "host_disease")
 
 
 @dataclass(frozen=True)
@@ -18,10 +21,13 @@ class LexiconRule:
     rule_id: str
     fields: tuple[str, ...]
     phrases: tuple[tuple[str, ...], ...]
-    exact: tuple[str, ...]
+    exact: tuple[tuple[str, ...], ...]
     l1: str
     healthcare_environment: str
     priority: int
+    # A body site or specimen (blood, urine, faeces, "clinical") that occurs in any
+    # host. L1 then comes from host evidence; `l1` is used only when there is none.
+    host_dependent: bool = False
     note: str = ""
 
 
@@ -29,15 +35,6 @@ class LexiconRule:
 class Lexicon:
     version: str
     rules: tuple[LexiconRule, ...]
-
-
-FIELD_ALIASES = {
-    "isolation_source": ("isolation_source",),
-    "host": ("host",),
-    "host_disease": ("host_disease",),
-    "sample_type": ("sample_type",),
-    "any": ("isolation_source", "host", "host_disease", "sample_type"),
-}
 
 
 def _healthcare(value: Any) -> str:
@@ -49,7 +46,7 @@ def _healthcare(value: Any) -> str:
 
 
 def default_lexicon_path() -> Path:
-    return Path(str(files("onehealth").joinpath("data/lexicon/v1.yaml")))
+    return Path(str(files("onehealth").joinpath(f"data/lexicon/v{SEED_LEXICON_VERSION}.yaml")))
 
 
 def load_lexicon(path: Path | None = None) -> Lexicon:
@@ -71,16 +68,18 @@ def _parse_rule(item: dict[str, Any]) -> LexiconRule:
     if healthcare not in {HEALTHCARE_YES, HEALTHCARE_NO}:
         raise ValueError(f"Lexicon rule {rule_id} has invalid healthcare_environment {healthcare!r}")
     fields = tuple(item.get("fields") or ["isolation_source"])
-    phrases = tuple(tuple(tokenize(phrase)) for phrase in item.get("phrases") or [])
-    exact = tuple(normalize_text(value) for value in item.get("exact") or [])
+    unknown = [name for name in fields if name not in RULE_FIELDS]
+    if unknown:
+        raise ValueError(f"Lexicon rule {rule_id} reads unknown field(s) {unknown}; use {list(RULE_FIELDS)}")
     return LexiconRule(
         rule_id=rule_id,
         fields=fields,
-        phrases=phrases,
-        exact=exact,
+        phrases=tuple(tuple(tokenize(phrase)) for phrase in item.get("phrases") or []),
+        exact=tuple(tuple(tokenize(value)) for value in item.get("exact") or []),
         l1=l1,
         healthcare_environment=healthcare,
         priority=int(item.get("priority") or 0),
+        host_dependent=bool(item.get("host_dependent", False)),
         note=str(item.get("note") or ""),
     )
 
@@ -93,39 +92,25 @@ class RuleHit:
 
 
 def match_rules(record: dict[str, str], lexicon: Lexicon) -> list[RuleHit]:
+    """One hit per rule: the first of the rule's fields that matches."""
     hits: list[RuleHit] = []
     for rule in lexicon.rules:
         for field in rule.fields:
-            for actual in FIELD_ALIASES.get(field, (field,)):
-                value = record.get(actual, "")
-                tokens = tokenize(value)
-                normalized = normalize_text(value)
-                matched = ""
-                if rule.exact and normalized in rule.exact:
-                    matched = normalized
-                else:
-                    for phrase in rule.phrases:
-                        if contains_phrase(tokens, phrase):
-                            matched = " ".join(phrase)
-                            break
-                if matched:
-                    hits.append(RuleHit(rule=rule, field=actual, matched=matched))
-                    break
+            tokens = tuple(tokenize(record.get(field, "")))
+            if not tokens:
+                continue
+            matched = tokens if tokens in rule.exact else None
+            if matched is None:
+                matched = next((phrase for phrase in rule.phrases if contains_phrase(list(tokens), phrase)), None)
+            if matched is not None:
+                hits.append(RuleHit(rule=rule, field=field, matched=" ".join(matched)))
+                break
     return hits
 
 
 def best_hits(hits: list[RuleHit]) -> list[RuleHit]:
+    """Hits that share the highest priority."""
     if not hits:
         return []
     top = max(hit.rule.priority for hit in hits)
-    winners = [hit for hit in hits if hit.rule.priority == top]
-    # Deduplicate identical outcomes.
-    seen: set[tuple[str, str, str]] = set()
-    unique: list[RuleHit] = []
-    for hit in winners:
-        key = (hit.rule.l1, hit.rule.healthcare_environment, hit.rule.rule_id)
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(hit)
-    return unique
+    return [hit for hit in hits if hit.rule.priority == top]

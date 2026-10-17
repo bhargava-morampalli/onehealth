@@ -6,10 +6,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES
+from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, PAPER_ROLLUP_VALUES
 from onehealth.ids import parse_id
-from onehealth.io_tsv import first_present, get_field, read_tsv, row_match_ids
-from onehealth.text import is_blank, normalize_text
+from onehealth.io_tsv import get_field, read_tsv, row_match_ids
+from onehealth.text import normalize_text
+
+_OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt")
 
 
 @dataclass(frozen=True)
@@ -24,33 +26,34 @@ class OverrideRow:
 
 @dataclass(frozen=True)
 class OverrideHit:
-    status: str  # applied | empty | conflict | invalid | missing
+    status: str  # applied | empty | conflict | invalid
     reason: str
     row: OverrideRow | None = None
+
+
+def _canonical(value: str, allowed: tuple[str, ...]) -> str:
+    """Case-insensitive match to an allowed label; unknown text is returned as typed."""
+    text = value.strip()
+    return {item.lower(): item for item in allowed}.get(text.lower(), text)
 
 
 def load_overrides(path: Path | None) -> dict[str, list[OverrideRow]]:
     if path is None:
         return {}
-    rows = read_tsv(path)
     grouped: dict[str, list[OverrideRow]] = defaultdict(list)
-    for raw in rows:
+    for raw in read_tsv(path):
         key = _override_key(raw)
         if not key:
             continue
-        l1 = get_field(raw, ("l1", "L1", "source_l1", "classification"))
-        healthcare = normalize_text(get_field(raw, ("healthcare_environment", "healthcare_env")))
-        paper = get_field(raw, ("paper_rollup", "paper"))
-        note = get_field(raw, ("note", "reason", "comment"))
-        complete = not is_blank(l1)
+        l1 = _canonical(get_field(raw, ("l1", "source_l1", "classification")), L1_VALUES)
         grouped[key].append(
             OverrideRow(
                 key=key,
-                l1=l1.strip(),
-                healthcare_environment=healthcare,
-                paper_rollup=paper.strip(),
-                note=note,
-                complete=complete,
+                l1=l1,
+                healthcare_environment=normalize_text(get_field(raw, ("healthcare_environment", "healthcare_env"))),
+                paper_rollup=_canonical(get_field(raw, ("paper_rollup", "paper")), PAPER_ROLLUP_VALUES),
+                note=get_field(raw, ("note", "reason", "comment")),
+                complete=bool(l1),
             )
         )
     return grouped
@@ -59,42 +62,33 @@ def load_overrides(path: Path | None) -> dict[str, list[OverrideRow]]:
 def lookup_override(record: dict[str, str], overrides: dict[str, list[OverrideRow]]) -> OverrideHit | None:
     if not overrides:
         return None
-    keys = {item.upper() for item in row_match_ids(record)}
-    matches: list[OverrideRow] = []
-    for key in keys:
-        matches.extend(overrides.get(key, []))
+    # row_match_ids includes GCA<->GCF twins and the versionless assembly stem.
+    matches = [row for key in sorted(row_match_ids(record)) for row in overrides.get(key, [])]
     if not matches:
         return None
 
     if any(not item.complete for item in matches):
         return OverrideHit(status="empty", reason="override_empty", row=matches[0])
 
-    invalid = [item for item in matches if item.l1 not in L1_VALUES]
-    if invalid:
-        return OverrideHit(status="invalid", reason="override_invalid_l1", row=invalid[0])
-
-    healthcare_values = set()
     for item in matches:
-        if item.healthcare_environment and item.healthcare_environment not in {
-            HEALTHCARE_YES,
-            HEALTHCARE_NO,
-        }:
+        if item.l1 not in L1_VALUES:
+            return OverrideHit(status="invalid", reason="override_invalid_l1", row=item)
+        if item.healthcare_environment not in {"", HEALTHCARE_YES, HEALTHCARE_NO}:
             return OverrideHit(status="invalid", reason="override_invalid_healthcare", row=item)
-        healthcare_values.add(item.healthcare_environment or HEALTHCARE_NO)
+        if item.paper_rollup and item.paper_rollup not in PAPER_ROLLUP_VALUES:
+            return OverrideHit(status="invalid", reason="override_invalid_paper_rollup", row=item)
 
     l1_values = {item.l1 for item in matches}
+    healthcare_values = {item.healthcare_environment or HEALTHCARE_NO for item in matches}
     paper_values = {item.paper_rollup for item in matches if item.paper_rollup}
     if len(l1_values) > 1 or len(healthcare_values) > 1 or len(paper_values) > 1:
         return OverrideHit(status="conflict", reason="override_conflict", row=matches[0])
-
     return OverrideHit(status="applied", reason="override", row=matches[0])
 
 
 def _override_key(row: dict[str, str]) -> str:
-    raw = get_field(row, ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt"))
+    raw = get_field(row, _OVERRIDE_ID_COLUMNS)
     if not raw:
-        # last resort: first column
-        key = first_present(row, row.keys())
-        raw = row.get(key, "") if key else ""
+        return ""
     parsed = parse_id(raw)
     return (parsed.normalized or raw).strip().upper()

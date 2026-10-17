@@ -1,0 +1,180 @@
+"""Write a SYNTHETIC One Health demonstration dataset (not real isolates).
+
+    python examples/demo/make_demo.py work/demo
+
+Creates metadata.tsv, amrfinder.tsv (AMRFinderPlus-style columns) and
+snp_dists.tsv (snp-dists square matrix). The structure loosely mimics published
+Klebsiella One Health studies: hospital clones with carbapenemases, lineages
+shared across sources, pig-associated aerobactin, bovine mastitis lineages,
+and mostly within-source transmission with occasional cross-source links.
+Every value is simulated from a fixed seed.
+"""
+
+from __future__ import annotations
+
+import sys
+from datetime import date, timedelta
+from pathlib import Path
+
+import numpy as np
+
+RNG = np.random.default_rng(20261017)
+
+# (label, n, host, isolation sources, host_disease)
+SAMPLES = [
+    ("human_clinical", 110, "Homo sapiens", ["blood", "urine", "sputum", "wound swab", "bronchoalveolar lavage"], ""),
+    ("human_carriage", 40, "Homo sapiens", ["rectal swab"], ""),
+    ("hospital_env", 30, "", ["hospital sink drain", "ICU sink", "hospital surface", "hospital wastewater"], ""),
+    ("pig", 25, "Sus scrofa domesticus", ["pig feces"], ""),
+    ("chicken", 20, "Gallus gallus", ["cloacal swab"], ""),
+    ("cattle", 20, "Bos taurus", ["milk"], "bovine mastitis"),
+    ("dog", 10, "Canis lupus familiaris", ["urine"], ""),
+    ("food", 25, "", ["retail chicken meat", "salad"], ""),
+    ("environment", 27, "", ["river water", "municipal wastewater", "soil"], ""),
+    ("unknown", 9, "", ["unknown", "Klebsiella pneumoniae"], ""),
+]
+
+# Lineage preferences per sample type; the rest are rare / novel lineages.
+LINEAGES = {
+    "human_clinical": {"ST258": 0.18, "ST512": 0.08, "ST307": 0.12, "ST15": 0.08, "ST17": 0.04, "ST37": 0.04, "ST45": 0.04, "ST107": 0.03},
+    "human_carriage": {"ST258": 0.08, "ST307": 0.06, "ST17": 0.08, "ST35": 0.08, "ST45": 0.08, "ST37": 0.05, "ST107": 0.05},
+    "hospital_env": {"ST258": 0.35, "ST512": 0.15, "ST307": 0.1, "ST15": 0.05},
+    "pig": {"ST37": 0.2, "ST107": 0.2, "ST35": 0.12, "ST17": 0.08},
+    "chicken": {"ST45": 0.15, "ST17": 0.12, "ST35": 0.1},
+    "cattle": {"ST661": 0.35, "ST3068": 0.25, "ST17": 0.05},
+    "dog": {"ST307": 0.25, "ST15": 0.25},
+    "food": {"ST45": 0.2, "ST17": 0.12, "ST35": 0.1},
+    "environment": {"ST17": 0.12, "ST35": 0.1, "ST45": 0.08, "ST258": 0.05},
+    "unknown": {"ST17": 0.2},
+}
+
+# Gene, class, probability by sample type (default), lineage overrides.
+GENES = [
+    ("blaSHV-1", "BETA-LACTAM", {"*": 0.97}, {}),
+    ("fosA", "FOSFOMYCIN", {"*": 0.96}, {}),
+    ("oqxA", "QUINOLONE", {"*": 0.95}, {}),
+    ("blaKPC-3", "BETA-LACTAM", {"*": 0.0}, {"ST258": 0.9, "ST512": 0.9}),
+    ("blaCTX-M-15", "BETA-LACTAM", {"human_clinical": 0.12, "human_carriage": 0.08, "hospital_env": 0.1, "dog": 0.2, "*": 0.03}, {"ST307": 0.8, "ST15": 0.7}),
+    ("aac(6')-Ib-cr5", "AMINOGLYCOSIDE/QUINOLONE", {"human_clinical": 0.1, "*": 0.02}, {"ST307": 0.7, "ST15": 0.5, "ST258": 0.4}),
+    ("tet(A)", "TETRACYCLINE", {"pig": 0.45, "chicken": 0.4, "cattle": 0.15, "food": 0.2, "*": 0.08}, {}),
+    ("sul1", "SULFONAMIDE", {"human_clinical": 0.3, "pig": 0.3, "chicken": 0.25, "environment": 0.15, "*": 0.08}, {"ST258": 0.7}),
+    ("qnrS1", "QUINOLONE", {"chicken": 0.25, "food": 0.15, "*": 0.03}, {}),
+    ("mcr-1.1", "COLISTIN", {"chicken": 0.08, "pig": 0.05, "*": 0.0}, {}),
+    ("iucA", "VIRULENCE", {"pig": 0.35, "*": 0.03}, {"ST37": 0.4}),
+    ("ybtS", "VIRULENCE", {"human_clinical": 0.25, "*": 0.08}, {"ST258": 0.6}),
+]
+
+
+def main(out: Path) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    isolates = []
+    patient = 0
+    for label, n, host, sources, disease in SAMPLES:
+        for _ in range(n):
+            lineage = _pick_lineage(label)
+            host_id = ""
+            if host == "Homo sapiens":
+                patient += 1
+                host_id = f"P{patient:04d}"
+            isolates.append(
+                {"type": label, "host": host, "source": str(RNG.choice(sources)), "disease": disease, "lineage": lineage, "host_id": host_id}
+            )
+    # A few patients with both a clinical and a carriage isolate (same host).
+    carriage = [i for i in isolates if i["type"] == "human_carriage"]
+    clinical = [i for i in isolates if i["type"] == "human_clinical"]
+    for c, k in zip(carriage[:6], clinical[:6]):
+        c["host_id"], c["lineage"] = k["host_id"], k["lineage"]
+
+    _assign_clones(isolates)
+    start = date(2018, 1, 1)
+    clone_day = {}
+    for idx, iso in enumerate(isolates):
+        centre = clone_day.setdefault(iso["clone"], int(RNG.integers(0, 3 * 365)))
+        day = min(max(0, centre + int(RNG.normal(0, 45))), 3 * 365 - 1)
+        iso["date"] = (start + timedelta(days=day)).isoformat()
+        iso["id"] = f"DEMO{idx + 1:04d}"
+
+    with (out / "metadata.tsv").open("w", encoding="utf-8") as handle:
+        handle.write("# SYNTHETIC demonstration data generated by examples/demo/make_demo.py - not real isolates\n")
+        handle.write("id\thost\tisolation_source\thost_disease\tcollection_date\tgeo_loc_name\thost_subject_id\tst\n")
+        for iso in isolates:
+            handle.write(
+                f"{iso['id']}\t{iso['host']}\t{iso['source']}\t{iso['disease']}\t{iso['date']}\tDemoland\t{iso['host_id']}\t{iso['lineage']}\n"
+            )
+    _write_genes(isolates, out / "amrfinder.tsv")
+    _write_distances(isolates, out / "snp_dists.tsv")
+    print(f"wrote {len(isolates)} synthetic isolates to {out}")
+
+
+def _pick_lineage(label: str) -> str:
+    weights = LINEAGES[label]
+    r = RNG.random()
+    for lineage, p in weights.items():
+        if r < p:
+            return lineage
+        r -= p
+    return f"ST{int(RNG.integers(1000, 5000))}"
+
+
+def _assign_clones(isolates: list[dict]) -> None:
+    """Clones nest inside lineages; most clones stay within one sample type."""
+    clones: dict[str, list[tuple[int, str]]] = {}
+    next_id = 0
+    for iso in isolates:
+        existing = clones.setdefault(iso["lineage"], [])
+        same = [c for c, t in existing if t == iso["type"]]
+        r = RNG.random()
+        if same and r < 0.55:
+            iso["clone"] = int(RNG.choice(same))
+        elif existing and r < 0.62:
+            iso["clone"] = existing[int(RNG.integers(len(existing)))][0]
+        else:
+            iso["clone"] = next_id
+            existing.append((next_id, iso["type"]))
+            next_id += 1
+
+
+def _write_genes(isolates: list[dict], path: Path) -> None:
+    clone_genes: dict[tuple[int, str], bool] = {}
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write("Name\tElement symbol\tElement type\tClass\n")
+        for iso in isolates:
+            for gene, klass, by_type, by_lineage in GENES:
+                p = by_lineage.get(iso["lineage"], by_type.get(iso["type"], by_type.get("*", 0.0)))
+                inherited = clone_genes.setdefault((iso["clone"], gene), RNG.random() < p)
+                # Clones keep their genes (occasional loss); rare independent gain.
+                if RNG.random() < (0.97 if inherited else 0.005):
+                    kind = "VIRULENCE" if klass == "VIRULENCE" else "AMR"
+                    handle.write(f"{iso['id']}\t{gene}\t{kind}\t{klass}\n")
+
+
+def _write_distances(isolates: list[dict], path: Path) -> None:
+    n = len(isolates)
+    private = RNG.poisson(1.5, n)
+    pair_cache: dict[tuple, int] = {}
+
+    def between(kind: str, a, b, low: int, spread: int) -> int:
+        key = (kind, min(a, b), max(a, b))
+        if key not in pair_cache:
+            pair_cache[key] = low + int(RNG.integers(0, spread))
+        return pair_cache[key]
+
+    matrix = np.zeros((n, n), dtype=np.int64)
+    for i in range(n):
+        for j in range(i + 1, n):
+            a, b = isolates[i], isolates[j]
+            d = int(private[i] + private[j])
+            if a["clone"] != b["clone"]:
+                if a["lineage"] == b["lineage"]:
+                    d += between("clone", a["clone"], b["clone"], 35, 150)
+                else:
+                    d += between("lineage", a["lineage"], b["lineage"], 15000, 20000)
+            matrix[i, j] = matrix[j, i] = d
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write("snp-dists 0.8.2\t" + "\t".join(i["id"] for i in isolates) + "\n")
+        for i, iso in enumerate(isolates):
+            handle.write(iso["id"] + "\t" + "\t".join(str(v) for v in matrix[i]) + "\n")
+
+
+if __name__ == "__main__":
+    main(Path(sys.argv[1] if len(sys.argv) > 1 else "work/demo"))

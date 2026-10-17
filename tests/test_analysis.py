@@ -1,0 +1,188 @@
+import math
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from onehealth import analysis as A
+from onehealth.io_tsv import read_distance_matrix, read_features, read_lineages
+
+
+def _row(i, l1="Human", st="ST1", hc="no", host_id="", date="2019-05-01", biosample=None):
+    return {
+        "query_id": f"ISO{i}",
+        "biosample": biosample or f"SAMN{i}",
+        "l1": l1,
+        "healthcare_environment": hc,
+        "paper_rollup": "Environmental" if hc == "yes" or l1 in {"Food", "Laboratory", "Environmental"} else l1,
+        "st": st,
+        "host_subject_id": host_id,
+        "collection_date": date,
+    }
+
+
+# --- statistics checked against hand-computed values -------------------------------------
+
+
+def test_simpson_matches_hunter_gaston():
+    assert A.simpson([1, 1])[0] == 1.0
+    assert A.simpson([3, 1])[0] == pytest.approx(1 - 6 / 12)
+    assert math.isnan(A.simpson([1])[0])
+    d, lo, hi = A.simpson([5, 5, 5, 5])
+    assert lo <= d <= hi
+
+
+def test_rarefaction_is_exact_for_simple_cases():
+    assert A.rarefaction([1, 1, 1, 1], [1, 2, 4]) == pytest.approx([1, 2, 4])
+    assert A.rarefaction([4], [1, 3]) == pytest.approx([1, 1])
+    # two lineages of 2: E[S_2] = 2 - 2 * C(2,2)/C(4,2) = 2 - 2/6
+    assert A.rarefaction([2, 2], [2]) == pytest.approx([2 - 2 / 6])
+
+
+def test_wilson_interval():
+    lo, hi = A.wilson(0, 10)
+    assert lo == 0 and hi == pytest.approx(0.2775, abs=1e-3)
+    lo, hi = A.wilson(5, 10)
+    assert (lo, hi) == pytest.approx((0.2366, 0.7634), abs=1e-3)
+
+
+def test_benjamini_hochberg():
+    assert A.benjamini_hochberg([0.01, 0.04, 0.03]) == pytest.approx([0.03, 0.04, 0.04])
+    q = A.benjamini_hochberg([0.5, math.nan])
+    assert q[0] == 0.5 and math.isnan(q[1])
+
+
+def test_permutation_p_is_never_zero():
+    assert A.perm_pvalue(0, 999) == pytest.approx(0.001)
+
+
+def test_decimal_year():
+    assert A.decimal_year("2019") == 2019.5
+    assert A.decimal_year("2019-07") == pytest.approx(2019.54, abs=0.01)
+    assert 2019.0 < A.decimal_year("2019-01-02") < 2019.01
+    assert A.decimal_year("missing") is None
+    assert A.decimal_year("2019-13-40") == 2019.5
+
+
+# --- dataset --------------------------------------------------------------------------------
+
+
+def test_dataset_collapses_rows_of_the_same_biosample_and_splits_healthcare():
+    rows = [_row(1), _row(2, biosample="SAMN1"), _row(3, "Environmental", hc="yes"), _row(4, "Unclassified")]
+    ds = A.build_dataset(rows)
+    assert (len(ds.isolates), ds.duplicates, ds.unclassified) == (3, 1, 1)
+    assert {iso.source for iso in ds.classified} == {"Human", "Healthcare environment"}
+    rollup = A.build_dataset(rows, by="paper_rollup")
+    assert {iso.source for iso in rollup.classified} == {"Human", "Environmental"}
+
+
+def test_lineage_sharing_summary_and_intersections():
+    rows = [_row(1, "Human", "ST1"), _row(2, "Animal", "ST1"), _row(3, "Human", "ST2"), _row(4, "Food", "ST3")]
+    ds = A.build_dataset(rows)
+    summary = A.lineage_sharing_summary(ds)
+    assert summary == {"lineages": 3, "shared_lineages": 1, "typed_isolates": 4, "isolates_in_shared": 2}
+    combos = {r["sources"]: r["lineages"] for r in A.lineage_intersections(ds)}
+    assert combos == {"Human": 1, "Food": 1, "Human + Animal": 1}
+
+
+def test_lineage_enrichment_finds_a_source_restricted_lineage_and_is_reproducible():
+    rows = [_row(i, "Animal", "ST661") for i in range(12)]
+    rows += [_row(100 + i, "Human", f"ST{i % 4}") for i in range(30)]
+    ds = A.build_dataset(rows)
+    first = A.lineage_enrichment(ds, permutations=999, seed=3)
+    again = A.lineage_enrichment(ds, permutations=999, seed=3)
+    assert first == again
+    hit = next(r for r in first if r["lineage"] == "ST661" and r["source"] == "Animal")
+    assert hit["direction"] == "enriched" and hit["q"] < 0.01
+
+
+# --- features ------------------------------------------------------------------------------
+
+
+def test_feature_prevalence_counts_tests_and_unmatched(tmp_path: Path):
+    rows = [_row(i, "Animal") for i in range(15)] + [_row(100 + i, "Human") for i in range(15)]
+    path = tmp_path / "amr.tsv"
+    lines = ["Name\tElement symbol\tClass"]
+    lines += [f"ISO{i}\ttet(A)\tTETRACYCLINE" for i in range(15)]
+    lines += [f"ISO{100 + i}\tblaSHV-1\tBETA-LACTAM" for i in range(15)]
+    lines += ["GHOST\tmcr-1\tCOLISTIN"]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    presence, classes = read_features(path)
+    result = A.feature_prevalence(A.build_dataset(rows), presence, classes, permutations=999)
+    assert result.genotyped == {"Human": 15, "Animal": 15}
+    assert result.unmatched == ["GHOST"]
+    tet = next(r for r in result.rows if r["feature"] == "tet(A)" and r["source"] == "Animal")
+    assert (tet["present"], tet["genotyped"], tet["percent"]) == (15, 15, 100.0)
+    test = next(t for t in result.tests if t["feature"] == "tet(A)")
+    assert test["class"] == "TETRACYCLINE" and test["q"] < 0.01
+
+
+# --- linkage -------------------------------------------------------------------------------
+
+
+def _linkage_fixture():
+    rows = [
+        _row(0, "Human", host_id="P1"),
+        _row(1, "Human", host_id="P1"),  # same patient as 0
+        _row(2, "Animal"),
+        _row(3, "Human", host_id="P2"),
+        _row(4, "Food", st="ST9"),
+        _row(5, "Animal", st="ST9"),
+    ]
+    names = [f"ISO{i}" for i in range(6)]
+    d = np.full((6, 6), 5000.0)
+    np.fill_diagonal(d, 0)
+    for i, j, v in [(0, 1, 1), (0, 2, 3), (1, 2, 4), (2, 3, 2), (4, 5, 10)]:
+        d[i, j] = d[j, i] = v
+    return A.build_dataset(rows), names, d
+
+
+def test_linkage_counts_each_source_pair_once_per_cluster_and_skips_same_host():
+    ds, names, d = _linkage_fixture()
+    link = A.linkage(ds, names, d, threshold=5, permutations=99)
+    events = {(r["source_a"], r["source_b"]): r["events"] for r in link.events}
+    # Cluster {0,1,2,3}: Human-Animal (several pairs) counts once; Human-Human only via 0-1 (same host) -> 0.
+    assert events[("Human", "Animal")] == 1
+    assert events[("Human", "Human")] == 0
+    # Cluster {4,5} needs 10 SNPs, so Animal-Food is 0 at 5 SNPs.
+    assert events[("Animal", "Food")] == 0
+    sweep = {r["threshold"]: r for r in link.sweep}
+    assert sweep[10]["between_events"] == 2
+    linked = {(r["from_source"], r["to_source"]): r["with_close_relative"] for r in link.linked_fraction}
+    assert linked[("Human", "Animal")] == 3 and linked[("Animal", "Human")] == 1
+
+
+def test_linkage_reports_unmatched_names_and_cross_edges():
+    ds, names, d = _linkage_fixture()
+    link = A.linkage(ds, names + ["NOPE"], np.pad(d, ((0, 1), (0, 1)), constant_values=9999), threshold=5, permutations=9)
+    assert link.unmatched == ["NOPE"] and link.matched == 6
+    assert {(e["source_a"], e["source_b"]) for e in link.cross_edges} <= {("Human", "Animal"), ("Animal", "Human")}
+
+
+def test_match_names_accepts_ncbi_assembly_file_names():
+    ds = A.build_dataset([{**_row(1), "assembly": "GCA_000005845.2"}])
+    mapping, unmatched = A.match_names(["GCA_000005845.2_ASM584v2_genomic", "other"], ds)
+    assert mapping == {"GCA_000005845.2_ASM584v2_genomic": "SAMN1"} and unmatched == ["other"]
+
+
+# --- readers -------------------------------------------------------------------------------
+
+
+def test_read_distance_matrix_square_and_long(tmp_path: Path):
+    square = tmp_path / "sq.tsv"
+    square.write_text("snp-dists 0.8.2\tA\tB\nA\t0\t7\nB\t7\t0\n", encoding="utf-8")
+    names, m = read_distance_matrix(square)
+    assert names == ["A", "B"] and m[0, 1] == 7
+    long = tmp_path / "long.tsv"
+    long.write_text("A\tB\t7\nA\tC\t3\n", encoding="utf-8")
+    names, m = read_distance_matrix(long)
+    assert names == ["A", "B", "C"] and m[0, 2] == 3 and math.isnan(m[1, 2])
+
+
+def test_read_lineages_from_kleborate_v3_and_poppunk(tmp_path: Path):
+    kleborate = tmp_path / "k.tsv"
+    kleborate.write_text("strain\tklebsiella_pneumo_complex__mlst__ST\nISO1\tST258\n", encoding="utf-8")
+    assert read_lineages(kleborate) == {"ISO1": "ST258"}
+    poppunk = tmp_path / "clusters.csv"
+    poppunk.write_text("Taxon,Cluster\nISO1,4\n", encoding="utf-8")
+    assert read_lineages(poppunk) == {"ISO1": "4"}
