@@ -228,3 +228,56 @@ def test_dereplication_removes_clonal_inflation_of_feature_tests():
     assert raw.tests[0]["p"] < 0.05
     assert collapsed.tests[0]["p"] > 0.2
     assert n == 29 and len(derep.classified) == 20
+
+
+def test_collapsed_rows_keep_every_identifier():
+    rows = [{**_row(1), "assembly": "GCA_000000001.1"}, {**_row(2, biosample="SAMN1"), "assembly": "GCA_000000002.1"}]
+    ds = A.build_dataset(rows)
+    assert len(ds.isolates) == 1
+    mapping, unmatched = A.match_names(["GCA_000000002.1", "ISO2"], ds)
+    assert set(mapping.values()) == {"SAMN1"} and not unmatched
+
+
+# --- stratified permutation null (hand-built: exact expectations) -----------------------
+
+
+def test_year_confounded_with_source_gives_no_evidence_under_year_strata():
+    # Humans sampled in 2018, animals in 2019; close relatives only within each source.
+    rows = [_row(i, "Human", date="2018-03-01") for i in range(4)] + [_row(4 + i, "Animal", date="2019-03-01") for i in range(4)]
+    names = [f"ISO{i}" for i in range(8)]
+    d = np.full((8, 8), 5000.0)
+    np.fill_diagonal(d, 0)
+    for i, j in [(0, 1), (2, 3), (4, 5), (6, 7)]:
+        d[i, j] = d[j, i] = 2
+    ds = A.build_dataset(rows)
+    plain = A.linkage(ds, names, d, threshold=5, permutations=999, seed=1)
+    strat = A.linkage(ds, names, d, threshold=5, permutations=999, seed=1, strata=("year",))
+    cross_plain = next(r for r in plain.events if r["kind"] == "between")
+    cross_strat = next(r for r in strat.events if r["kind"] == "between")
+    assert cross_plain["events"] == cross_strat["events"] == 0
+    assert cross_plain["expected"] > 0.5  # shuffling across years invents human-animal links
+    assert (cross_strat["expected"], cross_strat["p"]) == (0.0, 1.0)  # within a year nothing can move
+
+
+def test_stratified_lineage_expectation_is_the_sum_over_strata():
+    # 2018: ST1 x2 (Human), ST2 x2 (Animal). 2019: ST1 x2 and ST2 x2, all Animal.
+    rows = [
+        _row(0, "Human", "ST1", date="2018"), _row(1, "Human", "ST1", date="2018"),
+        _row(2, "Animal", "ST2", date="2018"), _row(3, "Animal", "ST2", date="2018"),
+        _row(4, "Animal", "ST1", date="2019"), _row(5, "Animal", "ST1", date="2019"),
+        _row(6, "Animal", "ST2", date="2019"), _row(7, "Animal", "ST2", date="2019"),
+    ]
+    rows = [{**r, "st": r["st"]} for r in rows]
+    result = A.lineage_enrichment(A.build_dataset(rows), min_isolates=2, permutations=99, strata=("year",))
+    st1_human = next(r for r in result if r["lineage"] == "ST1" and r["source"] == "Human")
+    # 2018: 2 ST1 x 2 Human / 4 = 1; 2019: no humans -> 0.
+    assert st1_human["expected"] == pytest.approx(1.0)
+    unstratified = A.lineage_enrichment(A.build_dataset(rows), min_isolates=2, permutations=99)
+    # Pooled: 4 ST1 x 2 Human / 8 = 1 as well, but the variance differs; check the other cell.
+    st1_animal = next(r for r in unstratified if r["lineage"] == "ST1" and r["source"] == "Animal")
+    assert st1_animal["expected"] == pytest.approx(3.0)
+
+
+def test_unknown_stratum_field_is_rejected():
+    with pytest.raises(ValueError, match="cannot stratify"):
+        A.strata_codes(A.build_dataset([_row(1)]).isolates, ("month",))

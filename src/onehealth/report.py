@@ -578,6 +578,7 @@ def build_report(
     title: str = "One Health population report",
     note: str = "",
     dereplicate: bool = False,
+    stratify: tuple[str, ...] = (),
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir, tables_dir = out_dir / "figures", out_dir / "tables"
@@ -613,6 +614,7 @@ def build_report(
             quality.append(f"{derep.not_in_matrix} classified isolates have no distances and were kept as their own "
                            "representatives during dereplication.")
     derep_note = " Counts use one representative per genomic cluster per source (dereplicated)." if derep else ""
+    strata_text = " and ".join({"year": "collection year", "country": "country"}[f] for f in stratify)
 
     # 1. Sampling
     counts = A.source_counts(dataset)
@@ -638,6 +640,15 @@ def build_report(
             f"identifier was kept ({derep.isolates_before} to {derep.isolates_after} isolates; "
             f"{derep.clusters_collapsed} clusters collapsed), following the dereplication in Vezina et al. "
             f"{refs.cite('vezina')}. Isolates from different sources were never merged, and linkage analyses used all isolates.")
+    if stratify:
+        strata = A.strata_summary(population.isolates, stratify)
+        methods.append(
+            f"All permutation tests shuffled source labels only among isolates with the same {strata_text} "
+            f"({strata['strata']} strata). {strata['isolates_in_single_source_strata']} of {strata['isolates']} "
+            "classified isolates were in strata with a single source, so their labels could not change.")
+        if strata["isolates"] and strata["isolates_in_single_source_strata"] > strata["isolates"] / 2:
+            quality.append(f"Most classified isolates are in {strata_text} strata that contain a single source, so the "
+                           "stratified permutation tests have little power.")
 
     # 2. Lineages
     typed = [iso for iso in population.classified if iso.lineage]
@@ -646,7 +657,7 @@ def build_report(
         rare = A.rarefaction_curves(population)
         lineage_rows = A.lineage_sources(population)
         summary = A.lineage_sharing_summary(population)
-        enrichment = A.lineage_enrichment(population, permutations=permutations, seed=seed)
+        enrichment = A.lineage_enrichment(population, permutations=permutations, seed=seed, strata=stratify)
         significant = [r for r in enrichment if r["q"] < 0.05]
         enriched = {r["lineage"] for r in significant if r["direction"] == "enriched"}
         share = 100 * summary["shared_lineages"] / max(1, summary["lineages"])
@@ -714,7 +725,8 @@ def build_report(
     # 3. Features
     if features_path:
         presence, classes = read_features(features_path)
-        result = A.feature_prevalence(population, presence, classes, permutations=permutations, seed=seed)
+        result = A.feature_prevalence(population, presence, classes, permutations=permutations, seed=seed,
+                                      strata=stratify)
         if result.unmatched:
             quality.append(f"{len(result.unmatched)} isolates in the features file matched no classified isolate "
                            f"(e.g. {', '.join(result.unmatched[:3])}).")
@@ -748,7 +760,8 @@ def build_report(
 
     # 4. Genomic linkage
     if distances_path:
-        link = A.linkage(dataset, names, matrix, threshold=threshold, permutations=permutations, seed=seed)
+        link = A.linkage(dataset, names, matrix, threshold=threshold, permutations=permutations, seed=seed,
+                         strata=stratify)
         if link.unmatched:
             quality.append(f"{len(link.unmatched)} names in the distance matrix matched no isolate "
                            f"(e.g. {', '.join(link.unmatched[:3])}).")
@@ -814,8 +827,10 @@ def build_report(
                 _render(oe, stem, figures_dir),
                 f"Shaded bands show the 95% range of events when source labels are shuffled over the same genomes "
                 f"({permutations:,} permutations), which keeps sampling effort fixed {r_mu}{r_th}. * marks q < 0.05 {r_ps}. "
-                "Caveat: shuffling ignores when and where samples were taken, so sources sampled at different times or "
-                "places also show fewer links than chance.",
+                + (f"Labels were shuffled only among isolates with the same {strata_text}, so differences in when or "
+                   "where sources were sampled do not drive the expectation." if stratify else
+                   "Caveat: shuffling ignores when and where samples were taken, so sources sampled at different times "
+                   "or places also show fewer links than chance; rerun with --stratify-by year,country."),
                 _table_html(link.events, [("source_a", "Source A"), ("source_b", "Source B"), ("events", "Events"),
                                           ("events_per_100", "Per 100 isolates"), ("expected", "Expected"),
                                           ("expected_low", "2.5%"), ("expected_high", "97.5%"), ("q", "q (BH)")]),
@@ -853,7 +868,8 @@ def build_report(
         quality.append(f"{dataset.duplicates} rows repeated an isolate already listed (same BioSample) and were collapsed.")
 
     page = _page(title, note, kpis, sections, quality, methods, refs,
-                 dict(threshold=threshold, by=by, permutations=permutations, seed=seed, dereplicate=bool(derep)))
+                 dict(threshold=threshold, by=by, permutations=permutations, seed=seed, dereplicate=bool(derep),
+                      stratify=stratify))
     path = out_dir / "report.html"
     path.write_text(page, encoding="utf-8")
     return path
@@ -914,7 +930,8 @@ def _page(title, note, kpis, sections, quality, methods, refs, params) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     param_text = (f"grouping: {params['by']}; SNP threshold: {params['threshold']:g}; permutations: "
                   f"{params['permutations']:,}; random seed: {params['seed']}; "
-                  f"dereplicated: {'yes' if params['dereplicate'] else 'no'}")
+                  f"dereplicated: {'yes' if params['dereplicate'] else 'no'}; "
+                  f"permutation strata: {', '.join(params['stratify']) or 'none'}")
     return f"""<!doctype html>
 <html lang="en">
 <head>

@@ -64,6 +64,8 @@ onehealth report work/classified.tsv -o work/report \
 | `--features` | Resistance / virulence / plasmid prevalence by source | Long table: isolate, feature, optional class. AMRFinderPlus run with `--name` fits as is. Only isolates listed count as genotyped. |
 | `--distances` | Genomic linkage between sources | snp-dists square matrix or `-m` long format |
 
+Add `--stratify-by year`, `country` or `year,country` to shuffle source labels only among isolates from the same collection year and country in every permutation test. Sources sampled at different times or places then no longer look like barriers to sharing. Historical INSDC country names (for example "Czech Republic") are mapped to their current names first.
+
 Add `--dereplicate` (with `--distances`) to run the lineage and feature analyses on one isolate per genomic cluster per source. Isolates from the same source within `--threshold` SNPs collapse to one representative, so outbreak clusters do not inflate the tests; isolates from different sources are never merged. Sampling and linkage sections always use every isolate.
 
 The SNP threshold defaults to 21, the published *K. pneumoniae* value. Choose one for your organism and pipeline; the report always shows a sweep from 0 to 100 SNPs. Tests use 9,999 permutations with a fixed `--seed`, so results reproduce exactly.
@@ -123,3 +125,5 @@ What changed from v1 and why, with literature, is in [REVIEW.md](REVIEW.md).
 pip install -e ".[dev]"
 pytest
 ```
+
+Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results. Provenance and the rebuild script are in `tests/data/ncbi_pd_klebsiella/`.

@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 
 import numpy as np
@@ -37,6 +37,25 @@ LINEAGE_ALIASES = (
     "cluster",
 )
 HOST_ID_ALIASES = ("host_id", "host_subject_id", "patient_id", "subject_id", "individual_id", "animal_id")
+COUNTRY_ALIASES = ("geo_loc_name", "country", "geo_loc")
+# Permutation tests can shuffle source labels only within these strata.
+STRATA_FIELDS = ("year", "country")
+# One-to-one renames from the INSDC list of historical geo_loc_names. Old records keep
+# the old name ("Czech Republic"), new ones use the current one ("Czechia"); without
+# this the same country would be two strata. Splits and mergers (USSR, Yugoslavia,
+# Czechoslovakia, Serbia and Montenegro) have no single successor and are left as is.
+HISTORICAL_COUNTRIES = {
+    "belgian congo": "Democratic Republic of the Congo",
+    "british guiana": "Guyana",
+    "burma": "Myanmar",
+    "czech republic": "Czechia",
+    "east timor": "Timor-Leste",
+    "macedonia": "North Macedonia",
+    "siam": "Thailand",
+    "swaziland": "Eswatini",
+    "the former yugoslav republic of macedonia": "North Macedonia",
+    "zaire": "Democratic Republic of the Congo",
+}
 # Thorpe et al. 2022 swept 0-20 SNPs; Hetland et al. 2025 used 22; David et al. 2019 21.
 SWEEP_THRESHOLDS = (0, 1, 2, 5, 10, 20, 50, 100)
 
@@ -49,6 +68,7 @@ class Isolate:
     year: float | None
     host_id: str
     ids: frozenset[str]
+    country: str = ""
 
 
 @dataclass
@@ -79,7 +99,12 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
     isolates: dict[str, Isolate] = {}
     for row in rows:
         key = isolate_key(row)
-        if not key or key in isolates:
+        if not key:
+            continue
+        if key in isolates:
+            # Same BioSample (e.g. two assemblies): keep the first row's values, but every
+            # identifier, so distances or genes keyed by either assembly still match.
+            isolates[key] = replace(isolates[key], ids=isolates[key].ids | frozenset(_row_names(row)))
             continue
         isolates[key] = Isolate(
             key=key,
@@ -88,6 +113,7 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
             year=decimal_year(row.get("collection_date", "")),
             host_id=_clean(get_field(row, HOST_ID_ALIASES)),
             ids=frozenset(_row_names(row)),
+            country=_country(get_field(row, COUNTRY_ALIASES)),
         )
     records = list(isolates.values())
     return Dataset(
@@ -104,10 +130,7 @@ def apply_lineages(dataset: Dataset, lineages: dict[str, str]) -> list[str]:
     """Set lineages from an external typing table (Kleborate, mlst, PopPUNK). Returns unmatched names."""
     mapping, unmatched = match_names(list(lineages), dataset)
     by_key = {key: _clean(lineages[name]) for name, key in mapping.items()}
-    dataset.isolates = [
-        Isolate(iso.key, iso.source, by_key.get(iso.key, iso.lineage), iso.year, iso.host_id, iso.ids)
-        for iso in dataset.isolates
-    ]
+    dataset.isolates = [replace(iso, lineage=by_key.get(iso.key, iso.lineage)) for iso in dataset.isolates]
     dataset.lineage_column = dataset.lineage_column or "external table"
     return unmatched
 
@@ -122,6 +145,12 @@ def _source_group(row: dict[str, str], by: str) -> str:
     if (row.get("healthcare_environment") or "").strip() == HEALTHCARE_YES:
         return "Healthcare environment"
     return l1 if l1 in SOURCE_GROUPS else ""
+
+
+def _country(geo_loc_name: str) -> str:
+    """INSDC geo_loc_name is "Country: region, locality"; keep the current country name."""
+    country = _clean(geo_loc_name.split(":", 1)[0])
+    return HISTORICAL_COUNTRIES.get(country.lower(), country)
 
 
 def _clean(value: str) -> str:
@@ -221,6 +250,51 @@ def benjamini_hochberg(pvalues: list[float]) -> list[float]:
 def perm_pvalue(exceed: int, permutations: int) -> float:
     """Phipson & Smyth (2010): never zero."""
     return (exceed + 1) / (permutations + 1)
+
+
+def strata_codes(isolates: list[Isolate], by: tuple[str, ...] = ()) -> np.ndarray | None:
+    """Integer stratum per isolate from collection year and/or country; None when not stratifying.
+
+    Isolates missing a value share an "unknown" stratum for that field.
+    """
+    if not by:
+        return None
+    unknown = [f for f in by if f not in STRATA_FIELDS]
+    if unknown:
+        raise ValueError(f"cannot stratify by {unknown}; choose from {list(STRATA_FIELDS)}")
+
+    def part(iso: Isolate, name: str) -> str:
+        if name == "year":
+            return str(int(iso.year)) if iso.year is not None else "?"
+        return iso.country.lower() or "?"
+
+    keys = ["|".join(part(iso, name) for name in by) for iso in isolates]
+    index = {key: i for i, key in enumerate(sorted(set(keys)))}
+    return np.array([index[key] for key in keys], dtype=np.int64)
+
+
+def permute_within(labels: np.ndarray, strata: np.ndarray | None, rng: np.random.Generator) -> np.ndarray:
+    """Shuffle labels, but only among isolates of the same stratum."""
+    if strata is None:
+        return rng.permutation(labels)
+    slots = np.argsort(strata, kind="stable")  # positions grouped by stratum
+    draws = np.lexsort((rng.random(len(labels)), strata))  # same grouping, random order inside
+    out = np.empty_like(labels)
+    out[slots] = labels[draws]
+    return out
+
+
+def strata_summary(isolates: list[Isolate], by: tuple[str, ...]) -> dict:
+    """How informative the strata are: isolates in strata with one source cannot change label."""
+    codes = strata_codes([iso for iso in isolates if iso.source], by)
+    if codes is None:
+        return {"strata": 0, "isolates": 0, "isolates_in_single_source_strata": 0}
+    classified = [iso for iso in isolates if iso.source]
+    sources: dict[int, set[str]] = {}
+    for iso, code in zip(classified, codes.tolist()):
+        sources.setdefault(code, set()).add(iso.source)
+    fixed = sum(1 for code in codes.tolist() if len(sources[code]) == 1)
+    return {"strata": len(sources), "isolates": len(classified), "isolates_in_single_source_strata": fixed}
 
 
 def simpson(counts: list[int]) -> tuple[float, float, float]:
@@ -344,12 +418,14 @@ def lineage_intersections(dataset: Dataset, top: int = 15) -> list[dict]:
 
 
 def lineage_enrichment(
-    dataset: Dataset, min_isolates: int = 5, permutations: int = 9999, seed: int = 1
+    dataset: Dataset, min_isolates: int = 5, permutations: int = 9999, seed: int = 1, strata: tuple[str, ...] = ()
 ) -> list[dict]:
     """Thorpe et al. 2022: is a lineage over- or under-represented in a source?
 
-    Source labels are permuted across typed isolates; two-sided p-values use
-    |count - expected|, are never zero (Phipson & Smyth 2010) and are BH-adjusted.
+    Source labels are permuted across typed isolates (within strata, if given);
+    two-sided p-values use |count - expected|, are never zero (Phipson & Smyth 2010)
+    and are BH-adjusted. The expected count is exact: the sum over strata of
+    lineage size x source size / stratum size.
     """
     typed = _typed(dataset)
     groups = [g for g in dataset.groups if any(iso.source == g for iso in typed)]
@@ -368,12 +444,19 @@ def lineage_enrichment(
         return np.bincount(lin[keep] * n_s + labels[keep], minlength=n_l * n_s).reshape(n_l, n_s)
 
     observed = counts(src)
-    expected = np.outer([sizes[t] for t in tested], np.bincount(src, minlength=n_s)) / len(typed)
+    codes = strata_codes(typed, strata)
+    stratum = codes if codes is not None else np.zeros(len(typed), dtype=np.int64)
+    expected = np.zeros((n_l, n_s))
+    for k in np.unique(stratum):
+        inside = stratum == k
+        lineage_k = np.bincount(lin[inside & keep], minlength=n_l)
+        source_k = np.bincount(src[inside], minlength=n_s)
+        expected += np.outer(lineage_k, source_k) / inside.sum()
     deviation = np.abs(observed - expected) - 1e-9
     exceed = np.zeros_like(observed)
     rng = np.random.default_rng(seed)
     for _ in range(permutations):
-        exceed += np.abs(counts(rng.permutation(src)) - expected) >= deviation
+        exceed += np.abs(counts(permute_within(src, codes, rng)) - expected) >= deviation
     rows = []
     for i, lineage in enumerate(tested):
         for j, group in enumerate(groups):
@@ -411,6 +494,7 @@ def feature_prevalence(
     classes: dict[str, str],
     permutations: int = 9999,
     seed: int = 1,
+    strata: tuple[str, ...] = (),
 ) -> FeatureResult:
     """Prevalence (Wilson 95% CI) of each feature per source, and a permutation
     chi-squared test of independence from source with BH correction."""
@@ -438,9 +522,10 @@ def feature_prevalence(
     exceed = np.zeros(len(features), dtype=np.int64)
     if testable.any():
         rng = np.random.default_rng(seed)
+        codes = strata_codes(isolates, strata)
         sub = matrix[:, testable]
         for _ in range(permutations):
-            perm = onehot[rng.permutation(src)].T @ sub
+            perm = onehot[permute_within(src, codes, rng)].T @ sub
             exceed[testable] += _chi2(perm, n_s, totals[testable]) >= stat_obs[testable] - 1e-9
     pvalues = [perm_pvalue(int(exceed[k]), permutations) if testable[k] else math.nan for k in range(len(features))]
     qvalues = benjamini_hochberg(pvalues)
@@ -510,6 +595,7 @@ def linkage(
     threshold: float = 21,
     permutations: int = 9999,
     seed: int = 1,
+    strata: tuple[str, ...] = (),
 ) -> LinkageResult:
     """Strain sharing within and between sources at a SNP threshold.
 
@@ -519,6 +605,9 @@ def linkage(
     the same host individual are excluded. Events are normalised per 100 isolates
     of the two sources, and compared with a null in which source labels are
     permuted across isolates (sampling effort held fixed; cf. Muloi et al. 2022).
+    With `strata`, labels are shuffled only among isolates from the same collection
+    year and/or country, so sources sampled at different times or places are not
+    expected to share strains.
     """
     isolates, sub, unmatched = _matched_isolates(dataset, names, matrix)
     groups = [g for g in dataset.groups if any(iso.source == g for iso in isolates)]
@@ -557,12 +646,13 @@ def linkage(
     exceed = np.zeros_like(observed)
     perm_values = []
     labelled = np.flatnonzero(src >= 0)
+    codes = strata_codes([isolates[i] for i in labelled], strata)
     if n_s and len(a):
         rng = np.random.default_rng(seed)
         draws = []
         for _ in range(permutations):
             labels = src.copy()
-            labels[labelled] = rng.permutation(src[labelled])
+            labels[labelled] = permute_within(src[labelled], codes, rng)
             draws.append(event_counts(labels, a, b, clusters))
         perm_values = np.stack(draws)
         mean = perm_values.mean(axis=0)

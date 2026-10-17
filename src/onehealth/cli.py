@@ -92,6 +92,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     report_p.add_argument("--group-by", choices=("source", "paper_rollup"), default="source")
     report_p.add_argument(
+        "--stratify-by",
+        type=_strata,
+        default=(),
+        metavar="FIELDS",
+        help="Shuffle source labels only within strata in every permutation test: year, country, or year,country",
+    )
+    report_p.add_argument(
         "--dereplicate",
         action="store_true",
         help="Lineage and feature analyses use one isolate per genomic cluster per source (within --threshold SNPs); "
@@ -127,6 +134,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         title=args.title,
         note=args.note,
         dereplicate=args.dereplicate,
+        stratify=args.stratify_by,
     )
     print(f"wrote {path}", file=sys.stderr)
     return 0
@@ -182,6 +190,14 @@ def cmd_plot(args: argparse.Namespace) -> int:
     plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
+
+
+def _strata(text: str) -> tuple[str, ...]:
+    fields = tuple(dict.fromkeys(part.strip().lower() for part in text.split(",") if part.strip()))
+    unknown = [f for f in fields if f not in ("year", "country")]
+    if unknown:
+        raise argparse.ArgumentTypeError(f"unknown strata {unknown}; use year, country or year,country")
+    return fields
 
 
 def _sidecar(path: Path, suffix: str) -> Path:
