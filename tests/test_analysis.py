@@ -159,6 +159,64 @@ def test_linkage_reports_unmatched_names_and_cross_edges():
     assert {(e["source_a"], e["source_b"]) for e in link.cross_edges} <= {("Human", "Animal"), ("Animal", "Human")}
 
 
+def _random_linkage_inputs(n=60, seed=4):
+    rng = np.random.default_rng(seed)
+    sources = ["Human", "Animal", "Environmental", "Unclassified"]
+    rows = [_row(i, sources[i % 4], host_id=f"P{i % 7}" if i % 3 == 0 else "", date=f"{2016 + i % 5}-03-01")
+            for i in range(n)]
+    clone = rng.integers(8, size=n)
+    d = np.abs(clone[:, None] - clone[None, :]) * 60.0 + rng.integers(0, 30, size=(n, n))
+    d = np.triu(d, 1)
+    d = d + d.T
+    missing = np.triu(rng.random((n, n)) < 0.1, 1)
+    d[missing | missing.T] = np.nan
+    return A.build_dataset(rows), [f"ISO{i}" for i in range(n)], d
+
+
+def _linkage_summary(link):
+    """Everything in a LinkageResult that does not depend on the matrix's row order.
+
+    (The permutation null does: shuffles are drawn over isolates in matrix order.)
+    """
+    events = [(r["source_a"], r["source_b"], r["events"], r["isolates_in_pair"]) for r in link.events]
+    edges = sorted((tuple(sorted((e["isolate_a"], e["isolate_b"]))), e["snps"]) for e in link.cross_edges)
+    clusters = sorted((c["isolates"], c["sources"], tuple(sorted(c["members"])), len(c["edges"])) for c in link.clusters)
+    return (events, link.linked_fraction, link.sweep, edges, clusters, link.pairs_within, link.pairs_between,
+            sorted(link.close_within.tolist()), sorted(link.close_between.tolist()))
+
+
+def test_linkage_ignores_matrix_row_order_and_extra_names():
+    ds, names, d = _random_linkage_inputs()
+    reference = A.linkage(ds, names, d, threshold=25, permutations=9)
+    order = np.random.default_rng(1).permutation(len(names))
+    # Shuffled rows, plus an unknown sample in the middle, so isolates are not the matrix's first rows.
+    shuffled = np.insert(np.insert(d[np.ix_(order, order)], 30, 3.0, axis=0), 30, 3.0, axis=1)
+    shuffled_names = [names[i] for i in order[:30]] + ["NOPE"] + [names[i] for i in order[30:]]
+    link = A.linkage(ds, shuffled_names, shuffled, threshold=25, permutations=9)
+    assert link.unmatched == ["NOPE"]
+    assert _linkage_summary(link) == _linkage_summary(reference)
+    kept, _ = A.dereplicate(ds, shuffled_names, shuffled, threshold=25)
+    assert {iso.key for iso in kept.isolates} == {iso.key for iso in A.dereplicate(ds, names, d, threshold=25)[0].isolates}
+
+
+def test_linkage_counts_every_pair_but_keeps_only_close_distances():
+    ds, names, d = _random_linkage_inputs()
+    for threshold in (25, 150):  # the kept range grows when the threshold passes 100 SNPs
+        link = A.linkage(ds, names, d, threshold=threshold, permutations=9)
+        source = {f"ISO{i}": iso.source for i, iso in enumerate(ds.isolates)}
+        within, between = [], []
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                si, sj = source[names[i]], source[names[j]]
+                if si and sj and not math.isnan(d[i, j]):
+                    (within if si == sj else between).append(d[i, j])
+        assert (link.pairs_within, link.pairs_between) == (len(within), len(between))
+        limit = max(100, threshold)
+        assert link.close_limit == limit
+        assert sorted(link.close_within.tolist()) == sorted(v for v in within if v <= limit)
+        assert sorted(link.close_between.tolist()) == sorted(v for v in between if v <= limit)
+
+
 def test_match_names_accepts_ncbi_assembly_file_names():
     ds = A.build_dataset([{**_row(1), "assembly": "GCA_000005845.2"}])
     mapping, unmatched = A.match_names(["GCA_000005845.2_ASM584v2_genomic", "other"], ds)
@@ -177,6 +235,32 @@ def test_read_distance_matrix_square_and_long(tmp_path: Path):
     long.write_text("A\tB\t7\nA\tC\t3\n", encoding="utf-8")
     names, m = read_distance_matrix(long)
     assert names == ["A", "B", "C"] and m[0, 2] == 3 and math.isnan(m[1, 2])
+
+
+def test_read_distance_matrix_csv_comments_crlf_and_missing_values(tmp_path: Path):
+    path = tmp_path / "d.csv"
+    path.write_bytes(b"# snp-dists -c\r\n\r\nsnp-dists, A , B\r\n A ,0, nan\r\nB , nan,0\r\n")
+    names, m = read_distance_matrix(path)
+    assert names == ["A", "B"] and m[0, 0] == 0 and math.isnan(m[0, 1])
+
+
+def test_read_distance_matrix_long_format_keeps_the_last_value_of_a_repeated_pair(tmp_path: Path):
+    path = tmp_path / "long.tsv"
+    path.write_text("seq1\tseq2\tdistance\nA\tB\t7\nB\tA\t9\nA\tC\t1\nA\tB\t4\n", encoding="utf-8")
+    names, m = read_distance_matrix(path)
+    assert names == ["A", "B", "C"]
+    assert m[0, 1] == m[1, 0] == 4 and m[0, 2] == m[2, 0] == 1 and math.isnan(m[1, 2])
+
+
+def test_read_distance_matrix_rejects_ragged_and_non_numeric_squares(tmp_path: Path):
+    ragged = tmp_path / "ragged.tsv"
+    ragged.write_text("x\tA\tB\nA\t0\nB\t7\t0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not square"):
+        read_distance_matrix(ragged)
+    text = tmp_path / "text.tsv"
+    text.write_text("x\tA\tB\nA\t0\t-\nB\t7\t0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="non-numeric distance"):
+        read_distance_matrix(text)
 
 
 def test_read_lineages_from_kleborate_v3_and_poppunk(tmp_path: Path):
@@ -298,3 +382,28 @@ def test_dataset_keeps_isolates_named_by_strain_and_rows_without_ids():
     # Strain names still match the genotype and distance files.
     mapping, unmatched = A.match_names(["KP1", "kp2"], ds)
     assert mapping == {"KP1": "KP1", "kp2": "KP2"} and unmatched == []
+
+
+def test_feature_permutations_match_a_one_at_a_time_reference():
+    """The feature test multiplies many permutations at once; p-values must match doing them one by one."""
+    rng = np.random.default_rng(5)
+    sources = ["Human", "Animal", "Environmental"]
+    rows = [_row(i, sources[i % 3], date=f"{2015 + i % 4}-01-01") for i in range(90)]
+    presence = {f"ISO{i}": {f"g{k}" for k in range(12) if rng.random() < 0.15 + 0.3 * (i % 3 == k % 3)} for i in range(90)}
+    ds = A.build_dataset(rows)
+    permutations = 300  # more than one batch
+    result = A.feature_prevalence(ds, presence, {}, permutations=permutations, seed=11, strata=("year",))
+
+    isolates = [iso for iso in ds.classified if iso.key in {f"SAMN{i}" for i in range(90)}]
+    features = sorted({f for genes in presence.values() for f in genes})
+    groups = [g for g in ds.groups if any(iso.source == g for iso in isolates)]
+    src = np.array([groups.index(iso.source) for iso in isolates])
+    matrix = np.array([[f in presence[f"ISO{iso.key[4:]}"] for f in features] for iso in isolates], dtype=float)
+    n_s, totals, onehot = np.bincount(src), matrix.sum(axis=0), np.eye(len(groups))
+    observed = A._chi2(onehot[src].T @ matrix, n_s, totals)
+    codes, draw = A.strata_codes(isolates, ("year",)), np.random.default_rng(11)
+    exceed = np.zeros(len(features))
+    for _ in range(permutations):
+        exceed += A._chi2(onehot[A.permute_within(src, codes, draw)].T @ matrix, n_s, totals) >= observed - 1e-9
+    expected = {f: A.perm_pvalue(int(e), permutations) for f, e in zip(features, exceed) if 0 < totals[features.index(f)] < len(isolates)}
+    assert {t["feature"]: t["p"] for t in result.tests if not math.isnan(t["p"])} == expected

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import csv
+from array import array
 from pathlib import Path
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 from onehealth.constants import (
     ASSEMBLY_ALIASES,
@@ -20,6 +21,9 @@ from onehealth.constants import (
     SRA_ALIASES,
 )
 from onehealth.ids import assembly_join_keys, parse_id
+
+if TYPE_CHECKING:  # numpy is imported lazily, only by the readers that need it
+    import numpy as np
 
 # Columns that can hold the input identifier of an ID list.
 _ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SRA_ALIASES + PDT_ALIASES
@@ -192,39 +196,89 @@ def read_features(path: Path) -> tuple[dict[str, set[str]], dict[str, str]]:
 
 
 def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
-    """Pairwise distances from snp-dists: square (default) or long (-m) format, TSV or CSV."""
+    """Pairwise distances from snp-dists: square (default) or long (-m) format, TSV or CSV.
+
+    The file is streamed and the numbers are parsed by numpy, so memory stays close to
+    the matrix itself (8 bytes per cell) rather than a Python object per cell.
+    """
     import numpy as np
 
-    lines = [line.rstrip("\r\n") for line in path.read_text(encoding="utf-8").splitlines()]
-    lines = [line for line in lines if line.strip() and not line.startswith("#")]
-    if not lines:
+    header = next(_data_lines(path), None)
+    if header is None:
         return [], np.zeros((0, 0))
-    delimiter = "\t" if "\t" in lines[0] else ","
-    cells = [[cell.strip() for cell in line.split(delimiter)] for line in lines]
-    header_names = cells[0][1:]
-    if header_names and header_names == [row[0] for row in cells[1:]]:
-        names = header_names
-        try:
-            matrix = np.array([[float(value) for value in row[1:]] for row in cells[1:]])
-        except ValueError as exc:
-            raise ValueError(f"{path}: non-numeric distance ({exc})") from exc
-        if matrix.shape != (len(names), len(names)):
-            raise ValueError(f"{path}: distance matrix is not square")
-        return names, matrix
-    if any(len(row) != 3 for row in cells):
-        raise ValueError(f"{path}: expected a square snp-dists matrix or three-column (name, name, distance) rows")
+    delimiter = "\t" if "\t" in header else ","
+    names = [cell.strip() for cell in header.split(delimiter)[1:]]
+    if names and _first_cells(path, delimiter) == names:
+        return names, _read_square(path, delimiter, len(names))
+    return _read_long(path, delimiter)
+
+
+def _data_lines(path: Path) -> Iterator[str]:
+    """Lines without their newline, skipping blank lines and lines starting with '#'."""
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.rstrip("\r\n")
+            if line.strip() and not line.startswith("#"):
+                yield line
+
+
+def _first_cells(path: Path, delimiter: str) -> list[str]:
+    """First cell of every line after the header: a square matrix's row names."""
+    lines = _data_lines(path)
+    next(lines)
+    return [line.split(delimiter, 1)[0].strip() for line in lines]
+
+
+def _read_square(path: Path, delimiter: str, n: int) -> "np.ndarray":
+    import numpy as np
+
+    def values() -> Iterator[str]:
+        lines = _data_lines(path)
+        next(lines)
+        for line in lines:
+            if line.count(delimiter) != n:
+                raise ValueError(f"{path}: distance matrix is not square")
+            yield line.split(delimiter, 1)[1]
+
+    try:
+        matrix = np.loadtxt(values(), delimiter=delimiter, comments=None, dtype=float, ndmin=2)
+    except ValueError as exc:
+        if "not square" in str(exc):
+            raise
+        raise ValueError(f"{path}: non-numeric distance ({exc})") from exc
+    if matrix.shape != (n, n):
+        raise ValueError(f"{path}: distance matrix is not square")
+    return matrix
+
+
+def _read_long(path: Path, delimiter: str) -> tuple[list[str], "np.ndarray"]:
+    """Three columns: name, name, distance. Lines with a non-numeric distance (a header) are skipped."""
+    import numpy as np
+
     order: dict[str, int] = {}
-    triples = []
-    for a, b, value in cells:
+    first, second, distances = array("q"), array("q"), array("d")
+    for line in _data_lines(path):
+        cells = line.split(delimiter)
+        if len(cells) != 3:
+            raise ValueError(f"{path}: expected a square snp-dists matrix or three-column (name, name, distance) rows")
+        a, b, value = (cell.strip() for cell in cells)
         try:
             distance = float(value)
         except ValueError:
             continue  # a header line in long format
-        triples.append((order.setdefault(a, len(order)), order.setdefault(b, len(order)), distance))
-    matrix = np.full((len(order), len(order)), np.nan)
+        first.append(order.setdefault(a, len(order)))
+        second.append(order.setdefault(b, len(order)))
+        distances.append(distance)
+    n = len(order)
+    matrix = np.full((n, n), np.nan)
     np.fill_diagonal(matrix, 0.0)
-    for i, j, distance in triples:
-        matrix[i, j] = matrix[j, i] = distance
+    i, j, d = np.array(first, dtype=np.int64), np.array(second, dtype=np.int64), np.array(distances)
+    # A pair listed twice keeps its last distance, in both directions.
+    pair = np.minimum(i, j) * n + np.maximum(i, j)
+    _, last_reversed = np.unique(pair[::-1], return_index=True)
+    keep = len(pair) - 1 - last_reversed
+    matrix[i[keep], j[keep]] = d[keep]
+    matrix[j[keep], i[keep]] = d[keep]
     return list(order), matrix
 
 
