@@ -254,17 +254,25 @@ _NON_TAXON_TOKENS = frozenset(
         "setting",
         "env",
         "collection",
-        "vitro",
-        "ward",
+        # Real sources once mistaken for binomials (IMP benchmark, NCBI Pathogen Detection).
+        "influent",
+        "effluent",
+        "wwtp",
+        "bedpan",
+        "washer",
     }
 )
+
+# English word endings that no Latin binomial uses ("cleaning", "infection").
+_ENGLISH_SUFFIXES = ("ing", "tion", "sion", "ment", "ness")
 
 
 def is_taxon_only_source(value: str | None) -> bool:
     """True when isolation_source is only a scientific name, not a specimen.
 
     GenFS cleanup: taxonomy belongs in host. Do not treat `Escherichia coli`
-    or `Bos taurus` as an isolation site.
+    or `Bos taurus` as an isolation site. This is a word-shape guess (two or
+    three plain words), so classify lets a matching lexicon rule overrule it.
     """
     tokens = tokenize(value)
     if not tokens:
@@ -273,7 +281,7 @@ def is_taxon_only_source(value: str | None) -> bool:
         return False
     if tuple(tokens) in _TAXON_ABBREVIATIONS:
         return True
-    if any(token in _NON_TAXON_TOKENS for token in tokens):
+    if any(token in _NON_TAXON_TOKENS or token.endswith(_ENGLISH_SUFFIXES) for token in tokens):
         return False
     if len(tokens) not in {2, 3}:
         return False

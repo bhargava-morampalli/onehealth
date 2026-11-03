@@ -1,6 +1,7 @@
 """Gaps 2–4: food-producing / feed, lexicon holes, taxon-only source."""
 
 from onehealth.classify import classify_record
+from onehealth.lexicon import load_lexicon
 from onehealth.text import is_taxon_only_source
 
 
@@ -174,3 +175,45 @@ def test_is_taxon_only_source_accepts_binomials_and_rejects_specimens():
     assert is_taxon_only_source("Escherichia coli from urine") is False
     assert is_taxon_only_source("experimentally derived") is False
     assert is_taxon_only_source("") is False
+
+
+def _custom_lexicon(tmp_path, fields):
+    path = tmp_path / "lexicon.yaml"
+    path.write_text(
+        'version: "test"\nrules:\n'
+        f"  - id: hospital-fixtures-extra\n    fields: {fields}\n"
+        '    phrases: ["bedpan washer", "door handle", "bed rail"]\n'
+        "    l1: Environmental\n    healthcare_environment: true\n    priority: 90\n"
+        "  - id: animal-hosts\n    fields: [host, isolation_source]\n"
+        '    phrases: ["bos taurus"]\n    l1: Animal\n    priority: 40\n',
+        encoding="utf-8",
+    )
+    return load_lexicon(path)
+
+
+def test_lexicon_rule_for_source_text_beats_the_taxon_guess(tmp_path):
+    # "bedpan washer" has the shape of a binomial; a rule written for source text must still match it.
+    lexicon = _custom_lexicon(tmp_path, "[isolation_source]")
+    for source in ("bedpan washer", "Door handle", "bed rail"):
+        result = _cls(lexicon, source)
+        assert (result.l1, result.healthcare_environment, result.classify_reason) == (
+            "Environmental", "yes", "hospital-fixtures-extra"), source
+
+
+def test_binomial_matched_by_a_host_rule_is_still_ignored_in_isolation_source(tmp_path):
+    lexicon = _custom_lexicon(tmp_path, "[isolation_source]")
+    result = _cls(lexicon, "Bos taurus")
+    assert (result.l1, result.classify_reason) == ("Unclassified", "taxon_only_source")
+    # A rule that also reads host lists species names, so it does not overrule the guess.
+    host_rule = _custom_lexicon(tmp_path, "[isolation_source, host]")
+    assert _cls(host_rule, "door handle").classify_reason == "taxon_only_source"
+
+
+def test_real_sources_are_not_reported_as_taxon_names(lexicon):
+    # Every string the guess flagged in the IMP and NCBI Pathogen Detection data; none is a species.
+    for source in ("bedpan washer", "respiratory tract infection", "urinary tract infection", "Cleaning car",
+                   "WWTP influent"):
+        assert is_taxon_only_source(source) is False, source
+        assert _cls(lexicon, source).classify_reason != "taxon_only_source", source
+    assert is_taxon_only_source("Klebsiella pneumoniae") is True
+    assert is_taxon_only_source("Pseudomonas aeruginosa") is True
