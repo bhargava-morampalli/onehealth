@@ -298,3 +298,28 @@ def test_dataset_keeps_isolates_named_by_strain_and_rows_without_ids():
     # Strain names still match the genotype and distance files.
     mapping, unmatched = A.match_names(["KP1", "kp2"], ds)
     assert mapping == {"KP1": "KP1", "kp2": "KP2"} and unmatched == []
+
+
+def test_feature_permutations_match_a_one_at_a_time_reference():
+    """The feature test multiplies many permutations at once; p-values must match doing them one by one."""
+    rng = np.random.default_rng(5)
+    sources = ["Human", "Animal", "Environmental"]
+    rows = [_row(i, sources[i % 3], date=f"{2015 + i % 4}-01-01") for i in range(90)]
+    presence = {f"ISO{i}": {f"g{k}" for k in range(12) if rng.random() < 0.15 + 0.3 * (i % 3 == k % 3)} for i in range(90)}
+    ds = A.build_dataset(rows)
+    permutations = 300  # more than one batch
+    result = A.feature_prevalence(ds, presence, {}, permutations=permutations, seed=11, strata=("year",))
+
+    isolates = [iso for iso in ds.classified if iso.key in {f"SAMN{i}" for i in range(90)}]
+    features = sorted({f for genes in presence.values() for f in genes})
+    groups = [g for g in ds.groups if any(iso.source == g for iso in isolates)]
+    src = np.array([groups.index(iso.source) for iso in isolates])
+    matrix = np.array([[f in presence[f"ISO{iso.key[4:]}"] for f in features] for iso in isolates], dtype=float)
+    n_s, totals, onehot = np.bincount(src), matrix.sum(axis=0), np.eye(len(groups))
+    observed = A._chi2(onehot[src].T @ matrix, n_s, totals)
+    codes, draw = A.strata_codes(isolates, ("year",)), np.random.default_rng(11)
+    exceed = np.zeros(len(features))
+    for _ in range(permutations):
+        exceed += A._chi2(onehot[A.permute_within(src, codes, draw)].T @ matrix, n_s, totals) >= observed - 1e-9
+    expected = {f: A.perm_pvalue(int(e), permutations) for f, e in zip(features, exceed) if 0 < totals[features.index(f)] < len(isolates)}
+    assert {t["feature"]: t["p"] for t in result.tests if not math.isnan(t["p"])} == expected

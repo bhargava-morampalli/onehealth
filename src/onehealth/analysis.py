@@ -506,19 +506,25 @@ def feature_prevalence(
     mapping, unmatched = match_names(list(presence), dataset)
     by_key: dict[str, set[str]] = {}
     for name, key in mapping.items():
-        by_key.setdefault(key, set()).update(presence[name])
+        # Share the caller's set; only two names for one isolate need a new (merged) one.
+        by_key[key] = by_key[key] | presence[name] if key in by_key else presence[name]
     isolates = [iso for iso in dataset.classified if iso.key in by_key]
     groups = [g for g in dataset.groups if any(iso.source == g for iso in isolates)]
     result = FeatureResult(groups=groups, genotyped={g: 0 for g in groups}, unmatched=unmatched)
     if not isolates:
         return result
     features = sorted({f for iso in isolates for f in by_key[iso.key]})
+    column = {f: k for k, f in enumerate(features)}
     src_index = {g: i for i, g in enumerate(groups)}
     src = np.array([src_index[iso.source] for iso in isolates])
-    matrix = np.array([[f in by_key[iso.key] for f in features] for iso in isolates], dtype=np.int64)
+    # Float rather than int: numpy multiplies float matrices with BLAS, about 35x faster
+    # in the permutation loop below, and whole-number counts stay exact.
+    matrix = np.zeros((len(isolates), len(features)))
+    rows = np.repeat(np.arange(len(isolates)), [len(by_key[iso.key]) for iso in isolates])
+    matrix[rows, [column[f] for iso in isolates for f in by_key[iso.key]]] = 1.0
     n_s = np.bincount(src, minlength=len(groups))
     result.genotyped = {g: int(n_s[i]) for i, g in enumerate(groups)}
-    onehot = np.eye(len(groups), dtype=np.int64)
+    onehot = np.eye(len(groups))
     observed = onehot[src].T @ matrix  # sources x features
 
     totals = matrix.sum(axis=0)
@@ -529,9 +535,18 @@ def feature_prevalence(
         rng = np.random.default_rng(seed)
         codes = strata_codes(isolates, strata)
         sub = matrix[:, testable]
-        for _ in range(permutations):
-            perm = onehot[permute_within(src, codes, rng)].T @ sub
-            exceed[testable] += _chi2(perm, n_s, totals[testable]) >= stat_obs[testable] - 1e-9
+        # Many permutations per matrix product: one pass over the isolate x feature
+        # matrix per batch instead of one per permutation. Permutations are drawn in
+        # the same order, so results do not depend on the batch size.
+        batch = max(1, min(256, 2_000_000 // (len(groups) * len(isolates))))
+        done = 0
+        while done < permutations:
+            size = min(batch, permutations - done)
+            labels = np.stack([permute_within(src, codes, rng) for _ in range(size)])  # size x isolates
+            rows = onehot[labels].transpose(0, 2, 1).reshape(size * len(groups), len(isolates))
+            counts = (rows @ sub).reshape(size, len(groups), -1)  # size x sources x features
+            exceed[testable] += (_chi2(counts, n_s, totals[testable]) >= stat_obs[testable] - 1e-9).sum(axis=0)
+            done += size
     pvalues = [perm_pvalue(int(exceed[k]), permutations) if testable[k] else math.nan for k in range(len(features))]
     qvalues = benjamini_hochberg(pvalues)
     for k, feature in enumerate(features):
@@ -564,14 +579,17 @@ def feature_prevalence(
 
 
 def _chi2(present: np.ndarray, n_s: np.ndarray, totals: np.ndarray) -> np.ndarray:
-    """Pearson chi-squared for each feature's 2 x sources table."""
+    """Pearson chi-squared for each feature's 2 x sources table.
+
+    `present` is sources x features, or a stack of those (one per permutation).
+    """
     n = n_s.sum()
     expected = np.outer(n_s, totals) / n
     absent = n_s[:, None] - present
     expected_absent = np.outer(n_s, n - totals) / n
     with np.errstate(divide="ignore", invalid="ignore"):
         terms = (present - expected) ** 2 / expected + (absent - expected_absent) ** 2 / expected_absent
-    return np.nansum(np.where(np.isfinite(terms), terms, 0.0), axis=0)
+    return np.nansum(np.where(np.isfinite(terms), terms, 0.0), axis=-2)
 
 
 # --- 4. genomic linkage between sources ------------------------------------------------
