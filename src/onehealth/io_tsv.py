@@ -108,12 +108,26 @@ def row_match_ids(row: dict[str, str]) -> set[str]:
     return {item for item in ids if item}
 
 
+# Columns that name an isolate in tables without accessions: Kleborate `strain`,
+# AMRFinderPlus `Name`, lab sheets `sample`.
+_ISOLATE_NAME_ALIASES = ("strain", "isolate", "sample", "sample_name", "name")
+
+
 def isolate_key(row: dict[str, str]) -> str:
-    """One key per biological isolate: the BioSample when it is a single accession, else the query ID."""
+    """One key per biological isolate, or "" when the row names none.
+
+    The BioSample when it is a single accession; otherwise the first identifier
+    found: the query/ID column, assembly, SRA, PDT, then a strain, isolate or
+    sample name.
+    """
     biosample = get_field(row, BIOSAMPLE_ALIASES)
     if biosample and "," not in biosample:
         return biosample.upper()
-    return get_field(row, ID_COLUMN_ALIASES).upper()
+    for aliases in (ID_COLUMN_ALIASES, ASSEMBLY_ALIASES, SRA_ALIASES, PDT_ALIASES, _ISOLATE_NAME_ALIASES):
+        value = get_field(row, aliases)
+        if value:
+            return value.upper()
+    return ""
 
 
 def find_column(rows: list[dict[str, str]], aliases: Iterable[str]) -> str | None:

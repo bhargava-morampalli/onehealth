@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import numpy as np
@@ -75,3 +76,36 @@ def test_report_dereplicate_uses_representatives_and_needs_distances(tmp_path: P
     assert "dereplicated: yes" in page and "After dereplication" in page
     assert "Vezina B, Morampalli BR" in page
     assert "one representative per genomic cluster per source" in page
+
+
+def _kpi(page: str, label: str) -> str:
+    match = re.search(rf'<div class="label">{re.escape(label)}</div><div class="value">([^<]*)</div>', page)
+    assert match, f"no {label!r} tile"
+    return match.group(1)
+
+
+def test_report_counts_isolates_named_only_by_strain(tmp_path: Path):
+    classified = tmp_path / "classified.tsv"
+    lines = ["strain\tl1\thealthcare_environment\tpaper_rollup\tst\tcollection_date"]
+    lines += [f"KP{i}\t{l1}\tno\t{l1}\tST{i % 3}\t2019-01-01" for i, l1 in enumerate(["Human"] * 5 + ["Animal"] * 4)]
+    classified.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out = tmp_path / "report"
+    assert main(["report", str(classified), "-o", str(out), "--permutations", "19"]) == 0
+    page = (out / "report.html").read_text(encoding="utf-8")
+    assert _kpi(page, "Isolates") == "9"
+    assert "Lineage diversity" in page
+    assert "were collapsed" not in page
+
+
+def test_diversity_headline_skips_a_source_with_one_typed_isolate(tmp_path: Path):
+    # Human comes first in the fixed source order and has a single typed isolate, so no D.
+    classified = tmp_path / "classified.tsv"
+    lines = ["query_id\tl1\thealthcare_environment\tpaper_rollup\tst"]
+    lines += ["H1\tHuman\tno\tHuman\tST1"] + [f"A{i}\tAnimal\tno\tAnimal\tST{i % 2}" for i in range(4)]
+    classified.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out = tmp_path / "report"
+    assert main(["report", str(classified), "-o", str(out), "--permutations", "19"]) == 0
+    finding = re.search(r'id="02_diversity-title">.*?<p class="finding">([^<]*)</p>', (out / "report.html").read_text(
+        encoding="utf-8"), re.S).group(1)
+    assert "nan" not in finding
+    assert finding.startswith("Only Animal has two or more typed isolates")
