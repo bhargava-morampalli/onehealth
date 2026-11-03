@@ -69,7 +69,7 @@ def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classifica
     # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
     # Drop it and let host / source_type decide, as if the field were blank.
     source = view.get("isolation_source", "")
-    if is_unknown_value(source) or is_taxon_only_source(source):
+    if is_unknown_value(source) or _taxon_only(source, hits):
         hits = [hit for hit in hits if hit.field != "isolation_source"]
 
     winners = best_hits(hits)
@@ -91,6 +91,19 @@ def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classifica
     if conflict:
         return _review("host_source_conflict", version, conflict)
     return _ok(rule.l1, rule.healthcare_environment, rule.rule_id, version)
+
+
+def _taxon_only(source: str, hits: list[RuleHit]) -> bool:
+    """isolation_source is a bare scientific name, not a description of the sample.
+
+    The word-shape test in is_taxon_only_source cannot tell "Bos taurus" from
+    "bedpan washer", so a lexicon rule written for source text overrules it.
+    Rules that also read `host` list host species ("bos taurus", "homo sapiens"),
+    so a match from one of those is still treated as a taxon name.
+    """
+    if not is_taxon_only_source(source):
+        return False
+    return not any(hit.field == "isolation_source" and "host" not in hit.rule.fields for hit in hits)
 
 
 def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, str], version: str) -> Classification:

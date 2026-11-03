@@ -20,10 +20,15 @@ _BINOMIALS = {
 }
 
 
-def test_seed_lexicon_phrases_are_not_mistaken_for_taxon_names(lexicon):
-    """The taxon guard runs before matching; a new 2-3 word phrase must not trip it."""
+def test_host_rule_phrases_are_not_mistaken_for_taxon_names(lexicon):
+    """In a rule that reads `host`, a phrase that looks like a binomial is ignored in isolation_source.
+
+    Rules for source text only are exempt: their matches overrule the taxon guess.
+    """
     flagged = []
     for rule in lexicon.rules:
+        if "host" not in rule.fields:
+            continue
         for words in rule.phrases + rule.exact:
             phrase = " ".join(words)
             if phrase not in _BINOMIALS and is_taxon_only_source(phrase):
