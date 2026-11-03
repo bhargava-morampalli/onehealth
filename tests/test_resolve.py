@@ -452,3 +452,106 @@ def test_local_extra_columns_are_carried_through():
     local = [{"biosample": "SAMN1", "isolation_source": "urine", "ST": "ST258", "host_subject_id": "P1"}]
     row = resolve_ids(["SAMN1"], local_rows=local)[0]
     assert (row["ST"], row["host_subject_id"]) == ("ST258", "P1")
+
+
+def _fake_urlopen(responses: dict[str, list[bytes]], seen: list):
+    """urlopen stand-in: each URL fragment answers with its next body (the last one repeats)."""
+    import io
+
+    class _Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(request, timeout):
+        seen.append(request)
+        for fragment, bodies in responses.items():
+            if fragment in request.full_url:
+                return _Response(bodies.pop(0) if len(bodies) > 1 else bodies[0])
+        raise AssertionError(f"unexpected URL {request.full_url}")
+
+    return urlopen
+
+
+def test_garbled_ncbi_answer_sends_one_id_to_review_and_the_run_continues(monkeypatch):
+    from onehealth import ncbi
+
+    good = b'{"reports": [{"accession": "SAMN1", "attributes": [{"name": "isolation_source", "value": "blood"}]}]}'
+    maintenance = b"<html><body>Service temporarily unavailable</body></html>"
+    seen: list = []
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", _fake_urlopen({"SAMN1/": [good], "SAMN2/": [maintenance]}, seen))
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    client = NCBIClient(fetcher=ncbi.UrllibFetcher(delay_s=0, retries=2))
+    rows = resolve_ids(["SAMN2", "SAMN1"], client=client, allow_network=True)
+    assert [(r["query_id"], r["resolve_status"]) for r in rows] == [("SAMN2", "review"), ("SAMN1", "ok")]
+    assert rows[0]["resolve_reason"].startswith("ncbi_error:Invalid JSON from https://api.ncbi.nlm.nih.gov/")
+    assert rows[1]["isolation_source"] == "blood"
+    assert sum("SAMN2/" in r.full_url for r in seen) == 3  # first try plus two retries
+
+
+def test_fetcher_retries_a_garbled_body_then_succeeds(monkeypatch):
+    from onehealth import ncbi
+
+    seen: list = []
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", _fake_urlopen({"x": [b"<html>", b'{"ok": 1}']}, seen))
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    assert ncbi.UrllibFetcher(delay_s=0).get_json("https://example.org/x") == {"ok": 1}
+    assert len(seen) == 2
+
+
+def test_fetcher_rejects_json_that_is_not_an_object(monkeypatch):
+    import pytest
+
+    from onehealth import ncbi
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", _fake_urlopen({"x": [b"[1, 2]"]}, []))
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    with pytest.raises(ncbi.HttpError, match="Expected a JSON object"):
+        ncbi.UrllibFetcher(delay_s=0, retries=0).get_json("https://example.org/x")
+
+
+def test_custom_fetcher_json_error_does_not_stop_the_run():
+    class Broken(FakeFetcher):
+        def get_json(self, url, headers=None):
+            if "SAMN2" in url:
+                return json.loads("<html>")
+            return super().get_json(url, headers)
+
+    good = {"reports": [{"accession": "SAMN1", "attributes": [{"name": "isolation_source", "value": "urine"}]}]}
+    rows = resolve_ids(["SAMN1", "SAMN2"], client=NCBIClient(fetcher=Broken({"SAMN1/": good})), allow_network=True)
+    assert [(r["resolve_status"], r["resolve_reason"][:11]) for r in rows] == [("ok", "ncbi"), ("review", "ncbi_error:")]
+
+
+def test_rejected_api_key_is_not_written_to_the_table():
+    from onehealth.ncbi import HttpError
+
+    class Rejecting(FakeFetcher):
+        def get_json(self, url, headers=None):
+            raise HttpError('HTTP 400 for https://api.ncbi.nlm.nih.gov/datasets/v2/x: {"message":"API key invalid","api-key":"MYKEY123"}')
+
+    client = NCBIClient(api_key="MYKEY123", fetcher=Rejecting({}))
+    row = resolve_ids(["SAMN1"], client=client, allow_network=True)[0]
+    assert row["resolve_status"] == "review"
+    assert "MYKEY123" not in row["resolve_reason"] and "***" in row["resolve_reason"]
+
+
+def test_api_key_raises_the_request_rate_and_reaches_datasets_as_a_header():
+    from onehealth.ncbi import UrllibFetcher
+
+    assert NCBIClient().fetcher.delay_s == 0.35  # 3 requests/s without a key
+    assert NCBIClient(api_key="K").fetcher.delay_s == 0.11  # 10 requests/s with one
+    assert NCBIClient(api_key="K", fetcher=UrllibFetcher(delay_s=1.0)).fetcher.delay_s == 1.0
+
+    class Recording(FakeFetcher):
+        headers: list = []
+
+        def get_json(self, url, headers=None):
+            Recording.headers.append(headers or {})
+            return super().get_json(url, headers)
+
+    fetcher = Recording({"biosample_report": {"reports": [{"accession": "SAMN1"}]}})
+    NCBIClient(api_key="K", fetcher=fetcher).biosample_report("SAMN1")
+    assert Recording.headers[-1].get("api-key") == "K"
+    assert all("K" not in url.split("?")[-1] for url in fetcher.urls)
