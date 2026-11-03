@@ -46,20 +46,38 @@ class Fetcher(Protocol):
 
 
 class UrllibFetcher:
-    """Rate-limited GET. NCBI allows 3 requests/s without an API key.
+    """Rate-limited GET. NCBI allows 3 requests/s without an API key and 10/s with one.
 
-    HTTP 429 (rate limit), 5xx and network errors are retried a few times, so a
-    transient NCBI hiccup does not turn into a random review row.
+    HTTP 429 (rate limit), 5xx, network errors and garbled JSON are retried a few
+    times, so a transient NCBI hiccup does not turn into a random review row.
     """
 
-    def __init__(self, delay_s: float = 0.35, retries: int = 3, backoff_s: float = 2.0) -> None:
+    DEFAULT_DELAY_S = 0.35
+    API_KEY_DELAY_S = 0.11
+
+    def __init__(self, delay_s: float = DEFAULT_DELAY_S, retries: int = 3, backoff_s: float = 2.0) -> None:
         self.delay_s = delay_s
         self.retries = retries
         self.backoff_s = backoff_s
         self._last = 0.0
 
     def get_json(self, url: str, headers: dict[str, str] | None = None) -> dict[str, Any]:
-        return json.loads(self.get_text(url, headers=headers))
+        """A JSON object. A body that is not one (an HTML maintenance page sent with
+        HTTP 200, a cut-off transfer) is retried, then raised as HttpError."""
+        for attempt in range(self.retries + 1):
+            text = self.get_text(url, headers=headers)
+            try:
+                payload = json.loads(text)
+            except ValueError as exc:
+                problem = f"Invalid JSON from {_endpoint(url)}: {exc}"
+            else:
+                if isinstance(payload, dict):
+                    return payload
+                problem = f"Expected a JSON object from {_endpoint(url)}, got {type(payload).__name__}"
+            if attempt == self.retries:
+                raise HttpError(problem)
+            time.sleep(self.backoff_s * (attempt + 1))
+        raise AssertionError("unreachable")
 
     def get_text(self, url: str, headers: dict[str, str] | None = None) -> str:
         for attempt in range(self.retries + 1):
@@ -105,9 +123,25 @@ class NCBIClient:
     api_key: str = ""
     fetcher: Fetcher = field(default_factory=UrllibFetcher)
 
+    def __post_init__(self) -> None:
+        # With a key NCBI allows 10 requests/s, not 3. Keep any pace the caller chose.
+        if (
+            self.api_key
+            and isinstance(self.fetcher, UrllibFetcher)
+            and self.fetcher.delay_s == UrllibFetcher.DEFAULT_DELAY_S
+        ):
+            self.fetcher.delay_s = UrllibFetcher.API_KEY_DELAY_S
+
+    def _datasets_headers(self) -> dict[str, str]:
+        """Datasets takes the key as a header (E-utilities as a parameter); it keeps the key out of URLs."""
+        headers = {"Accept": "application/json"}
+        if self.api_key:
+            headers["api-key"] = self.api_key
+        return headers
+
     def biosample_report(self, accession: str) -> dict[str, Any] | None:
         url = f"{DATASETS_BASE}/biosample/accession/{urllib.parse.quote(accession)}/biosample_report"
-        payload = self.fetcher.get_json(url)
+        payload = self.fetcher.get_json(url, headers=self._datasets_headers())
         return _usable_datasets_report(payload, require_accession=True)
 
     def genome_report(self, accession: str) -> dict[str, Any] | None:
@@ -123,7 +157,7 @@ class NCBIClient:
 
     def _genome_report_once(self, accession: str) -> dict[str, Any] | None:
         url = f"{DATASETS_BASE}/genome/accession/{urllib.parse.quote(accession)}/dataset_report"
-        payload = self.fetcher.get_json(url)
+        payload = self.fetcher.get_json(url, headers=self._datasets_headers())
         return _usable_datasets_report(payload, require_accession=False)
 
     def biosample_xml_report(self, accession: str) -> dict[str, Any] | None:
