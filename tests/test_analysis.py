@@ -179,6 +179,32 @@ def test_read_distance_matrix_square_and_long(tmp_path: Path):
     assert names == ["A", "B", "C"] and m[0, 2] == 3 and math.isnan(m[1, 2])
 
 
+def test_read_distance_matrix_csv_comments_crlf_and_missing_values(tmp_path: Path):
+    path = tmp_path / "d.csv"
+    path.write_bytes(b"# snp-dists -c\r\n\r\nsnp-dists, A , B\r\n A ,0, nan\r\nB , nan,0\r\n")
+    names, m = read_distance_matrix(path)
+    assert names == ["A", "B"] and m[0, 0] == 0 and math.isnan(m[0, 1])
+
+
+def test_read_distance_matrix_long_format_keeps_the_last_value_of_a_repeated_pair(tmp_path: Path):
+    path = tmp_path / "long.tsv"
+    path.write_text("seq1\tseq2\tdistance\nA\tB\t7\nB\tA\t9\nA\tC\t1\nA\tB\t4\n", encoding="utf-8")
+    names, m = read_distance_matrix(path)
+    assert names == ["A", "B", "C"]
+    assert m[0, 1] == m[1, 0] == 4 and m[0, 2] == m[2, 0] == 1 and math.isnan(m[1, 2])
+
+
+def test_read_distance_matrix_rejects_ragged_and_non_numeric_squares(tmp_path: Path):
+    ragged = tmp_path / "ragged.tsv"
+    ragged.write_text("x\tA\tB\nA\t0\nB\t7\t0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not square"):
+        read_distance_matrix(ragged)
+    text = tmp_path / "text.tsv"
+    text.write_text("x\tA\tB\nA\t0\t-\nB\t7\t0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="non-numeric distance"):
+        read_distance_matrix(text)
+
+
 def test_read_lineages_from_kleborate_v3_and_poppunk(tmp_path: Path):
     kleborate = tmp_path / "k.tsv"
     kleborate.write_text("strain\tklebsiella_pneumo_complex__mlst__ST\nISO1\tST258\n", encoding="utf-8")
