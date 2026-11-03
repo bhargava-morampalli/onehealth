@@ -70,6 +70,19 @@ def _build_parser() -> argparse.ArgumentParser:
     plot_p.add_argument("-o", "--out", type=Path, required=True, help="PNG path")
     plot_p.set_defaults(handler=cmd_plot)
 
+    validate_p = sub.add_parser(
+        "validate",
+        help="Compare onehealth classes with curated labels (coverage, accuracy, confusion matrix)",
+    )
+    validate_p.add_argument("input", type=Path, help="Classified TSV (from onehealth classify)")
+    validate_p.add_argument("--truth", type=Path, required=True, help="TSV with an isolate ID column and a label column")
+    validate_p.add_argument("--truth-column", default="truth", help="Label column in --truth (default: truth)")
+    validate_p.add_argument("--level", choices=("paper_rollup", "l1"), default="paper_rollup",
+                            help="Which onehealth class to compare (default: paper_rollup)")
+    validate_p.add_argument("-o", "--out", type=Path, required=True,
+                            help="Summary TSV; per-class, confusion and disagreement tables are written next to it")
+    validate_p.set_defaults(handler=cmd_validate)
+
     report_p = sub.add_parser(
         "report",
         help="Standard One Health analyses with an HTML report, figures and tables",
@@ -111,6 +124,34 @@ def _build_parser() -> argparse.ArgumentParser:
     report_p.set_defaults(handler=cmd_report)
 
     return parser
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    from onehealth.validate import read_truth, validate
+
+    result = validate(read_tsv(args.input), read_truth(args.truth, args.truth_column, args.level), args.level)
+    summary = [
+        {"metric": "isolates", "value": result.isolates, "meaning": "isolates with a truth label found in the input"},
+        {"metric": "coverage", "value": f"{result.coverage:.4f}", "meaning": "share of truly classifiable isolates that onehealth classified"},
+        {"metric": "accuracy", "value": f"{result.accuracy:.4f}", "meaning": "share of classified isolates whose class matches the truth"},
+        {"metric": "agreement", "value": f"{result.agreement:.4f}", "meaning": "share of all isolates where class and truth agree (Unclassified included)"},
+        {"metric": "unmatched_truth_ids", "value": len(result.unmatched), "meaning": "truth IDs not found in the input"},
+    ]
+    write_tsv(args.out, summary, ["metric", "value", "meaning"])
+    by_class = [{k: (f"{v:.4f}" if isinstance(v, float) else v) for k, v in row.items()} for row in result.per_class()]
+    write_tsv(_sidecar(args.out, "by_class"), by_class, ["class", "truth", "predicted", "correct", "recall", "precision"])
+    classes = result.classes
+    confusion = [{"truth": t, **{p: result.count(t, p) for p in classes}} for t in classes]
+    write_tsv(_sidecar(args.out, "confusion"), confusion, ["truth", *classes])
+    write_tsv(_sidecar(args.out, "disagreements"), result.disagreements,
+              ["id", "truth", "predicted", "host", "isolation_source", "sample_type", "classify_reason"])
+
+    print(f"validate: {result.isolates} isolates; coverage {result.coverage:.1%}, accuracy {result.accuracy:.1%}, "
+          f"agreement {result.agreement:.1%}", file=sys.stderr)
+    print("truth \\ onehealth  " + "  ".join(f"{p:>13}" for p in classes), file=sys.stderr)
+    for row in confusion:
+        print(f"{row['truth']:<19}" + "  ".join(f"{row[p]:>13}" for p in classes), file=sys.stderr)
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:

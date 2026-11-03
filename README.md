@@ -29,6 +29,7 @@ uv run onehealth --help
 | `onehealth classify` | Assign L1, `healthcare_environment`, and a paper rollup |
 | `onehealth summarize` | Count classes and source evidence (`ok` with a source vs `ok` with an empty source vs each review reason); rows vs unique isolates; cluster/plasmid overlap only if those columns exist |
 | `onehealth plot` | Write L1 and paper-rollup bar charts |
+| `onehealth validate` | Compare the classes with a curated label table: coverage, accuracy, confusion matrix and every disagreement |
 | `onehealth report` | Standard One Health analyses as an HTML report, figures (SVG/PNG) and tables (TSV) |
 
 ```bash
@@ -47,6 +48,18 @@ onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com
 Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`.
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
+
+## Validate
+
+Check the classifier against labels you trust before relying on it for a new dataset. The truth file needs an ID column and a label column naming a class (Human, Animal, Environmental, Unclassified; or the L1 classes with `--level l1`).
+
+```bash
+onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth -o work/validation.tsv
+```
+
+It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
+
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v2 classifies 84.5% of isolates, and 99.2% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
 ## Report
 
