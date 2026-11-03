@@ -358,8 +358,8 @@ def fig_features(result: A.FeatureResult, top: int = 40) -> Figure | None:
 def fig_distance_histogram(link: A.LinkageResult, limit: int = 100) -> Figure:
     f = Figure(8.2, 3.2)
     bins = np.arange(0, limit + 2, 2)
-    for values, label, token in ((link.distances_within, "Same source", "muted"),
-                                 (link.distances_between, "Different sources", "accent")):
+    for values, label, token in ((link.close_within, "Same source", "muted"),
+                                 (link.close_between, "Different sources", "accent")):
         close = values[values <= limit]
         counts, _ = np.histogram(close, bins=bins)
         line = f.ax.step(bins[:-1], counts, where="post", color=LIGHT[token], label=f"{label} ({len(close)} pairs ≤{limit} SNPs)")[0]
@@ -771,15 +771,16 @@ def build_report(
         kpis.append((f"Cross-source links (≤{threshold:g} SNPs)", f"{n_between}"))
         r_th, r_he, r_da, r_mu, r_ps = (refs.cite(k) for k in ("thorpe", "hetland", "david", "muloi", "phipson"))
         close_rows = [
-            {"pairs": label, "all_pairs": len(values), f"within_{threshold:g}_snps": int((values <= threshold).sum()),
+            {"pairs": label, "all_pairs": total, f"within_{threshold:g}_snps": int((values <= threshold).sum()),
              "within_100_snps": int((values <= 100).sum())}
-            for label, values in (("Same source", link.distances_within), ("Different sources", link.distances_between))
+            for label, total, values in (("Same source", link.pairs_within, link.close_within),
+                                         ("Different sources", link.pairs_between, link.close_between))
         ]
         stem = "07_distances"
         sections.append(_section(
             stem, "How close are isolates from the same and different sources?",
-            f"{int((link.distances_within <= threshold).sum())} same-source pairs and "
-            f"{int((link.distances_between <= threshold).sum())} cross-source pairs are within {threshold:g} SNPs.",
+            f"{int((link.close_within <= threshold).sum())} same-source pairs and "
+            f"{int((link.close_between <= threshold).sum())} cross-source pairs are within {threshold:g} SNPs.",
             _render(fig_distance_histogram(link), stem, figures_dir),
             f"Pairwise SNP distances up to 100 SNPs. The vertical line is the linkage threshold. Thresholds are "
             f"organism- and pipeline-specific: 21 SNPs separated hospital clusters of K. pneumoniae {r_da} and 22 was "

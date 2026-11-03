@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 from array import array
 from pathlib import Path
-from typing import Iterable, Iterator
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 from onehealth.constants import (
     ASSEMBLY_ALIASES,
@@ -21,6 +21,9 @@ from onehealth.constants import (
     SRA_ALIASES,
 )
 from onehealth.ids import assembly_join_keys, parse_id
+
+if TYPE_CHECKING:  # numpy is imported lazily, only by the readers that need it
+    import numpy as np
 
 # Columns that can hold the input identifier of an ID list.
 _ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SRA_ALIASES + PDT_ALIASES

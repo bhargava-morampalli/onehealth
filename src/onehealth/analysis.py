@@ -12,6 +12,7 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
+from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
 from datetime import date
 
@@ -58,6 +59,9 @@ HISTORICAL_COUNTRIES = {
 }
 # Thorpe et al. 2022 swept 0-20 SNPs; Hetland et al. 2025 used 22; David et al. 2019 21.
 SWEEP_THRESHOLDS = (0, 1, 2, 5, 10, 20, 50, 100)
+# Linkage keeps pairs up to this distance (or the threshold, if larger) for the
+# histogram and the sweep; pairs further apart are only counted.
+CLOSE_LIMIT = 100.0
 
 
 @dataclass(frozen=True)
@@ -607,8 +611,11 @@ class LinkageResult:
     sweep: list[dict]
     clusters: list[dict]
     cross_edges: list[dict]
-    distances_within: np.ndarray
-    distances_between: np.ndarray
+    close_within: np.ndarray  # same-source distances up to close_limit
+    close_between: np.ndarray  # cross-source distances up to close_limit
+    pairs_within: int  # every same-source pair with a distance
+    pairs_between: int  # every cross-source pair with a distance
+    close_limit: float
 
 
 def linkage(
@@ -632,28 +639,29 @@ def linkage(
     year and/or country, so sources sampled at different times or places are not
     expected to share strains.
     """
-    isolates, sub, unmatched = _matched_isolates(dataset, names, matrix)
+    isolates, index, unmatched = _matched_isolates(dataset, names, matrix)
     groups = [g for g in dataset.groups if any(iso.source == g for iso in isolates)]
     n_s = len(groups)
     src = np.array([groups.index(iso.source) if iso.source in groups else -1 for iso in isolates], dtype=np.int64)
-    hosts = np.array([iso.host_id for iso in isolates], dtype=object)
     per_source = {g: int((src == k).sum()) for k, g in enumerate(groups)}
 
-    iu, ju = np.triu_indices(len(isolates), k=1)
-    values = sub[iu, ju] if len(isolates) else np.zeros(0)
-    finite = np.isfinite(values)
-    classified = (src[iu] >= 0) & (src[ju] >= 0) & finite
-    same = classified & (src[iu] == src[ju])
-    within = values[same]
-    between = values[classified & ~same]
+    # Only pairs within reach of a threshold are kept; holding all n^2/2 pairs at once
+    # was what made large matrices run out of memory.
+    close_limit = max(threshold, CLOSE_LIMIT, *SWEEP_THRESHOLDS)
+    pair_a, pair_b, pair_d = _close_pairs(matrix, index, close_limit)
+    pairs_within, pairs_between = _pairs_by_source(matrix, index, src)
+    classified = (src[pair_a] >= 0) & (src[pair_b] >= 0)
+    same = classified & (src[pair_a] == src[pair_b])
+    host_codes: dict[str, int] = {}
+    host = np.array([host_codes.setdefault(iso.host_id, len(host_codes) + 1) if iso.host_id else 0 for iso in isolates],
+                    dtype=np.int64)
+    same_host = (host[pair_a] > 0) & (host[pair_a] == host[pair_b])
 
-    def edges_at(t: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        hit = finite & (values <= t)
-        a, b = iu[hit], ju[hit]
-        clusters = _components(len(isolates), a, b)
-        same_host = np.array([bool(hosts[x]) and hosts[x] == hosts[y] for x, y in zip(a, b)], dtype=bool)
-        keep = ~same_host
-        return a[keep], b[keep], clusters
+    def edges_at(t: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        hit = pair_d <= t
+        clusters = _components(len(isolates), pair_a[hit], pair_b[hit])
+        keep = hit & ~same_host
+        return pair_a[keep], pair_b[keep], pair_d[keep], clusters
 
     def event_counts(labels: np.ndarray, a: np.ndarray, b: np.ndarray, clusters: np.ndarray) -> np.ndarray:
         la, lb = labels[a], labels[b]
@@ -662,7 +670,7 @@ def linkage(
         codes = np.unique(clusters[a[ok]] * n_s * n_s + lo * n_s + hi)
         return np.bincount(codes % (n_s * n_s), minlength=n_s * n_s).reshape(n_s, n_s)
 
-    a, b, clusters = edges_at(threshold)
+    a, b, d, clusters = edges_at(threshold)
     observed = event_counts(src, a, b, clusters) if n_s else np.zeros((0, 0), dtype=np.int64)
 
     # Permutation null: shuffle labels among classified isolates, graph fixed.
@@ -730,13 +738,13 @@ def linkage(
 
     sweep = []
     for t in sorted(set(SWEEP_THRESHOLDS) | {threshold}):
-        ta, tb, tc = edges_at(t)
+        ta, tb, _, tc = edges_at(t)
         counts = event_counts(src, ta, tb, tc) if n_s else np.zeros((0, 0))
         diagonal = int(np.trace(counts)) if n_s else 0
         sweep.append({"threshold": t, "within_events": diagonal, "between_events": int(counts.sum()) - diagonal})
 
     cross_edges = []
-    for x, y in zip(a, b):
+    for x, y, distance in zip(a, b, d):
         if src[x] >= 0 and src[y] >= 0 and src[x] != src[y]:
             gap = (
                 abs(isolates[x].year - isolates[y].year)
@@ -751,18 +759,25 @@ def linkage(
                     "isolate_b": isolates[y].key,
                     "source_b": isolates[y].source,
                     "lineage": isolates[x].lineage or isolates[y].lineage,
-                    "snps": float(sub[x, y]),
+                    "snps": float(distance),
                     "years_apart": gap,
                 }
             )
 
+    # Members and edges grouped by cluster in one pass (not one scan of all edges per cluster).
+    cluster_members: dict[int, list[int]] = {}
+    for i, cid in enumerate(clusters.tolist()):
+        cluster_members.setdefault(cid, []).append(i)
+    cluster_edges: dict[int, list[tuple[int, int, float]]] = {}
+    for x, y, distance in zip(a.tolist(), b.tolist(), d.tolist()):
+        cluster_edges.setdefault(int(clusters[x]), []).append((x, y, distance))
     cluster_rows = []
-    for cid in sorted(set(clusters.tolist())):
-        members = np.flatnonzero(clusters == cid)
+    for cid in sorted(cluster_members):
+        members = np.array(cluster_members[cid])
         if len(members) < 2:
             continue
         sources = Counter(isolates[i].source or "Unclassified" for i in members)
-        inside = [(int(x), int(y)) for x, y in zip(a, b) if clusters[x] == cid]
+        inside = cluster_edges.get(cid, [])
         cluster_rows.append(
             {
                 "cluster": int(cid),
@@ -772,7 +787,8 @@ def linkage(
                 "lineages": ", ".join(sorted({isolates[i].lineage for i in members if isolates[i].lineage})),
                 "members": [isolates[i].key for i in members],
                 "member_sources": [isolates[i].source for i in members],
-                "edges": [(int(np.searchsorted(members, x)), int(np.searchsorted(members, y)), float(sub[x, y])) for x, y in inside],
+                "edges": [(int(np.searchsorted(members, x)), int(np.searchsorted(members, y)), distance)
+                          for x, y, distance in inside],
             }
         )
     cluster_rows.sort(key=lambda r: (-r["n_sources"], -r["isolates"], r["cluster"]))
@@ -787,15 +803,18 @@ def linkage(
         sweep=sweep,
         clusters=cluster_rows,
         cross_edges=cross_edges,
-        distances_within=within,
-        distances_between=between,
+        close_within=pair_d[same],
+        close_between=pair_d[classified & ~same],
+        pairs_within=pairs_within,
+        pairs_between=pairs_between,
+        close_limit=close_limit,
     )
 
 
 def _matched_isolates(
     dataset: Dataset, names: list[str], matrix: np.ndarray
 ) -> tuple[list[Isolate], np.ndarray, list[str]]:
-    """Isolates found in a distance matrix (first occurrence of each), their sub-matrix, and unmatched names."""
+    """Isolates found in a distance matrix (first occurrence of each), their rows in it, and unmatched names."""
     mapping, unmatched = match_names(names, dataset)
     by_key = {iso.key: iso for iso in dataset.isolates}
     index: list[int] = []
@@ -808,8 +827,48 @@ def _matched_isolates(
         seen.add(key)
         index.append(i)
         isolates.append(by_key[key])
-    sub = matrix[np.ix_(index, index)] if index else np.zeros((0, 0))
-    return isolates, sub, unmatched
+    return isolates, np.array(index, dtype=np.int64), unmatched
+
+
+def _upper_rows(matrix: np.ndarray, index: np.ndarray) -> Iterator[tuple[int, np.ndarray]]:
+    """For each isolate i (a position in `index`), its distances to isolates i+1, i+2, ...
+
+    Rows are read from the full matrix one at a time, so nothing of size n^2 is copied.
+    """
+    contiguous = np.array_equal(index, np.arange(len(index)))  # the matrix's first rows, in order
+    for i in range(len(index) - 1):
+        yield i, (matrix[i, i + 1 : len(index)] if contiguous else matrix[index[i], index[i + 1 :]])
+
+
+def _close_pairs(matrix: np.ndarray, index: np.ndarray, cutoff: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Pairs i < j with a finite distance <= cutoff, in row order, and their distances.
+
+    Built row by row, so memory grows with the number of close pairs, not with n^2.
+    """
+    a_parts, b_parts, d_parts = [], [], []
+    for i, row in _upper_rows(matrix, index):
+        j = np.flatnonzero(np.isfinite(row) & (row <= cutoff))
+        if len(j):
+            a_parts.append(np.full(len(j), i, dtype=np.int64))
+            b_parts.append(j + i + 1)
+            d_parts.append(row[j])
+    if not a_parts:
+        return np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64), np.zeros(0)
+    return np.concatenate(a_parts), np.concatenate(b_parts), np.concatenate(d_parts)
+
+
+def _pairs_by_source(matrix: np.ndarray, index: np.ndarray, src: np.ndarray) -> tuple[int, int]:
+    """Same-source and cross-source pairs that have a distance (both isolates classified)."""
+    within = between = 0
+    for i, row in _upper_rows(matrix, index):
+        if src[i] < 0:
+            continue
+        others = src[i + 1 :]
+        usable = np.isfinite(row) & (others >= 0)
+        same = int((usable & (others == src[i])).sum())
+        within += same
+        between += int(usable.sum()) - same
+    return within, between
 
 
 @dataclass
@@ -831,12 +890,11 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
     Isolates from different sources are never merged, so cross-source sharing is
     not hidden. Isolates without distances are kept unchanged.
     """
-    isolates, sub, _ = _matched_isolates(dataset, names, matrix)
-    iu, ju = np.triu_indices(len(isolates), k=1)
-    values = sub[iu, ju] if len(isolates) else np.zeros(0)
+    isolates, index, _ = _matched_isolates(dataset, names, matrix)
+    a, b, _ = _close_pairs(matrix, index, threshold)
     sources = np.array([iso.source for iso in isolates], dtype=object)
-    link = np.isfinite(values) & (values <= threshold) & (sources[iu] == sources[ju])
-    clusters = _components(len(isolates), iu[link], ju[link])
+    link = sources[a] == sources[b]
+    clusters = _components(len(isolates), a[link], b[link])
     members: dict[int, list[str]] = {}
     for iso, cid in zip(isolates, clusters.tolist()):
         members.setdefault(cid, []).append(iso.key)
