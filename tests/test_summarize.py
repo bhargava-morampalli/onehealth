@@ -135,3 +135,10 @@ def test_dataset_section_reports_rows_that_share_a_biosample():
     ]
     dataset = {row["key"]: row["count"] for row in summarize(rows) if row["section"] == "dataset"}
     assert dataset == {"rows": "4", "unique_isolates": "3", "rows_sharing_a_biosample": "1"}
+
+
+def test_dataset_section_counts_tables_keyed_by_strain_or_without_ids():
+    # Kleborate and lab sheets name isolates in a `strain` or `sample` column, not an ID column.
+    rows = [{"strain": "KP1"}, {"strain": "KP2"}, {"strain": "KP2"}, {"sample": "S9"}, {"isolation_source": "blood"}]
+    dataset = {row["key"]: row["count"] for row in summarize(rows) if row["section"] == "dataset"}
+    assert dataset == {"rows": "5", "unique_isolates": "4", "rows_sharing_a_biosample": "1"}

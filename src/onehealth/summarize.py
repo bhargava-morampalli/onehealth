@@ -47,12 +47,16 @@ def _row(section: str, key: str, count: int, l1_set: str = "", mixed: str = "") 
 
 
 def _dataset(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    """Counts below are per input row. Rows that share a BioSample are the same isolate."""
-    isolates = {isolate_key(row) for row in rows}
+    """Counts below are per input row. Rows that share a BioSample (or other ID) are the same isolate.
+
+    A row with no identifier at all cannot be matched to another, so it counts as its own isolate.
+    """
+    keys = [isolate_key(row) for row in rows]
+    isolates = len({key for key in keys if key}) + keys.count("")
     return [
         _row("dataset", "rows", len(rows)),
-        _row("dataset", "unique_isolates", len(isolates)),
-        _row("dataset", "rows_sharing_a_biosample", len(rows) - len(isolates)),
+        _row("dataset", "unique_isolates", isolates),
+        _row("dataset", "rows_sharing_a_biosample", len(rows) - isolates),
     ]
 
 

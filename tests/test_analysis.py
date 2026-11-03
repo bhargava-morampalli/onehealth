@@ -281,3 +281,20 @@ def test_stratified_lineage_expectation_is_the_sum_over_strata():
 def test_unknown_stratum_field_is_rejected():
     with pytest.raises(ValueError, match="cannot stratify"):
         A.strata_codes(A.build_dataset([_row(1)]).isolates, ("month",))
+
+
+def test_dataset_keeps_isolates_named_by_strain_and_rows_without_ids():
+    rows = [
+        {"strain": "KP1", "l1": "Human", "st": "ST1"},
+        {"strain": "KP2", "l1": "Animal", "st": "ST1"},
+        {"strain": "KP2", "l1": "Animal", "st": "ST1"},  # same isolate listed twice
+        {"assembly": "GCA_000005845.2", "l1": "Human", "st": "ST2"},
+        {"l1": "Environmental", "st": "ST3"},
+        {"l1": "Environmental", "st": "ST3"},
+    ]
+    ds = A.build_dataset(rows)
+    assert (len(ds.isolates), ds.duplicates, ds.unnamed) == (5, 1, 2)
+    assert {iso.key for iso in ds.isolates} >= {"KP1", "KP2", "GCA_000005845.2"}
+    # Strain names still match the genotype and distance files.
+    mapping, unmatched = A.match_names(["KP1", "kp2"], ds)
+    assert mapping == {"KP1": "KP1", "kp2": "KP2"} and unmatched == []
