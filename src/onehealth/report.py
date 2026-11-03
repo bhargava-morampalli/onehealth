@@ -208,7 +208,8 @@ def fig_diversity(rows: list[dict]) -> Figure:
         f.tip(dot, f"{row['source']}: D = {row['simpson']:.3f} (95% CI {row['ci_low']:.3f}–{row['ci_high']:.3f}); "
                    f"{row['lineages']} lineages in {row['isolates']} isolates")
     f.ax.set_yticks(y, [f"{r['source']}  (n={r['isolates']})" for r in rows])
-    low = min(r["ci_low"] for r in rows)
+    # A source with a single typed isolate has no D (NaN); min() would not skip it.
+    low = min((r["ci_low"] for r in rows if not math.isnan(r["ci_low"])), default=0.0)
     f.ax.set_xlim(max(0.0, low - 0.05), 1.005)
     f.ax.set_xlabel("Simpson's index of diversity (lineages)")
     _vgrid(f.ax)
@@ -666,11 +667,9 @@ def build_report(
         kpis.append(("Lineages in ≥2 sources", f"{summary['shared_lineages']} ({share:.0f}%)"))
         r_hg, r_gr, r_hu, r_th, r_he, r_ps = (refs.cite(k) for k in ("hunter", "grundmann", "hurlbert", "thorpe", "hetland", "phipson"))
         stem = "02_diversity"
-        top_div = max(div, key=lambda r: r["simpson"])
         sections.append(_section(
             stem, "Lineage diversity",
-            f"Lineage diversity was highest in {top_div['source']} (D = {top_div['simpson']:.2f}). "
-            "Overlapping intervals mean the sources are not clearly different.",
+            _diversity_finding(div),
             _render(fig_diversity(div), stem, figures_dir),
             f"Simpson's index D is the chance that two isolates drawn from a source belong to different lineages "
             f"{r_hg}; lines are 95% confidence intervals {r_gr}.{derep_note}",
@@ -865,7 +864,11 @@ def build_report(
     if dataset.unclassified:
         quality.append(f"{dataset.unclassified} isolates have no source class and are excluded from source comparisons.")
     if dataset.duplicates:
-        quality.append(f"{dataset.duplicates} rows repeated an isolate already listed (same BioSample) and were collapsed.")
+        quality.append(f"{dataset.duplicates} rows repeated an isolate already listed (same BioSample or ID) and were "
+                       "collapsed.")
+    if dataset.unnamed:
+        quality.append(f"{dataset.unnamed} rows have no identifier (BioSample, ID, strain or sample name). Each is "
+                       "counted as its own isolate, but cannot be matched to lineages, features or distances.")
 
     page = _page(title, note, kpis, sections, quality, methods, refs,
                  dict(threshold=threshold, by=by, permutations=permutations, seed=seed, dereplicate=bool(derep),
@@ -873,6 +876,19 @@ def build_report(
     path = out_dir / "report.html"
     path.write_text(page, encoding="utf-8")
     return path
+
+
+def _diversity_finding(rows: list[dict]) -> str:
+    """Headline for the diversity section. Sources with one typed isolate have no D and are skipped."""
+    measured = [r for r in rows if not math.isnan(r["simpson"])]
+    if not measured:
+        return "No source has two or more typed isolates, so lineage diversity cannot be measured."
+    top = max(measured, key=lambda r: r["simpson"])
+    if len(measured) == 1:
+        return (f"Only {top['source']} has two or more typed isolates (D = {top['simpson']:.2f}), so diversity "
+                "cannot be compared between sources.")
+    return (f"Lineage diversity was highest in {top['source']} (D = {top['simpson']:.2f}). "
+            "Overlapping intervals mean the sources are not clearly different.")
 
 
 def _section(stem, heading, finding, svg, caption, table, download, extra_downloads=()) -> str:

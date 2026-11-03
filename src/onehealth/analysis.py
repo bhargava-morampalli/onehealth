@@ -79,6 +79,7 @@ class Dataset:
     rows: int
     duplicates: int
     unclassified: int
+    unnamed: int = 0  # rows with no identifier; counted, but never matched to other files
 
     @property
     def classified(self) -> list[Isolate]:
@@ -97,10 +98,13 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
     if lineage_column and rows and lineage_column not in rows[0]:
         raise ValueError(f"lineage column {lineage_column!r} is not in the table")
     isolates: dict[str, Isolate] = {}
-    for row in rows:
+    unnamed = 0
+    for number, row in enumerate(rows, start=1):
         key = isolate_key(row)
         if not key:
-            continue
+            # No identifier to match on: still an isolate, just never a duplicate.
+            unnamed += 1
+            key = f"(row {number})"
         if key in isolates:
             # Same BioSample (e.g. two assemblies): keep the first row's values, but every
             # identifier, so distances or genes keyed by either assembly still match.
@@ -123,6 +127,7 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
         rows=len(rows),
         duplicates=len(rows) - len(records),
         unclassified=sum(1 for iso in records if not iso.source),
+        unnamed=unnamed,
     )
 
 
@@ -827,6 +832,7 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
         rows=dataset.rows,
         duplicates=dataset.duplicates,
         unclassified=sum(1 for iso in kept if not iso.source),
+        unnamed=dataset.unnamed,
     )
     summary = Dereplication(
         threshold=threshold,

@@ -1,4 +1,4 @@
-"""onehealth resolve | classify | summarize | plot"""
+"""onehealth resolve | classify | summarize | plot | validate | report"""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def _build_parser() -> argparse.ArgumentParser:
     classify_p.add_argument("input", type=Path, help="Resolved or user metadata TSV")
     classify_p.add_argument("-o", "--out", type=Path, required=True, help="Classified TSV")
     classify_p.add_argument("--overrides", type=Path, help="Curator override TSV; complete rows always win")
-    classify_p.add_argument("--lexicon", type=Path, help="Lexicon YAML (default: seeded v1)")
+    classify_p.add_argument("--lexicon", type=Path, help=f"Lexicon YAML (default: seeded v{SEED_LEXICON_VERSION})")
     classify_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
     classify_p.set_defaults(handler=cmd_classify)
 

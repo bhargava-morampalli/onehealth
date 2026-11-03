@@ -69,9 +69,13 @@ def resolve_ids(
             continue
         try:
             fetched = _fetch(parsed, client)
-        except HttpError as exc:
+        except (HttpError, ValueError) as exc:
+            # One bad answer must not end a run of thousands of IDs (ValueError: JSON
+            # from a custom fetcher). NCBI echoes a rejected API key in its error body,
+            # and this text lands in the table, so the key is masked.
+            message = str(exc).replace(client.api_key, "***") if client.api_key else str(exc)
             row["resolve_status"] = "review"
-            row["resolve_reason"] = f"ncbi_error:{exc}"
+            row["resolve_reason"] = f"ncbi_error:{message}"
             resolved.append(row)
             continue
         row.update(fetched)

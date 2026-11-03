@@ -15,8 +15,11 @@ description: >
 #     does not recognise (e.g. a plant) is review. With no host at all, `l1` is used.
 #   * l1: Unclassified sends a match to review (e.g. animal feed).
 #   * The paper rollup is fixed in code (constants.derive_paper_rollup), not here.
-#   * A new 2-3 word phrase must not look like a Latin binomial to
-#     text.is_taxon_only_source. tests/test_lexicon.py checks the seed lexicon.
+#   * A bare scientific name in isolation_source ("Bos taurus") is ignored. The
+#     guess is by word shape, so a rule that does not read `host` still matches a
+#     phrase such as "bedpan washer". In a rule that reads `host`, a 2-3 word phrase
+#     that looks like a Latin binomial is treated as a species name in
+#     isolation_source. tests/test_lexicon.py checks the seed lexicon.
 rules:
   # --- send to review ---
   - id: animal-feed
