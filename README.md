@@ -7,7 +7,8 @@ v1 does **not** download genomes, assemble, run SKA/PopPUNK/MOB-suite, or start 
 ## Install
 
 ```bash
-cd ~/onehealth-pipeline
+git clone https://github.com/bhargava-morampalli/onehealth.git
+cd onehealth
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -16,7 +17,7 @@ pip install -e ".[dev]"
 Or with uv:
 
 ```bash
-cd ~/onehealth-pipeline
+cd onehealth
 uv sync --extra dev
 uv run onehealth --help
 ```
@@ -44,6 +45,8 @@ Live NCBI lookup (metadata only; no FASTA/SRA download):
 ```bash
 onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com
 ```
+
+NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues.
 
 Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`.
 

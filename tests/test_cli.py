@@ -57,3 +57,15 @@ def test_resolve_keeps_cluster_column_when_first_row_has_none(tmp_path: Path):
     header, _, second = out.read_text(encoding="utf-8").splitlines()
     assert "cluster_id" in header.split("\t")
     assert "ST15" in second.split("\t")
+
+
+def test_help_lists_every_command_and_the_current_seed_lexicon(capsys):
+    from onehealth.constants import SEED_LEXICON_VERSION
+
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    out = capsys.readouterr().out
+    assert "validate" in out and "report" in out
+    with pytest.raises(SystemExit):
+        main(["classify", "--help"])
+    assert f"seeded v{SEED_LEXICON_VERSION}" in " ".join(capsys.readouterr().out.split())
