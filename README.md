@@ -52,6 +52,8 @@ Rows that cannot be resolved or classified are written next to the output as `<s
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
+Input tables are tab-separated UTF-8 text with a header row; Excel's "UTF-8" export works, and cells may contain quote characters. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
+
 ## Validate
 
 Check the classifier against labels you trust before relying on it for a new dataset. The truth file needs an ID column and a label column naming a class (Human, Animal, Environmental, Unclassified; or the L1 classes with `--level l1`).
@@ -66,7 +68,7 @@ Against the manually curated source labels of 4,351 public BioSamples from the I
 
 ## Report
 
-`onehealth report` runs the analyses that recent One Health genomic studies publish, and writes them as one self-contained `report.html` plus `figures/` (SVG and PNG) and `tables/` (TSV). [ROADMAP.md](ROADMAP.md) lists which studies each analysis comes from and the statistics used.
+`onehealth report` runs the analyses that recent One Health genomic studies publish, and writes them as one self-contained `report.html` plus `figures/` (SVG and PNG) and `tables/` (TSV). The report's Methods section names the study each analysis follows and the statistics used, with references.
 
 ```bash
 onehealth report work/classified.tsv -o work/report \
@@ -132,8 +134,6 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 ## Lexicon
 
 The seeded lexicon is versioned at `src/onehealth/data/lexicon/v2.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
-
-What changed from v1 and why, with literature, is in [REVIEW.md](REVIEW.md).
 
 ## Tests
 

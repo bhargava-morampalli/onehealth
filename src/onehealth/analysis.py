@@ -1,6 +1,6 @@
 """Standard One Health population analyses on a classified table.
 
-The analysis set follows recent One Health genomic studies (see ROADMAP.md):
+The analysis set follows recent One Health genomic studies (cited in the report's methods):
 source composition, lineage diversity and sharing, lineage-source enrichment,
 resistance/virulence prevalence by source, and genomic linkage between sources
 at a SNP threshold with a permutation null. Every function is pure and returns
@@ -19,6 +19,7 @@ from datetime import date
 import numpy as np
 
 from onehealth.constants import ASSEMBLY_ALIASES, HEALTHCARE_YES, PDT_ALIASES
+from onehealth.errors import InputError
 from onehealth.io_tsv import first_present, get_field, isolate_key, row_match_ids
 from onehealth.text import is_unknown_value
 
@@ -96,11 +97,11 @@ class Dataset:
 def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column: str | None = None) -> Dataset:
     """One record per isolate (rows sharing a BioSample are collapsed)."""
     if by not in {"source", "paper_rollup"}:
-        raise ValueError("group-by must be 'source' or 'paper_rollup'")
+        raise InputError("group-by must be 'source' or 'paper_rollup'")
     groups = SOURCE_GROUPS if by == "source" else ROLLUP_GROUPS
     lineage_col = lineage_column or (first_present(rows[0], LINEAGE_ALIASES) if rows else None)
     if lineage_column and rows and lineage_column not in rows[0]:
-        raise ValueError(f"lineage column {lineage_column!r} is not in the table")
+        raise InputError(f"lineage column {lineage_column!r} is not in the table")
     isolates: dict[str, Isolate] = {}
     unnamed = 0
     for number, row in enumerate(rows, start=1):
@@ -272,7 +273,7 @@ def strata_codes(isolates: list[Isolate], by: tuple[str, ...] = ()) -> np.ndarra
         return None
     unknown = [f for f in by if f not in STRATA_FIELDS]
     if unknown:
-        raise ValueError(f"cannot stratify by {unknown}; choose from {list(STRATA_FIELDS)}")
+        raise InputError(f"cannot stratify by {unknown}; choose from {list(STRATA_FIELDS)}")
 
     def part(iso: Isolate, name: str) -> str:
         if name == "year":

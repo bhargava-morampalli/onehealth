@@ -1,4 +1,4 @@
-"""Specimen words are host-neutral; host and source_type decide. See REVIEW.md."""
+"""Specimen words are host-neutral; host and source_type decide."""
 
 import pytest
 

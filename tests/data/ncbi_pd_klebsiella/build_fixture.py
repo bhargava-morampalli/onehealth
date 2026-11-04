@@ -60,6 +60,10 @@ def stream_lines(url: str):
 
 
 def clean(value: str) -> str:
+    """NULL becomes empty. NCBI wraps a cell holding a list (AMR_genotypes: "aac(3)-IIe=COMPLETE,...")
+    in double quotes; split as plain text, the first and last gene kept a stray quote."""
+    if len(value) >= 2 and value[0] == '"' == value[-1]:
+        value = value[1:-1].replace('""', '"')
     return "" if value in ("NULL", "") else value
 
 

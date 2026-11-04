@@ -12,7 +12,7 @@ Real public data used by `tests/test_real_data.py`. Nothing here was simulated o
 ## Files
 
 - **metadata.tsv**: BioSample metadata exactly as NCBI publishes it (`host`, `isolation_source`, `source_type`, `epi_type`, `collection_date`, `geo_loc_name`, and others), plus each isolate's NCBI SNP cluster (`PDS_acc`). `NULL` is written as an empty cell.
-- **features.tsv**: NCBI's AMRFinderPlus results from the `AMR_genotypes` and `virulence_genotypes` columns, one row per isolate and gene. Allele status suffixes such as `=COMPLETE` are removed. An isolate genotyped by NCBI with no hits has one row with an empty feature.
+- **features.tsv**: NCBI's AMRFinderPlus results from the `AMR_genotypes` and `virulence_genotypes` columns, one row per isolate and gene. Allele status suffixes such as `=COMPLETE` are removed. NCBI wraps these list cells in quotes; the quotes are removed too (before 4 November 2026 the first and last gene of each list kept a stray quote, so 23 genes were counted under two names). An isolate genotyped by NCBI with no hits has one row with an empty feature.
 - **snp_dists.tsv**: pairwise SNP differences within each cluster. They are counted from NCBI's per-cluster SNP calls (`SNP_trees/<PDS>.tar.gz`, `variation.vcf.gz`), using sites where both isolates have a PASS call.
 
 ## Selection

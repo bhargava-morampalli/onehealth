@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import io
 from array import array
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator
@@ -20,6 +21,7 @@ from onehealth.constants import (
     SAMPLE_TYPE_ALIASES,
     SRA_ALIASES,
 )
+from onehealth.errors import InputError
 from onehealth.ids import assembly_join_keys, parse_id
 
 if TYPE_CHECKING:  # numpy is imported lazily, only by the readers that need it
@@ -29,18 +31,48 @@ if TYPE_CHECKING:  # numpy is imported lazily, only by the readers that need it
 _ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SRA_ALIASES + PDT_ALIASES
 
 
+def read_text(path: Path) -> str:
+    """A text file as UTF-8, without the byte-order mark Excel adds. Any other encoding is reported, not guessed."""
+    try:
+        return path.read_bytes().decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise InputError(f"{path}: not UTF-8 text (byte {exc.start}); save it as UTF-8") from None
+
+
 def read_tsv(path: Path) -> list[dict[str, str]]:
-    """Read a TSV with a header row. Lines starting with '#' are comments, even above the header."""
-    with path.open(newline="", encoding="utf-8") as handle:
-        lines = [line for line in handle if line.strip() and not line.startswith("#")]
-    reader = csv.DictReader(lines, delimiter="\t")
+    """Read a TSV with a header row. Lines starting with '#' are comments, even above the header.
+
+    One line is one row. A cell wrapped in double quotes (how Excel and pandas write a
+    cell that contains a quote) is unwrapped; any other quote is kept as typed. csv's
+    quoting rules let a stray quote, as in `"wound swab`, swallow the lines after it.
+    """
+    # Split lines exactly as a file opened with newline="" does (\n, \r\n or \r only).
+    lines = [
+        (number, line)
+        for number, line in enumerate(io.StringIO(read_text(path), newline=""), start=1)
+        if line.strip() and not line.startswith("#")
+    ]
+    if not lines:
+        return []
+    header = [cell.strip() for cell in _cells(lines[0][1])]
     rows = []
-    for raw in reader:
-        extra = raw.pop(None, None)  # cells beyond the header
-        if extra and any((cell or "").strip() for cell in extra):
-            raise ValueError(f"{path}: data line {reader.line_num} has more cells than the header")
-        rows.append({(key or "").strip(): (value or "").strip() for key, value in raw.items()})
+    for number, line in lines[1:]:
+        cells = _cells(line)
+        if any(cell.strip() for cell in cells[len(header):]):
+            raise InputError(f"{path}: line {number} has more cells than the header")
+        cells += [""] * (len(header) - len(cells))
+        rows.append({key: value.strip() for key, value in zip(header, cells)})
     return rows
+
+
+def _cells(line: str) -> list[str]:
+    return [_unquote(cell) for cell in line.rstrip("\r\n").split("\t")]
+
+
+def _unquote(cell: str) -> str:
+    if len(cell) >= 2 and cell[0] == '"' == cell[-1]:
+        return cell[1:-1].replace('""', '"')
+    return cell
 
 
 def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str]) -> None:
@@ -50,12 +82,30 @@ def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str])
         writer = csv.DictWriter(handle, fieldnames=names, delimiter="\t", extrasaction="ignore")
         writer.writeheader()
         for row in rows:
-            writer.writerow({name: row.get(name, "") for name in names})
+            writer.writerow({name: _one_line(row.get(name, "")) for name in names})
+
+
+def _one_line(value: object) -> object:
+    """A TSV cell cannot hold a tab or a line break, so they become spaces."""
+    if isinstance(value, str) and ("\t" in value or "\n" in value or "\r" in value):
+        return value.replace("\r\n", " ").replace("\t", " ").replace("\n", " ").replace("\r", " ")
+    return value
+
+
+def require_columns(rows: list[dict[str, str]], path: Path, columns: Iterable[str], hint: str = "") -> None:
+    """A table with rows must have these columns; a header-only table passes (it has nothing to misread)."""
+    if not rows:
+        return
+    missing = [name for name in columns if name not in rows[0]]
+    if missing:
+        names = ", ".join(repr(name) for name in missing)
+        found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
+        raise InputError(f"{path}: no {names} column{'s' if len(missing) > 1 else ''} (found: {found}). {hint}".strip())
 
 
 def read_id_list(path: Path) -> list[str]:
     """One ID per line, or a TSV whose header has an id-like column (else its first column)."""
-    lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
+    lines = [line.strip() for line in read_text(path).splitlines()]
     lines = [line for line in lines if line and not line.startswith("#")]
     if not lines:
         return []
@@ -175,7 +225,7 @@ def read_features(path: Path) -> tuple[dict[str, set[str]], dict[str, str]]:
     id_col = first_present(rows[0], _FEATURE_ID_ALIASES)
     feature_col = first_present(rows[0], _FEATURE_NAME_ALIASES)
     if id_col is None or feature_col is None:
-        raise ValueError(
+        raise InputError(
             f"{path}: need an isolate column ({', '.join(_FEATURE_ID_ALIASES[:4])}, ...) and a feature column "
             f"({', '.join(_FEATURE_NAME_ALIASES)})"
         )
@@ -215,11 +265,14 @@ def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
 
 def _data_lines(path: Path) -> Iterator[str]:
     """Lines without their newline, skipping blank lines and lines starting with '#'."""
-    with path.open(encoding="utf-8") as handle:
-        for line in handle:
-            line = line.rstrip("\r\n")
-            if line.strip() and not line.startswith("#"):
-                yield line
+    with path.open(encoding="utf-8-sig") as handle:
+        try:
+            for line in handle:
+                line = line.rstrip("\r\n")
+                if line.strip() and not line.startswith("#"):
+                    yield line
+        except UnicodeDecodeError as exc:
+            raise InputError(f"{path}: not UTF-8 text ({exc.reason}); save it as UTF-8") from None
 
 
 def _first_cells(path: Path, delimiter: str) -> list[str]:
@@ -237,17 +290,17 @@ def _read_square(path: Path, delimiter: str, n: int) -> "np.ndarray":
         next(lines)
         for line in lines:
             if line.count(delimiter) != n:
-                raise ValueError(f"{path}: distance matrix is not square")
+                raise InputError(f"{path}: distance matrix is not square")
             yield line.split(delimiter, 1)[1]
 
     try:
         matrix = np.loadtxt(values(), delimiter=delimiter, comments=None, dtype=float, ndmin=2)
+    except InputError:
+        raise
     except ValueError as exc:
-        if "not square" in str(exc):
-            raise
-        raise ValueError(f"{path}: non-numeric distance ({exc})") from exc
+        raise InputError(f"{path}: non-numeric distance ({exc})") from exc
     if matrix.shape != (n, n):
-        raise ValueError(f"{path}: distance matrix is not square")
+        raise InputError(f"{path}: distance matrix is not square")
     return matrix
 
 
@@ -260,7 +313,7 @@ def _read_long(path: Path, delimiter: str) -> tuple[list[str], "np.ndarray"]:
     for line in _data_lines(path):
         cells = line.split(delimiter)
         if len(cells) != 3:
-            raise ValueError(f"{path}: expected a square snp-dists matrix or three-column (name, name, distance) rows")
+            raise InputError(f"{path}: expected a square snp-dists matrix or three-column (name, name, distance) rows")
         a, b, value = (cell.strip() for cell in cells)
         try:
             distance = float(value)
@@ -289,11 +342,11 @@ _LINEAGE_VALUE_ALIASES = ("st", "mlst_st", "sequence_type", "lineage", "sublinea
 def read_lineages(path: Path) -> dict[str, str]:
     """Isolate -> lineage from a typing table: Kleborate (strain, ST or *__mlst__ST),
     mlst, or PopPUNK clusters.csv (Taxon, Cluster). Tab- or comma-separated."""
-    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip() and not line.startswith("#")]
+    lines = [line for line in read_text(path).splitlines() if line.strip() and not line.startswith("#")]
     if not lines:
         return {}
     delimiter = "\t" if "\t" in lines[0] else ","
-    rows = list(csv.DictReader(lines, delimiter=delimiter))
+    rows = read_tsv(path) if delimiter == "\t" else list(csv.DictReader(lines, delimiter=delimiter))
     if not rows:
         return {}
     header = [key for key in rows[0] if key]
@@ -302,7 +355,7 @@ def read_lineages(path: Path) -> dict[str, str]:
         (key for key in header if key.lower().endswith("__st")), None
     )
     if value_col is None:
-        raise ValueError(f"{path}: no lineage column ({', '.join(_LINEAGE_VALUE_ALIASES)}, or a Kleborate *__ST column)")
+        raise InputError(f"{path}: no lineage column ({', '.join(_LINEAGE_VALUE_ALIASES)}, or a Kleborate *__ST column)")
     out = {}
     for row in rows:
         name, value = (row.get(id_col) or "").strip(), (row.get(value_col) or "").strip()

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
 from onehealth import __version__
 from onehealth.classify import classify_fieldnames, classify_rows
 from onehealth.constants import RESOLVE_FIELDS, SEED_LEXICON_VERSION
-from onehealth.io_tsv import read_id_list, read_tsv, write_tsv
+from onehealth.errors import InputError
+from onehealth.io_tsv import read_id_list, read_tsv, require_columns, write_tsv
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides
@@ -24,7 +26,18 @@ def main(argv: list[str] | None = None) -> int:
     if not hasattr(args, "handler"):
         parser.print_help()
         return 2
-    return args.handler(args)
+    try:
+        return args.handler(args)
+    except (InputError, OSError) as exc:
+        # A problem with the user's files or options: one line, no traceback. Anything else is a bug and keeps it.
+        print(f"onehealth {args.command}: error: {_describe(exc)}", file=sys.stderr)
+        return 1
+
+
+def _describe(exc: Exception) -> str:
+    if isinstance(exc, OSError) and exc.strerror and exc.filename:
+        return f"{exc.strerror}: {exc.filename}"
+    return str(exc)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -99,7 +112,7 @@ def _build_parser() -> argparse.ArgumentParser:
     report_p.add_argument("--lineage-column", help="Lineage column in the input (default: first of st, mlst, lineage, cluster ...)")
     report_p.add_argument(
         "--threshold",
-        type=float,
+        type=_threshold,
         default=21,
         help="SNP threshold for close relatives (default 21, K. pneumoniae; choose one for your organism and pipeline)",
     )
@@ -119,7 +132,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     report_p.add_argument("--permutations", type=_permutations, default=9999, metavar="N",
                           help="Permutations for every test (default 9999; 0 skips the tests for a quick look)")
-    report_p.add_argument("--seed", type=int, default=1, help="Random seed (default 1)")
+    report_p.add_argument("--seed", type=_seed, default=1, help="Random seed, 0 or more (default 1)")
     report_p.add_argument("--title", default="One Health population report")
     report_p.add_argument("--note", default="", help="Banner text under the title, e.g. the dataset description")
     report_p.set_defaults(handler=cmd_report)
@@ -130,7 +143,9 @@ def _build_parser() -> argparse.ArgumentParser:
 def cmd_validate(args: argparse.Namespace) -> int:
     from onehealth.validate import read_truth, validate
 
-    result = validate(read_tsv(args.input), read_truth(args.truth, args.truth_column, args.level), args.level)
+    rows = read_tsv(args.input)
+    require_columns(rows, args.input, [args.level], _CLASSIFY_FIRST)
+    result = validate(rows, read_truth(args.truth, args.truth_column, args.level), args.level)
     summary = [
         {"metric": "isolates", "value": result.isolates, "meaning": "isolates with a truth label found in the input"},
         {"metric": "coverage", "value": f"{result.coverage:.4f}", "meaning": "share of truly classifiable isolates that onehealth classified"},
@@ -147,8 +162,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
     write_tsv(_sidecar(args.out, "disagreements"), result.disagreements,
               ["id", "truth", "predicted", "host", "isolation_source", "sample_type", "classify_reason"])
 
-    print(f"validate: {result.isolates} isolates; coverage {result.coverage:.1%}, accuracy {result.accuracy:.1%}, "
-          f"agreement {result.agreement:.1%}", file=sys.stderr)
+    print(f"validate: {result.isolates} isolates; coverage {_percent(result.coverage)}, accuracy "
+          f"{_percent(result.accuracy)}, agreement {_percent(result.agreement)}", file=sys.stderr)
     print("truth \\ onehealth  " + "  ".join(f"{p:>13}" for p in classes), file=sys.stderr)
     for row in confusion:
         print(f"{row['truth']:<19}" + "  ".join(f"{row[p]:>13}" for p in classes), file=sys.stderr)
@@ -162,8 +177,10 @@ def cmd_report(args: argparse.Namespace) -> int:
         print("onehealth report: --dereplicate needs --distances", file=sys.stderr)
         return 2
 
+    rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1", "paper_rollup"] if args.group_by == "paper_rollup" else ["l1"], _CLASSIFY_FIRST)
     path = build_report(
-        read_tsv(args.input),
+        rows,
         args.out,
         features_path=args.features,
         distances_path=args.distances,
@@ -221,6 +238,7 @@ def cmd_classify(args: argparse.Namespace) -> int:
 
 def cmd_summarize(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1"], _CLASSIFY_FIRST)
     summary = summarize(rows)
     write_tsv(args.out, summary, summary_fieldnames())
     print(f"wrote {args.out} ({len(summary)} rows)", file=sys.stderr)
@@ -229,9 +247,37 @@ def cmd_summarize(args: argparse.Namespace) -> int:
 
 def cmd_plot(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1", "paper_rollup"], _CLASSIFY_FIRST)
     plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
+
+
+_CLASSIFY_FIRST = "Is this the output of onehealth classify?"
+
+
+def _percent(value: float) -> str:
+    return "n/a" if math.isnan(value) else f"{value:.1%}"
+
+
+def _threshold(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {text!r}") from None
+    if not math.isfinite(value) or value < 0:
+        raise argparse.ArgumentTypeError("must be a number of SNPs, 0 or more")
+    return value
+
+
+def _seed(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a whole number: {text!r}") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be 0 or more")
+    return value
 
 
 def _permutations(text: str) -> int:

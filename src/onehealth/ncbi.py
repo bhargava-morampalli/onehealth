@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
@@ -109,6 +110,9 @@ class UrllibFetcher:
             raise HttpError(message) from exc
         except urllib.error.URLError as exc:
             raise _Retryable(f"Network error for {_endpoint(url)}: {exc.reason}") from exc
+        except (OSError, http.client.HTTPException) as exc:
+            # A read that times out, a connection dropped mid-reply or a TLS error escapes urlopen's URLError.
+            raise _Retryable(f"Network error for {_endpoint(url)}: {type(exc).__name__} {exc}".strip()) from exc
 
     def _pause(self) -> None:
         now = time.monotonic()

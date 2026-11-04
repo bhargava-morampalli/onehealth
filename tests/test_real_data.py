@@ -99,3 +99,10 @@ def test_report_on_real_data_with_strata_and_dereplication(tmp_path: Path, class
     page = (out / "report.html").read_text(encoding="utf-8")
     assert "permutation strata: year, country" in page
     assert "shuffled source labels only among isolates with the same collection year and country" in page
+
+
+def test_feature_names_carry_no_quotes_from_ncbis_list_cells():
+    """NCBI quotes its comma-separated AMR_genotypes cells. Split without unquoting, the first and last gene of
+    each list kept a stray quote, so "aac(3)-IId and aac(3)-IId counted as two genes (fixed in build_fixture.py)."""
+    rows = read_tsv(DATA / "features.tsv")
+    assert not [r["feature"] for r in rows if '"' in r["feature"]]
