@@ -1,0 +1,53 @@
+# Builds the documentation site (mkdocs.yml, documentation/) on every pull request and
+# push, and fails on a broken link or a page that is behind the code (tests/test_docs.py).
+# Pushes to main also publish it to GitHub Pages, but only once the repository is public:
+# while it is private the deploy job is skipped. To turn publishing on after going public,
+# set Settings > Pages > Source to "GitHub Actions".
+name: Documentation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install
+        run: uv sync --locked --extra docs --extra dev
+      - name: Check the pages cover every option, column and rule
+        run: uv run pytest tests/test_docs.py -q
+      - name: Build
+        run: uv run mkdocs build --strict
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+      - name: Keep the site for the deploy job
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !github.event.repository.private
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !github.event.repository.private
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

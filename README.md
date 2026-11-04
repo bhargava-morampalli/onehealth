@@ -4,6 +4,8 @@ Python CLI that resolves mixed public NCBI isolate IDs and classifies isolation-
 
 v1 does **not** download genomes, assemble, run SKA/PopPUNK/MOB-suite, or start a database. Cluster or plasmid overlap is reported only when those columns are already in the input table.
 
+The full documentation, with a tutorial and a page for each command, is in [`documentation/`](documentation/index.md). Once the repository is public it is also published at <https://bhargava-morampalli.github.io/onehealth/>.
+
 ## Install
 
 ```bash
