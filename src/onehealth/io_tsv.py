@@ -32,25 +32,47 @@ _ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SR
 
 
 def read_text(path: Path) -> str:
-    """A text file as UTF-8. Any other encoding is reported, not guessed."""
+    """A text file as UTF-8, without the byte-order mark Excel adds. Any other encoding is reported, not guessed."""
     try:
-        return path.read_bytes().decode("utf-8")
+        return path.read_bytes().decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise InputError(f"{path}: not UTF-8 text (byte {exc.start}); save it as UTF-8") from None
 
 
 def read_tsv(path: Path) -> list[dict[str, str]]:
-    """Read a TSV with a header row. Lines starting with '#' are comments, even above the header."""
+    """Read a TSV with a header row. Lines starting with '#' are comments, even above the header.
+
+    One line is one row. A cell wrapped in double quotes (how Excel and pandas write a
+    cell that contains a quote) is unwrapped; any other quote is kept as typed. csv's
+    quoting rules let a stray quote, as in `"wound swab`, swallow the lines after it.
+    """
     # Split lines exactly as a file opened with newline="" does (\n, \r\n or \r only).
-    lines = [line for line in io.StringIO(read_text(path), newline="") if line.strip() and not line.startswith("#")]
-    reader = csv.DictReader(lines, delimiter="\t")
+    lines = [
+        (number, line)
+        for number, line in enumerate(io.StringIO(read_text(path), newline=""), start=1)
+        if line.strip() and not line.startswith("#")
+    ]
+    if not lines:
+        return []
+    header = [cell.strip() for cell in _cells(lines[0][1])]
     rows = []
-    for raw in reader:
-        extra = raw.pop(None, None)  # cells beyond the header
-        if extra and any((cell or "").strip() for cell in extra):
-            raise InputError(f"{path}: data line {reader.line_num} has more cells than the header")
-        rows.append({(key or "").strip(): (value or "").strip() for key, value in raw.items()})
+    for number, line in lines[1:]:
+        cells = _cells(line)
+        if any(cell.strip() for cell in cells[len(header):]):
+            raise InputError(f"{path}: line {number} has more cells than the header")
+        cells += [""] * (len(header) - len(cells))
+        rows.append({key: value.strip() for key, value in zip(header, cells)})
     return rows
+
+
+def _cells(line: str) -> list[str]:
+    return [_unquote(cell) for cell in line.rstrip("\r\n").split("\t")]
+
+
+def _unquote(cell: str) -> str:
+    if len(cell) >= 2 and cell[0] == '"' == cell[-1]:
+        return cell[1:-1].replace('""', '"')
+    return cell
 
 
 def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str]) -> None:
@@ -60,7 +82,14 @@ def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str])
         writer = csv.DictWriter(handle, fieldnames=names, delimiter="\t", extrasaction="ignore")
         writer.writeheader()
         for row in rows:
-            writer.writerow({name: row.get(name, "") for name in names})
+            writer.writerow({name: _one_line(row.get(name, "")) for name in names})
+
+
+def _one_line(value: object) -> object:
+    """A TSV cell cannot hold a tab or a line break, so they become spaces."""
+    if isinstance(value, str) and ("\t" in value or "\n" in value or "\r" in value):
+        return value.replace("\r\n", " ").replace("\t", " ").replace("\n", " ").replace("\r", " ")
+    return value
 
 
 def read_id_list(path: Path) -> list[str]:
@@ -225,7 +254,7 @@ def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
 
 def _data_lines(path: Path) -> Iterator[str]:
     """Lines without their newline, skipping blank lines and lines starting with '#'."""
-    with path.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8-sig") as handle:
         try:
             for line in handle:
                 line = line.rstrip("\r\n")
@@ -306,7 +335,7 @@ def read_lineages(path: Path) -> dict[str, str]:
     if not lines:
         return {}
     delimiter = "\t" if "\t" in lines[0] else ","
-    rows = list(csv.DictReader(lines, delimiter=delimiter))
+    rows = read_tsv(path) if delimiter == "\t" else list(csv.DictReader(lines, delimiter=delimiter))
     if not rows:
         return {}
     header = [key for key in rows[0] if key]

@@ -741,3 +741,9 @@ def test_a_connection_that_keeps_timing_out_sends_only_that_id_to_review(monkeyp
     monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
     rows = resolve_ids(["SAMN2", "SAMN1"], client=NCBIClient(fetcher=ncbi.UrllibFetcher(delay_s=0, retries=1)), allow_network=True)
     assert [(r["resolve_status"], r["resolve_reason"][:11]) for r in rows] == [("review", "ncbi_error:"), ("ok", "ncbi")]
+
+
+def test_local_metadata_with_ncbi_datasets_column_names_joins():
+    local = [{"Assembly Accession": "GCA_000005845.2", "Assembly BioSample Accession": "SAMN02604091", "Isolation source": "urine"}]
+    row = resolve_ids(["GCA_000005845.2"], local_rows=local)[0]
+    assert (row["resolve_status"], row["biosample"], row["isolation_source"]) == ("ok", "SAMN02604091", "urine")

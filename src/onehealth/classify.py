@@ -141,10 +141,11 @@ def _host_source_conflict(hits: list[RuleHit]) -> set[str]:
 
 def _no_evidence_reason(view: dict[str, str]) -> str:
     source = view.get("isolation_source", "")
-    if is_taxon_only_source(source):
-        return "taxon_only_source"
+    # A missing-value term first: "not collected" also has the word shape of a binomial.
     if not is_blank(source) and is_unknown_value(source):
         return "unknown_source"
+    if is_taxon_only_source(source):
+        return "taxon_only_source"
     if is_blank(source) and is_unknown_value(view.get("host")):
         # NCBI sample_type ("whole organism", "pure culture") is material, not source.
         return "missing_source"

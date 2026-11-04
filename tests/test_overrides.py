@@ -91,3 +91,13 @@ def test_override_blank_healthcare_equals_no(tmp_path: Path, lexicon):
     path.write_text("id\tl1\thealthcare_environment\nSAMN1\tHuman\t\nSAMN1\tHuman\tno\n", encoding="utf-8")
     result = classify_record({"query_id": "SAMN1"}, lexicon, load_overrides(path))
     assert result.classify_reason == "override"
+
+
+def test_overrides_saved_by_excel_with_a_byte_order_mark_are_applied(tmp_path, lexicon):
+    from onehealth.classify import classify_rows
+    from onehealth.overrides import load_overrides
+
+    path = tmp_path / "overrides.tsv"
+    path.write_text("﻿id\tl1\nSAMN1\tAnimal\n", encoding="utf-8")
+    row = classify_rows([{"id": "SAMN1", "isolation_source": "blood", "host": "Homo sapiens"}], lexicon, load_overrides(path))[0]
+    assert (row["l1"], row["override_applied"]) == ("Animal", "yes")

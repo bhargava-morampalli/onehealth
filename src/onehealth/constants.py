@@ -46,6 +46,11 @@ UNKNOWN_EXACT = frozenset(
         "missing data",
         "no data",
         "none provided",
+        # Spreadsheet and pandas exports, and lab shorthand.
+        "nan",
+        "#n/a",
+        "not determined",
+        "undetermined",
     }
 )
 
@@ -73,8 +78,9 @@ ID_COLUMN_ALIASES = (
     "sample_id",
 )
 
-BIOSAMPLE_ALIASES = ("biosample", "biosample_acc", "biosample_accession")
-ASSEMBLY_ALIASES = ("assembly", "asm_acc", "assembly_accession", "genome")
+# The spaced names are what NCBI Datasets (`dataformat tsv genome`) writes.
+BIOSAMPLE_ALIASES = ("biosample", "biosample_acc", "biosample_accession", "biosample accession", "assembly biosample accession")
+ASSEMBLY_ALIASES = ("assembly", "asm_acc", "assembly_accession", "genome", "assembly accession")
 SRA_ALIASES = ("sra", "srr", "run", "run_accession")
 PDT_ALIASES = ("pdt", "target_acc", "pdt_accession")
 
