@@ -1,0 +1,71 @@
+site_name: onehealth
+site_description: >-
+  Resolve mixed NCBI isolate IDs, classify isolation sources into One Health
+  categories, and report the standard One Health population analyses.
+site_url: https://bhargava-morampalli.github.io/onehealth/
+repo_url: https://github.com/bhargava-morampalli/onehealth
+repo_name: bhargava-morampalli/onehealth
+edit_uri: edit/main/documentation/
+# docs/ holds internal working notes, so the published pages live here.
+docs_dir: documentation
+
+theme:
+  name: material
+  font: false  # system fonts: nothing is loaded from Google
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Tutorial: tutorial.md
+  - Commands:
+      - resolve: commands/resolve.md
+      - classify: commands/classify.md
+      - summarize and plot: commands/summarize-plot.md
+      - validate: commands/validate.md
+      - report: commands/report.md
+  - Guides:
+      - Input files: guides/input-files.md
+      - The lexicon: guides/lexicon.md
+  - Benchmarks: benchmarks.md
+  - Changelog: changelog.md

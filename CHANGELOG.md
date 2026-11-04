@@ -2,7 +2,13 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: lexicon v3 (branch `lexicon-v3`)
+## Unreleased: documentation site (branch `docs-site`)
+
+A documentation site in `documentation/`, built with MkDocs: install, a tutorial on the example data, a page for each command with every option and output column, guides to input files and the lexicon, the benchmarks, and this changelog. A GitHub Actions workflow builds it on every pull request and fails on a broken link. It publishes the site to GitHub Pages from `main` once the repository is public, and does nothing while it is private. A test fails if a command gains an option its page does not mention.
+
+To build it locally: `pip install -e ".[docs]"`, then `mkdocs serve`.
+
+## 4 November 2026: lexicon v3 ([#7](https://github.com/bhargava-morampalli/onehealth/pull/7))
 
 The seed lexicon is now v3, and classified tables record `lexicon_version` 3. v2 still ships: `classify --lexicon v2` reproduces earlier results exactly. The additions are general terms found in the review queues of the IMP benchmark and the NCBI Pathogen Detection test data. Each is marked `v3` in the file.
 
@@ -24,7 +30,7 @@ Every newly classified row agrees with its curated or NCBI label, and no row mov
 
 Left as they are, on purpose:
 
-- A bare fixture without a setting word (`Shower 3`, `Sink swab`) still goes to review, like bare `sink` and `faucet`. A wrong hospital flag would quietly move isolates into the report's healthcare-environment group. Counting them as hospital fixtures would lift IMP coverage to 86.0%.
+- A bare fixture without a setting word (`Shower 3`, `Sink swab`) still matches no rule, like bare `sink` and `faucet`. A wrong hospital flag would quietly move isolates into the report's healthcare-environment group. Counting them as hospital fixtures would lift IMP coverage to 86.0%. Such a row goes to review, unless its host decides: 9 room drains and sink swabs in the IMP benchmark have host *Homo sapiens* and are called Human. (Corrected 4 November 2026: this entry first said they all go to review.)
 - Strings tied to one study (`ensuite 7/8`, `arjo bathroom`) and typos are not added.
 
 ## 4 November 2026: PDT lookups that work ([#6](https://github.com/bhargava-morampalli/onehealth/pull/6))

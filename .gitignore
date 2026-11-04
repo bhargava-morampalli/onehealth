@@ -12,3 +12,6 @@ docs/
 
 # Analysis outputs
 work/
+
+# Documentation site build (mkdocs build)
+site/
