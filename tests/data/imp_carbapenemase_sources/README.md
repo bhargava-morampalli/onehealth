@@ -35,15 +35,15 @@ The 69 genomes in Table S1 without a public BioSample are excluded. One BioSampl
 
 ## Baseline
 
-Measured with `onehealth classify` then `onehealth validate`. v3 is the current seed lexicon; `--lexicon v2` gives the earlier column.
+Measured with `onehealth classify` then `onehealth validate`. v4 is the current seed lexicon; `--lexicon v3` and `--lexicon v2` give the earlier columns.
 
-| Metric | Lexicon v2 | Lexicon v3 |
-|---|---|---|
-| Coverage (classified, not sent to review) | 84.5% | 84.8% |
-| Accuracy (of classified isolates) | 99.2% | 99.5% |
-| Human recall / precision | 92.0% / 99.1% | 92.2% / 99.4% |
-| Environmental recall / precision | 13.5% / 100% | 17.6% / 100% |
-| Animal recall / precision | 74.5% / 86.4% | 74.5% / 86.4% |
-| Sent to review | 674 | 661 |
+| Metric | Lexicon v2 | Lexicon v3 | Lexicon v4 |
+|---|---|---|---|
+| Coverage (classified, not sent to review) | 84.5% | 84.8% | 84.5% |
+| Accuracy (of classified isolates) | 99.2% | 99.5% | 99.8% |
+| Human recall / precision | 92.0% / 99.1% | 92.2% / 99.4% | 92.1% / 99.9% |
+| Environmental recall / precision | 13.5% / 100% | 17.6% / 100% | 17.6% / 100% |
+| Animal recall / precision | 74.5% / 86.4% | 74.5% / 86.4% | 74.5% / 86.4% |
+| Sent to review | 674 | 661 | 681 |
 
-Most of the gap is missing information, not wrong calls. With v3, 555 of the 661 review cases have no isolation source and no host in their current BioSample record; the curators had other context, such as NCBI's isolation type. EBI-submitted records (SAME) rarely carry an isolation source. The paper's `isolation_source` column sometimes holds values that the current BioSample does not, so it is kept only for reference.
+Most of the gap is missing information, not wrong calls. With v4, 555 of the 681 review cases have no isolation source and no host in their current BioSample record; the curators had other context, such as NCBI's isolation type. EBI-submitted records (SAME) rarely carry an isolation source. The paper's `isolation_source` column sometimes holds values that the current BioSample does not, so it is kept only for reference.

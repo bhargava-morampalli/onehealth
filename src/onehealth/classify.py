@@ -126,9 +126,14 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
 
 
 def _host_source_conflict(hits: list[RuleHit]) -> set[str]:
-    """L1s in conflict between the host field and the source fields, or empty."""
-    source_hits = best_hits([hit for hit in hits if hit.field != "host"])
-    host_hits = best_hits([hit for hit in hits if hit.field == "host"])
+    """L1s in conflict between the host field and the source fields, or empty.
+
+    A rule that sends its matches to review (l1 Unclassified) names no class, so it
+    cannot conflict with the host; it decides only when it is the best hit.
+    """
+    classes = [hit for hit in hits if hit.rule.l1 != "Unclassified"]
+    source_hits = best_hits([hit for hit in classes if hit.field != "host"])
+    host_hits = best_hits([hit for hit in classes if hit.field == "host"])
     source_l1 = {hit.rule.l1 for hit in source_hits}
     host_l1 = {hit.rule.l1 for hit in host_hits}
     if not source_l1 or not host_l1 or source_l1 == host_l1:

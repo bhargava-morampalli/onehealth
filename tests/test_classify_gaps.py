@@ -1,5 +1,7 @@
 """Gaps 2–4: food-producing / feed, lexicon holes, taxon-only source."""
 
+from pathlib import Path
+
 from onehealth.classify import classify_record
 from onehealth.lexicon import load_lexicon
 from onehealth.text import is_taxon_only_source
@@ -101,7 +103,7 @@ def test_hospital_sink_is_healthcare_environment(lexicon):
 def test_bare_sink_is_not_healthcare_environment(lexicon):
     result = _cls(lexicon, "sink")
     assert result.classify_status == "review"
-    assert result.classify_reason == "unmatched"
+    assert result.classify_reason == "fixture-no-setting"  # v4: review, with the reason named
     assert result.healthcare_environment == ""
     assert result.l1 == "Unclassified"
 
@@ -116,7 +118,7 @@ def test_hospital_faucet_is_healthcare_environment(lexicon):
 def test_bare_faucet_is_not_healthcare_environment(lexicon):
     result = _cls(lexicon, "faucet")
     assert result.classify_status == "review"
-    assert result.classify_reason == "unmatched"
+    assert result.classify_reason == "fixture-no-setting"  # v4: review, with the reason named
     assert result.healthcare_environment == ""
     assert result.l1 != "Environmental"
 
@@ -253,8 +255,8 @@ def test_lexicon_v3_additions(lexicon, source, host, expected):
 @pytest.mark.parametrize(
     "source, reason",
     [
-        ("Shower 3", "unmatched"),  # bare fixtures stay in review, like bare sink and faucet
-        ("Sink swab", "unmatched"),
+        ("Shower 3", "fixture-no-setting"),  # bare fixtures stay in review; v4 names the reason
+        ("Sink swab", "fixture-no-setting"),
         ("infection control screening", "unmatched"),  # only "tract infection" is a specimen word
         ("water bath", "unmatched"),  # bare water is an exact match only
     ],
@@ -267,3 +269,39 @@ def test_lexicon_v3_leaves_these_for_review(lexicon, source, reason):
 def test_human_as_a_source_with_an_animal_host_is_a_conflict(lexicon):
     assert _cls(lexicon, "human", host="Gallus gallus").classify_reason == "host_source_conflict"
     assert _cls(lexicon, "patient room surface").l1 != "Human"
+
+
+# --- lexicon v4: a fixture without a setting ---------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "source, host, expected",
+    [
+        # A fixture alone says neither whose sample it is nor where: review, whatever a human host says.
+        ("Rm 14 Drain", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        ("Sink swab", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        ("Floor Trap Bathroom Room 1 Swab", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        ("kitchen sink", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        ("drain drainage", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        ("Shower 3", "", ("review", "fixture-no-setting", "Unclassified")),
+        # A setting word, a specimen or an animal host still decides, as in v3.
+        ("hospital drain", "Homo sapiens", ("ok", "hospital-drain", "Environmental")),
+        ("Sink drain, ward 4", "Homo sapiens", ("ok", "hospital-drain", "Environmental")),
+        ("ICU sink", "Homo sapiens", ("ok", "healthcare-fixtures", "Environmental")),
+        ("drain tip", "Homo sapiens", ("ok", "specimens+human-host", "Human")),
+        ("drain fluid", "Homo sapiens", ("ok", "wound-drainage+human-host", "Human")),
+        ("wound drain", "Homo sapiens", ("ok", "specimens+human-host", "Human")),
+        ("drainage", "Homo sapiens", ("ok", "human-host", "Human")),  # whole words: drainage is not drain
+        ("drain", "Sus scrofa", ("ok", "animal-hosts", "Animal")),
+    ],
+)
+def test_lexicon_v4_fixture_without_a_setting(lexicon, source, host, expected):
+    result = _cls(lexicon, source, host=host)
+    assert (result.classify_status, result.classify_reason, result.l1) == expected
+
+
+def test_lexicon_v3_still_calls_a_bare_fixture_human_from_its_host():
+    """Results made with v3 must reproduce, so v4's change lives in v4 only."""
+    v3 = load_lexicon(Path("v3"))
+    assert _cls(v3, "Rm 14 Drain", host="Homo sapiens").classify_reason == "human-host"
+    assert _cls(v3, "drain tip", host="Homo sapiens").classify_reason == "human-host"

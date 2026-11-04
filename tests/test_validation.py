@@ -55,20 +55,22 @@ def imp_validation(lexicon):
 
 
 def test_imp_benchmark_baseline(imp_validation):
-    """Floors just under the lexicon v3 baseline (84.8% coverage, 99.51% accuracy): changes must not make these worse."""
+    """Floors just under the lexicon v4 baseline (84.5% coverage, 99.75% accuracy): changes must not make these worse."""
     result = imp_validation
     assert result.isolates == 4351 and not result.unmatched
-    assert result.coverage >= 0.847
-    assert result.accuracy >= 0.995
+    assert result.coverage >= 0.845
+    assert result.accuracy >= 0.997
     precision = {r["class"]: r["precision"] for r in result.per_class()}
     assert precision["Human"] >= 0.99 and precision["Environmental"] >= 0.99
 
 
-def test_imp_benchmark_unclassifiable_drains_are_documented(imp_validation):
-    # The paper could not classify 9 "drain drainage" samples; with host Homo sapiens,
-    # onehealth calls them Human. Recorded so a lexicon change that alters this is noticed.
+def test_imp_benchmark_drains_without_a_setting_go_to_review(imp_validation):
+    # The paper could not classify 9 "drain drainage" samples, and v3 called them Human from
+    # their host. v4 sends a fixture without a setting to review, so they now agree with the
+    # curation, and only 3 environmental samples (stool, host Homo sapiens) are called Human.
     assert imp_validation.count(truth="Unclassified") == 9
-    assert imp_validation.count("Unclassified", "Human") == 9
+    assert imp_validation.count("Unclassified", "Unclassified") == 9
+    assert imp_validation.count("Environmental", "Human") == 3
 
 
 def test_ncbi_clinical_isolates_are_never_environmental_or_food(lexicon):
@@ -124,13 +126,23 @@ def test_lexicon_v2_still_ships_and_reproduces_its_benchmark():
     assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8448, 0.9918)  # 84.5% and 99.2%
 
 
+def test_lexicon_v3_still_ships_and_reproduces_its_benchmark():
+    from onehealth.lexicon import load_lexicon
+
+    v3 = load_lexicon(Path("v3"))
+    result = validate(classify_rows(read_tsv(IMP), v3), read_truth(IMP, "truth", "paper_rollup"))
+    assert v3.version == "3"
+    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8478, 0.9951)  # 84.8% and 99.5%
+    assert result.count("Environmental", "Human") == 12
+
+
 def test_lexicon_v3_classifies_more_of_the_ncbi_data_without_new_errors():
     """v3 classifies 10 more NCBI Pathogen Detection rows (waste water spellings) and gets none of them wrong."""
     from onehealth.lexicon import load_lexicon
 
     rows = read_tsv(KLEBSIELLA)
     expected = {"clinical": {"Human", "Animal"}, "environmental/other": {"Environmental"}}
-    for version, classified_floor in (("v2", 253), ("v3", 263)):
+    for version, classified_floor in (("v2", 253), ("v3", 263), ("v4", 263)):
         classified = [r for r in classify_rows(rows, load_lexicon(Path(version))) if r["classify_status"] == "ok"]
         labelled = [r for r in classified if r["epi_type"] in expected]
         wrong = [r for r in labelled if r["paper_rollup"] not in expected[r["epi_type"]]]

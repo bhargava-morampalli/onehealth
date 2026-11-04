@@ -47,4 +47,4 @@ def test_unknown_rule_field_is_rejected(tmp_path: Path):
 
 
 def test_seed_lexicon_version_matches_file(lexicon):
-    assert lexicon.version == "3"
+    assert lexicon.version == "4"

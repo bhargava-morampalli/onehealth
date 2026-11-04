@@ -74,7 +74,7 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v3 classifies 84.8% of isolates, and 99.5% of those agree with the curation (v2: 84.5% and 99.2%). Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v4 classifies 84.5% of isolates, and 99.8% of those agree with the curation (v3: 84.8% and 99.5%; v2: 84.5% and 99.2%). Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
 ## Report
 
@@ -131,7 +131,7 @@ Bare `clinical` / `clinical isolate` is a patient sample, as in the NCBI `Pathog
 
 NCBI `source_type` (`human`, `animal`, `food`, `environmental`) is read into `sample_type` before `tissue` and the NCBI material type (`whole organism`, `pure culture`). The material type is never treated as source evidence.
 
-KlebNET `Animal - food producing` is Animal, not Food. `animal feed` is not retail Food and has no L1 here, so it goes to review (`animal-feed`). A taxon-only `isolation_source` (`Escherichia coli`, `Bos taurus`) or an unknown marker (`unknown`, `missing: lab stock`) is ignored. Taxon-only is a guess from word shape, so a lexicon rule written for source text (one that does not read `host`) always wins over it: add `bedpan washer` to such a rule and it is classified. The host or `source_type` then decides, and with nothing else the row goes to review (`taxon_only_source` / `unknown_source`). Bare `sink` or `faucet` is not a hospital fixture; `hospital sink` / `hospital faucet` are.
+KlebNET `Animal - food producing` is Animal, not Food. `animal feed` is not retail Food and has no L1 here, so it goes to review (`animal-feed`). A taxon-only `isolation_source` (`Escherichia coli`, `Bos taurus`) or an unknown marker (`unknown`, `missing: lab stock`) is ignored. Taxon-only is a guess from word shape, so a lexicon rule written for source text (one that does not read `host`) always wins over it: add `bedpan washer` to such a rule and it is classified. The host or `source_type` then decides, and with nothing else the row goes to review (`taxon_only_source` / `unknown_source`). Bare `sink` or `faucet` is not a hospital fixture; `hospital sink` / `hospital faucet` are. A fixture without its setting (`Rm 14 Drain`, `Sink swab`) goes to review (`fixture-no-setting`), even with host *Homo sapiens*.
 
 Matching is token-based, so `wound drainage` is Human and `hospital drain` is healthcare-environment. The word `drain` does not match `drainage`.
 

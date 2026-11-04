@@ -6,8 +6,9 @@
 
 | Version | Shipped | Use |
 |---|---|---|
-| v3 | November 2026 | The default |
-| v2 | October 2026 | `--lexicon v2`, to reproduce earlier results exactly |
+| v4 | November 2026 | The default |
+| v3 | November 2026 | `--lexicon v3`, to reproduce earlier results exactly |
+| v2 | October 2026 | `--lexicon v2`, the same for older results |
 
 Every classified row records the version that made the call in `lexicon_version`. What changed between versions is in the [changelog](../changelog.md).
 
@@ -25,7 +26,7 @@ Every classified row records the version that made the call in `lexicon_version`
   priority: 95
 ```
 
-This is part of a rule in v3, shortened.
+This is part of a rule in v4, shortened.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -51,14 +52,14 @@ A rule with a missing `id` or `l1`, or an unknown class or field, stops with an 
 
 1. **Missing values** and **bare scientific names** in `isolation_source` are dropped; see [Missing values](input-files.md#missing-values).
 2. **The highest priority wins.** Rules of equal priority that disagree about the class or the healthcare flag send the row to review as `rule_conflict:<rules>`.
-3. **A rule with `l1: Unclassified`** sends the row to review with its id as the reason, such as `animal-feed`.
+3. **A rule with `l1: Unclassified`** sends the row to review with its id as the reason, such as `animal-feed` or `fixture-no-setting`. Such a rule names no class, so it only decides when it is the best match; it never counts as a conflict with the host.
 4. **A specimen rule** (`host_dependent: true`) lets the host decide: an animal host or animal word makes it Animal, a human host makes it Human, both is `host_source_conflict`, a host no rule recognises is `host_unrecognised`, and no host at all gives the rule's own `l1` with the reason `<rule>+no_host`.
 5. **Any other rule** decides, unless the host points to a different class than the source (`host_source_conflict`). The exception is a healthcare-environment source with a human host, which stays a healthcare environment: submitters often record *Homo sapiens* as the host of hospital sink and surface swabs.
 6. **No rule** sends the row to review as `missing_source`, `unknown_source`, `taxon_only_source` or `unmatched`; see [`classify`](../commands/classify.md#classify_reason).
 
 The paper rollup is not part of the lexicon. It follows from `l1` and `healthcare_environment`, as in [`classify`](../commands/classify.md#the-classes).
 
-## The rules in v3
+## The rules in v4
 
 | Priority | Rule | Class | Reads |
 |---|---|---|---|
@@ -77,19 +78,20 @@ The paper rollup is not part of the lexicon. It follows from `l1` and `healthcar
 | 65 | `animal-sites` | Animal | isolation source, sample type |
 | 60 | `environment-generic` | Environmental | isolation source, sample type |
 | 40 | `animal-hosts` | Animal | host, isolation source, sample type |
+| 30 | `fixture-no-setting` | review | isolation source, sample type |
 | 20 | `human-host` | Human | host, sample type |
 | 20 | `human-source` | Human | isolation source |
 
-The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon/v3.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon/v3.yaml). Phrases new in v3 are marked `v3`.
+The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon/v4.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon/v4.yaml). Changes in v3 and v4 are marked `v3` and `v4`.
 
-Some values are in no rule on purpose. A bare `sink`, `shower` or `faucet` says nothing about the setting, and a wrong healthcare flag would quietly move isolates into the report's healthcare-environment group. Such a row is decided by its host, or goes to review without one.
+A fixture on its own, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says neither whose sample it is nor where the fixture is. Calling it a hospital fixture could be wrong, and a wrong healthcare flag would quietly move isolates into the report's healthcare-environment group. Calling it Human because the host is *Homo sapiens* is often wrong too, since submitters record that host for hospital fixture swabs. So `fixture-no-setting` sends it to review. Any rule above it still decides: `sink drain` and `hospital sink` are healthcare environment, `drain tip` is a specimen, and an animal host makes it Animal, as other farm settings do.
 
 ## Changing the lexicon
 
 Add words to a copy, not to the shipped file:
 
-1. Copy the shipped lexicon. In a clone of the repository it is `src/onehealth/data/lexicon/v3.yaml`.
-2. Give the copy its own `version`, such as `"3-mylab"`, so its results are not mistaken for the shipped v3. A file without a `version` is recorded as the default version.
+1. Copy the shipped lexicon. In a clone of the repository it is `src/onehealth/data/lexicon/v4.yaml`.
+2. Give the copy its own `version`, such as `"4-mylab"`, so its results are not mistaken for the shipped v4. A file without a `version` is recorded as the default version.
 3. Add phrases to a rule, or a rule of your own. For example, a study that sampled only hospital sinks can classify a bare `sink`:
 
     ```yaml
