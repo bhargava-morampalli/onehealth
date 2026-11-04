@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from onehealth.constants import ID_COLUMN_ALIASES, L1_VALUES, PAPER_ROLLUP_VALUES
+from onehealth.errors import InputError
 from onehealth.io_tsv import first_present, read_tsv, row_match_ids
 
 LEVELS = {"l1": L1_VALUES, "paper_rollup": PAPER_ROLLUP_VALUES}
@@ -92,7 +93,7 @@ def read_truth(path: Path, column: str, level: str) -> dict[str, str]:
         return {}
     id_column = first_present(rows[0], _TRUTH_ID_COLUMNS)
     if id_column is None or column not in rows[0]:
-        raise ValueError(f"{path}: needs an ID column ({', '.join(_TRUTH_ID_COLUMNS[:5])}, ...) and a {column!r} column")
+        raise InputError(f"{path}: needs an ID column ({', '.join(_TRUTH_ID_COLUMNS[:5])}, ...) and a {column!r} column")
     classes = {name.lower(): name for name in LEVELS[level]}
     classes["environment"] = "Environmental"
     truth, unknown = {}, set()
@@ -105,7 +106,7 @@ def read_truth(path: Path, column: str, level: str) -> dict[str, str]:
             continue
         truth[row[id_column].strip().upper()] = classes[label.lower()]
     if unknown:
-        raise ValueError(
+        raise InputError(
             f"{path}: truth labels {sorted(unknown)} are not {level} classes ({', '.join(LEVELS[level])}); "
             "map them before validating"
         )
@@ -115,7 +116,7 @@ def read_truth(path: Path, column: str, level: str) -> dict[str, str]:
 def validate(classified: list[dict[str, str]], truth: dict[str, str], level: str = "paper_rollup") -> Validation:
     """Cross-tabulate truth against onehealth's class for every isolate in both tables."""
     if level not in LEVELS:
-        raise ValueError(f"level must be one of {list(LEVELS)}")
+        raise InputError(f"level must be one of {list(LEVELS)}")
     by_id: dict[str, dict[str, str]] = {}
     for row in classified:
         for identifier in row_match_ids(row):

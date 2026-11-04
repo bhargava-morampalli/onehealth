@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
 from onehealth import __version__
 from onehealth.classify import classify_fieldnames, classify_rows
 from onehealth.constants import RESOLVE_FIELDS, SEED_LEXICON_VERSION
+from onehealth.errors import InputError
 from onehealth.io_tsv import read_id_list, read_tsv, write_tsv
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
@@ -24,7 +26,18 @@ def main(argv: list[str] | None = None) -> int:
     if not hasattr(args, "handler"):
         parser.print_help()
         return 2
-    return args.handler(args)
+    try:
+        return args.handler(args)
+    except (InputError, OSError) as exc:
+        # A problem with the user's files or options: one line, no traceback. Anything else is a bug and keeps it.
+        print(f"onehealth {args.command}: error: {_describe(exc)}", file=sys.stderr)
+        return 1
+
+
+def _describe(exc: Exception) -> str:
+    if isinstance(exc, OSError) and exc.strerror and exc.filename:
+        return f"{exc.strerror}: {exc.filename}"
+    return str(exc)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -99,7 +112,7 @@ def _build_parser() -> argparse.ArgumentParser:
     report_p.add_argument("--lineage-column", help="Lineage column in the input (default: first of st, mlst, lineage, cluster ...)")
     report_p.add_argument(
         "--threshold",
-        type=float,
+        type=_threshold,
         default=21,
         help="SNP threshold for close relatives (default 21, K. pneumoniae; choose one for your organism and pipeline)",
     )
@@ -119,7 +132,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     report_p.add_argument("--permutations", type=_permutations, default=9999, metavar="N",
                           help="Permutations for every test (default 9999; 0 skips the tests for a quick look)")
-    report_p.add_argument("--seed", type=int, default=1, help="Random seed (default 1)")
+    report_p.add_argument("--seed", type=_seed, default=1, help="Random seed, 0 or more (default 1)")
     report_p.add_argument("--title", default="One Health population report")
     report_p.add_argument("--note", default="", help="Banner text under the title, e.g. the dataset description")
     report_p.set_defaults(handler=cmd_report)
@@ -232,6 +245,26 @@ def cmd_plot(args: argparse.Namespace) -> int:
     plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
+
+
+def _threshold(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {text!r}") from None
+    if not math.isfinite(value) or value < 0:
+        raise argparse.ArgumentTypeError("must be a number of SNPs, 0 or more")
+    return value
+
+
+def _seed(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a whole number: {text!r}") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be 0 or more")
+    return value
 
 
 def _permutations(text: str) -> int:

@@ -69,3 +69,86 @@ def test_help_lists_every_command_and_the_current_seed_lexicon(capsys):
     with pytest.raises(SystemExit):
         main(["classify", "--help"])
     assert f"seeded v{SEED_LEXICON_VERSION}" in " ".join(capsys.readouterr().out.split())
+
+
+# --- user errors get one line, not a traceback --------------------------------------------------
+
+
+def _error(capsys, argv) -> tuple[int, str]:
+    code = main(argv)
+    err = capsys.readouterr().err
+    assert "Traceback" not in err
+    return code, err.strip().splitlines()[-1]
+
+
+def test_missing_and_unreadable_inputs_give_one_line_errors(tmp_path: Path, capsys):
+    code, line = _error(capsys, ["classify", str(tmp_path / "missing.tsv"), "-o", str(tmp_path / "o.tsv")])
+    assert code == 1 and line.startswith("onehealth classify: error: No such file or directory:")
+    code, line = _error(capsys, ["summarize", str(tmp_path), "-o", str(tmp_path / "s.tsv")])
+    assert code == 1 and "Is a directory" in line
+    latin1 = tmp_path / "latin1.tsv"
+    latin1.write_bytes("id\tisolation_source\nI1\tsangre São Paulo\n".encode("latin-1"))
+    code, line = _error(capsys, ["classify", str(latin1), "-o", str(tmp_path / "o.tsv")])
+    assert code == 1 and "not UTF-8 text" in line and "save it as UTF-8" in line
+
+
+def test_bad_output_paths_give_one_line_errors(tmp_path: Path, capsys, fixtures: Path):
+    table = tmp_path / "t.tsv"
+    table.write_text("id\tl1\tpaper_rollup\nI1\tHuman\tHuman\n", encoding="utf-8")
+    code, line = _error(capsys, ["plot", str(table), "-o", str(tmp_path / "counts.txt")])
+    assert code == 1 and "cannot write .txt images" in line
+    code, line = _error(capsys, ["report", str(table), "-o", str(table)])
+    assert code == 1 and "-o needs a directory" in line
+
+
+@pytest.mark.parametrize(
+    "rules, message",
+    [
+        ("rules:\n  - l1: Human\n    phrases: [blood]\n", "rule 1 has no id"),
+        ("rules:\n  - id: r\n    phrases: [blood]\n", "rule 1 has no l1"),
+        ("rules:\n  - id: r\n    l1: Human\n    priority: high\n    phrases: [blood]\n", "priority must be a whole number"),
+        ("rules:\n  r: 1\n", "'rules' must be a list"),
+        ("rules:\n  - just text\n", "rule 1 is not a mapping"),
+        ("rules:\n  - id: r\n    l1: Human\n    phrases: [yes, blood]\n", "put it in quotes"),
+        ("rules: [\n  - id: x\n  bad", "not valid YAML"),
+    ],
+)
+def test_broken_lexicons_give_one_line_errors(tmp_path: Path, capsys, fixtures: Path, rules, message):
+    lexicon = tmp_path / "lexicon.yaml"
+    lexicon.write_text('version: "x"\n' + rules, encoding="utf-8")
+    code, line = _error(capsys, ["classify", str(fixtures / "metadata.tsv"), "-o", str(tmp_path / "o.tsv"), "--lexicon", str(lexicon)])
+    assert code == 1 and message in line
+
+
+def test_a_single_phrase_may_be_written_without_a_list(tmp_path: Path):
+    from onehealth.classify import classify_record
+    from onehealth.lexicon import load_lexicon
+
+    lexicon = tmp_path / "lexicon.yaml"
+    lexicon.write_text('version: "x"\nrules:\n  - id: r\n    l1: Human\n    fields: isolation_source\n    phrases: blood\n',
+                       encoding="utf-8")
+    loaded = load_lexicon(lexicon)
+    assert loaded.rules[0].phrases == (("blood",),) and loaded.rules[0].fields == ("isolation_source",)
+    assert classify_record({"isolation_source": "blood"}, loaded).l1 == "Human"
+
+
+@pytest.mark.parametrize("option, value", [("--threshold", "nan"), ("--threshold", "inf"), ("--threshold", "-5"),
+                                           ("--threshold", "x"), ("--seed", "-1")])
+def test_report_rejects_impossible_thresholds_and_seeds(tmp_path: Path, capsys, option, value):
+    with pytest.raises(SystemExit) as exc:
+        main(["report", str(tmp_path / "t.tsv"), "-o", str(tmp_path / "r"), option, value])
+    assert exc.value.code == 2
+    assert option in capsys.readouterr().err
+
+
+def test_a_bug_still_shows_its_traceback(monkeypatch, tmp_path: Path):
+    import onehealth.cli as cli
+
+    def broken(rows):
+        raise RuntimeError("a real bug")
+
+    table = tmp_path / "t.tsv"
+    table.write_text("id\tl1\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "summarize", broken)
+    with pytest.raises(RuntimeError, match="a real bug"):
+        cli.main(["summarize", str(table), "-o", str(tmp_path / "s.tsv")])

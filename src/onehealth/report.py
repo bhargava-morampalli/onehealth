@@ -25,6 +25,7 @@ from matplotlib.patches import Patch, Rectangle  # noqa: E402
 
 from onehealth import __version__  # noqa: E402
 from onehealth import analysis as A  # noqa: E402
+from onehealth.errors import InputError  # noqa: E402
 from onehealth.io_tsv import read_distance_matrix, read_features, read_lineages, write_tsv  # noqa: E402
 
 # --- theme ---------------------------------------------------------------------------
@@ -581,6 +582,8 @@ def build_report(
     dereplicate: bool = False,
     stratify: tuple[str, ...] = (),
 ) -> Path:
+    if out_dir.exists() and not out_dir.is_dir():
+        raise InputError(f"{out_dir} is a file; -o needs a directory for the report")
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir, tables_dir = out_dir / "figures", out_dir / "tables"
     figures_dir.mkdir(exist_ok=True)
@@ -608,7 +611,7 @@ def build_report(
     population, derep = dataset, None
     if dereplicate:
         if matrix is None:
-            raise ValueError("--dereplicate needs --distances")
+            raise InputError("--dereplicate needs --distances")
         population, derep = A.dereplicate(dataset, names, matrix, threshold)
         kpis.append(("After dereplication", f"{derep.isolates_after:,} of {derep.isolates_before:,}"))
         if derep.not_in_matrix:

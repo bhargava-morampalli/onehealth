@@ -692,3 +692,52 @@ def test_a_value_that_is_not_an_accession_is_never_put_in_a_batch():
 
     assert list(_chunks(["SAMN1", "12345", " samn2 ", "SAMN1", "GCA_000000001.1"], "biosample")) == [["SAMN1", "SAMN2"]]
     assert list(_chunks(["GCA_000000001.1", "SAMN1", "gca_000000002"], "assembly")) == [["GCA_000000001.1", "GCA_000000002"]]
+
+
+def test_timeouts_and_dropped_connections_are_retried(monkeypatch):
+    import io
+
+    from onehealth import ncbi
+
+    class _Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    failures = [TimeoutError("The read operation timed out"), ConnectionResetError(104, "Connection reset by peer")]
+
+    def urlopen(request, timeout):
+        if failures:
+            raise failures.pop(0)
+        return _Response(b'{"ok": 1}')
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    assert ncbi.UrllibFetcher(delay_s=0).get_json("https://example.org/x") == {"ok": 1}
+
+
+def test_a_connection_that_keeps_timing_out_sends_only_that_id_to_review(monkeypatch):
+    import io
+
+    from onehealth import ncbi
+
+    class _Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    good = b'{"reports": [{"accession": "SAMN1", "attributes": [{"name": "isolation_source", "value": "blood"}]}]}'
+
+    def urlopen(request, timeout):
+        if "SAMN2" in request.full_url:
+            raise TimeoutError("The read operation timed out")
+        return _Response(good)
+
+    monkeypatch.setattr(ncbi.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(ncbi.time, "sleep", lambda s: None)
+    rows = resolve_ids(["SAMN2", "SAMN1"], client=NCBIClient(fetcher=ncbi.UrllibFetcher(delay_s=0, retries=1)), allow_network=True)
+    assert [(r["resolve_status"], r["resolve_reason"][:11]) for r in rows] == [("review", "ncbi_error:"), ("ok", "ncbi")]
