@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from onehealth.cli import main
+from onehealth.io_tsv import read_tsv
 
 
 def test_cli_help_exits_zero(capsys):
@@ -172,3 +173,57 @@ def test_a_header_only_classified_table_is_still_fine(tmp_path: Path):
     table.write_text("id\tl1\tpaper_rollup\n", encoding="utf-8")
     assert main(["summarize", str(table), "-o", str(tmp_path / "s.tsv")]) == 0
     assert main(["report", str(table), "-o", str(tmp_path / "r")]) == 0
+
+
+# --- tables that would otherwise send every row to review without saying why -----------------
+
+
+def test_classify_names_the_problem_with_a_csv_or_an_id_list(tmp_path: Path, capsys):
+    csv_file = tmp_path / "m.csv"
+    csv_file.write_text("biosample,host,isolation_source\nSAMN1,Homo sapiens,blood\n", encoding="utf-8")
+    code, line = _error(capsys, ["classify", str(csv_file), "-o", str(tmp_path / "o.tsv")])
+    assert code == 1 and "looks comma-separated" in line
+    ids = tmp_path / "ids.txt"
+    ids.write_text("SAMN00000001\nSAMN00000002\n", encoding="utf-8")
+    code, line = _error(capsys, ["classify", str(ids), "-o", str(tmp_path / "o.tsv")])
+    assert code == 1 and "no column classify can read" in line and "found: SAMN00000001" in line
+    assert "run onehealth resolve first" in line
+    assert not (tmp_path / "o.tsv").exists()
+
+
+def test_classify_without_evidence_columns_still_applies_overrides(tmp_path: Path, capsys):
+    table = tmp_path / "ids.tsv"
+    table.write_text("id\tnote\nSAMN1\tx\nSAMN2\ty\n", encoding="utf-8")
+    overrides = tmp_path / "overrides.tsv"
+    overrides.write_text("id\tl1\nSAMN1\tAnimal\n", encoding="utf-8")
+    out = tmp_path / "o.tsv"
+    assert main(["classify", str(table), "-o", str(out), "--overrides", str(overrides)]) == 0
+    assert "warning:" in capsys.readouterr().err
+    assert [(r["id"], r["l1"]) for r in read_tsv(out)] == [("SAMN1", "Animal"), ("SAMN2", "Unclassified")]
+    # Without an ID column the overrides cannot match anything, so it is an error after all.
+    ids = tmp_path / "ids.txt"
+    ids.write_text("SAMN1\nSAMN2\n", encoding="utf-8")
+    code, line = _error(capsys, ["classify", str(ids), "-o", str(out), "--overrides", str(overrides)])
+    assert code == 1 and "no column classify can read" in line
+
+
+def test_resolve_metadata_needs_an_id_column(tmp_path: Path, capsys):
+    ids = tmp_path / "ids.txt"
+    ids.write_text("SAMN1\n", encoding="utf-8")
+    metadata = tmp_path / "m.tsv"
+    metadata.write_text("strain\thost\tisolation_source\nKP1\tHomo sapiens\tblood\n", encoding="utf-8")
+    code, line = _error(capsys, ["resolve", str(ids), "-o", str(tmp_path / "r.tsv"), "--metadata", str(metadata), "--no-network"])
+    assert code == 1 and "no ID column to match IDs on" in line and "found: strain, host, isolation_source" in line
+
+
+def test_truth_and_override_files_in_csv_say_so(tmp_path: Path, capsys, fixtures: Path):
+    classified = tmp_path / "c.tsv"
+    assert main(["classify", str(fixtures / "metadata.tsv"), "-o", str(classified)]) == 0
+    truth = tmp_path / "truth.csv"
+    truth.write_text("biosample,truth\nSAMN1,Human\n", encoding="utf-8")
+    code, line = _error(capsys, ["validate", str(classified), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")])
+    assert code == 1 and "looks comma-separated" in line
+    overrides = tmp_path / "o.csv"
+    overrides.write_text("id,l1\nSAMN1,Animal\n", encoding="utf-8")
+    code, line = _error(capsys, ["classify", str(fixtures / "metadata.tsv"), "-o", str(tmp_path / "o.tsv"), "--overrides", str(overrides)])
+    assert code == 1 and "looks comma-separated" in line

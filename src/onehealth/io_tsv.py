@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from array import array
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator
@@ -27,8 +28,9 @@ from onehealth.ids import assembly_join_keys, parse_id
 if TYPE_CHECKING:  # numpy is imported lazily, only by the readers that need it
     import numpy as np
 
-# Columns that can hold the input identifier of an ID list.
-_ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SRA_ALIASES + PDT_ALIASES
+# Columns that can hold an isolate's identifier: the ID column of an ID list, and what
+# resolve --metadata rows are matched on.
+ID_LIST_ALIASES = ID_COLUMN_ALIASES + BIOSAMPLE_ALIASES + ASSEMBLY_ALIASES + SRA_ALIASES + PDT_ALIASES
 
 
 def read_text(path: Path) -> str:
@@ -54,6 +56,7 @@ def read_tsv(path: Path) -> list[dict[str, str]]:
     ]
     if not lines:
         return []
+    _reject_other_delimiters(path, lines[0][1])
     header = [cell.strip() for cell in _cells(lines[0][1])]
     rows = []
     for number, line in lines[1:]:
@@ -63,6 +66,27 @@ def read_tsv(path: Path) -> list[dict[str, str]]:
         cells += [""] * (len(header) - len(cells))
         rows.append({key: value.strip() for key, value in zip(header, cells)})
     return rows
+
+
+_OTHER_DELIMITERS = ((",", "comma"), (";", "semicolon"))
+
+
+def _reject_other_delimiters(path: Path, header: str) -> None:
+    """A comma- or semicolon-separated file would be read as one column, and every row of it
+    would then go to review for lack of a host or source. Say so instead.
+
+    Only a header without a tab counts: in a TSV, a comma in a column name is just text.
+    """
+    if "\t" in header:
+        return
+    for delimiter, name in _OTHER_DELIMITERS:
+        try:
+            names = next(csv.reader([header.rstrip("\r\n")], delimiter=delimiter))
+        except csv.Error:  # e.g. a NUL byte: not a table this check can say anything about
+            return
+        if sum(1 for cell in names if cell.strip()) >= 2:
+            raise InputError(f"{path}: this looks {name}-separated (the header has {name}s but no tabs); "
+                             "save it as tab-separated text")
 
 
 def _cells(line: str) -> list[str]:
@@ -104,18 +128,30 @@ def require_columns(rows: list[dict[str, str]], path: Path, columns: Iterable[st
 
 
 def read_id_list(path: Path) -> list[str]:
-    """One ID per line, or a TSV whose header has an id-like column (else its first column)."""
-    lines = [line.strip() for line in read_text(path).splitlines()]
-    lines = [line for line in lines if line and not line.startswith("#")]
-    if not lines:
+    """One ID per line, or a TSV whose header has an id-like column (else its first column).
+
+    No accession contains a comma or semicolon, so a line with one is a CSV table or several
+    IDs on one line, and is reported rather than looked up as one unknown ID.
+    """
+    numbered = [(number, line.strip()) for number, line in enumerate(read_text(path).splitlines(), start=1)]
+    numbered = [(number, line) for number, line in numbered if line and not line.startswith("#")]
+    if not numbered:
         return []
-    if "\t" in lines[0]:
+    if "\t" in numbered[0][1]:
         rows = read_tsv(path)
         if not rows:
             return []
-        key = first_present(rows[0], _ID_LIST_ALIASES) or next(iter(rows[0]))
+        key = first_present(rows[0], ID_LIST_ALIASES) or next(iter(rows[0]))
         return [row[key] for row in rows if row.get(key)]
-    return [line.split("\t")[0].strip() for line in lines]
+    ids = []
+    for number, line in numbered:
+        value = line.split("\t")[0].strip()
+        for delimiter, name in _OTHER_DELIMITERS:
+            if delimiter in value:
+                raise InputError(f"{path}: line {number} has a {name}; put one ID per line, "
+                                 "or save a table of IDs as tab-separated text")
+        ids.append(value)
+    return ids
 
 
 def first_present(row: dict[str, str], aliases: Iterable[str]) -> str | None:
@@ -341,14 +377,29 @@ _LINEAGE_VALUE_ALIASES = ("st", "mlst_st", "sequence_type", "lineage", "sublinea
 
 def read_lineages(path: Path) -> dict[str, str]:
     """Isolate -> lineage from a typing table: Kleborate (strain, ST or *__mlst__ST),
-    mlst, or PopPUNK clusters.csv (Taxon, Cluster). Tab- or comma-separated."""
+    mlst (with or without a header row), or PopPUNK clusters.csv (Taxon, Cluster).
+    Tab- or comma-separated."""
     lines = [line for line in read_text(path).splitlines() if line.strip() and not line.startswith("#")]
     if not lines:
         return {}
     delimiter = "\t" if "\t" in lines[0] else ","
+    if _is_mlst_without_header(lines[0], delimiter):
+        pairs = _mlst_pairs(path, lines, delimiter)
+    else:
+        pairs = _table_pairs(path, lines, delimiter)
+    out: dict[str, str] = {}
+    for name, value in pairs:
+        if name and value:
+            if out.get(name, value) != value:
+                raise InputError(f"{path}: {name} is listed twice, as {out[name]} and {value}; keep one lineage per isolate")
+            out[name] = value
+    return out
+
+
+def _table_pairs(path: Path, lines: list[str], delimiter: str) -> list[tuple[str, str]]:
     rows = read_tsv(path) if delimiter == "\t" else list(csv.DictReader(lines, delimiter=delimiter))
     if not rows:
-        return {}
+        return []
     header = [key for key in rows[0] if key]
     id_col = first_present(rows[0], _LINEAGE_ID_ALIASES) or header[0]
     value_col = first_present(rows[0], _LINEAGE_VALUE_ALIASES) or next(
@@ -356,9 +407,33 @@ def read_lineages(path: Path) -> dict[str, str]:
     )
     if value_col is None:
         raise InputError(f"{path}: no lineage column ({', '.join(_LINEAGE_VALUE_ALIASES)}, or a Kleborate *__ST column)")
-    out = {}
-    for row in rows:
-        name, value = (row.get(id_col) or "").strip(), (row.get(value_col) or "").strip()
-        if name and value:
-            out[name] = value
-    return out
+    return [((row.get(id_col) or "").strip(), (row.get(value_col) or "").strip()) for row in rows]
+
+
+# mlst's default output has no header: FILE, SCHEME, ST, then one allele per locus as
+# name(number), such as gapA(3), infB(~4) or pgi(-). ST is "-" when none is assigned, and a
+# file with no matching scheme has only "FILE - -".
+_MLST_ST = re.compile(r"^(\d+|-)$")
+_MLST_ALLELE = re.compile(r"^[^\s()]+\(")
+
+
+def _split(line: str, delimiter: str) -> list[str]:
+    cells = line.split("\t") if delimiter == "\t" else next(csv.reader([line], delimiter=delimiter))
+    return [cell.strip() for cell in cells]
+
+
+def _is_mlst_without_header(line: str, delimiter: str) -> bool:
+    """A header has names in it, never an ST number or "-" in the third column."""
+    cells = _split(line, delimiter)
+    return len(cells) >= 3 and bool(_MLST_ST.match(cells[2])) and (len(cells) == 3 or bool(_MLST_ALLELE.match(cells[3])))
+
+
+def _mlst_pairs(path: Path, lines: list[str], delimiter: str) -> list[tuple[str, str]]:
+    pairs = []
+    for line in lines:
+        cells = _split(line, delimiter)
+        if len(cells) < 3 or not _MLST_ST.match(cells[2]):
+            raise InputError(f"{path}: this looks like mlst output, but {line[:60]!r} is not an mlst line "
+                             "(file, scheme, ST, alleles)")
+        pairs.append((cells[0], "" if cells[2] == "-" else cells[2]))
+    return pairs

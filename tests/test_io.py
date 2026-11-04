@@ -95,3 +95,53 @@ def test_every_missing_value_term_is_reported_as_unknown_not_as_a_species_name(l
 
     for term in sorted(t for t in UNKNOWN_EXACT if t):
         assert classify_record({"isolation_source": term}, lexicon).classify_reason == "unknown_source", term
+
+
+# --- files with the wrong delimiter ----------------------------------------------------------
+# Read as one column, a CSV would send every row to review for lack of a host or source.
+
+
+@pytest.mark.parametrize("delimiter, name", [(",", "comma"), (";", "semicolon")])
+def test_comma_and_semicolon_separated_tables_are_rejected(tmp_path: Path, delimiter, name):
+    path = tmp_path / "m.csv"
+    path.write_text(f"# exported\nbiosample{delimiter}host{delimiter}isolation_source\nSAMN1{delimiter}Homo sapiens{delimiter}blood\n",
+                    encoding="utf-8")
+    with pytest.raises(ValueError, match=f"looks {name}-separated"):
+        read_tsv(path)
+    path.write_text(f"biosample{delimiter}host\n", encoding="utf-8")  # header only: still the wrong format
+    with pytest.raises(ValueError, match=f"looks {name}-separated"):
+        read_tsv(path)
+
+
+def test_commas_and_semicolons_in_a_tab_separated_table_are_text(tmp_path: Path):
+    path = tmp_path / "m.tsv"
+    path.write_text("id\tisolation_source, as typed\nSAMN1\tblood, venous; left arm\n", encoding="utf-8")
+    assert read_tsv(path) == [{"id": "SAMN1", "isolation_source, as typed": "blood, venous; left arm"}]
+
+
+def test_one_column_tables(tmp_path: Path):
+    path = tmp_path / "m.tsv"
+    path.write_text("isolation_source\nblood, venous\n", encoding="utf-8")
+    assert read_tsv(path) == [{"isolation_source": "blood, venous"}]
+    # A single quoted column name may hold a comma; unquoted, two names mean a CSV.
+    path.write_text('"source, as typed"\nblood\n', encoding="utf-8")
+    assert read_tsv(path) == [{"source, as typed": "blood"}]
+    path.write_text("source, as typed\nblood\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="looks comma-separated"):
+        read_tsv(path)
+
+
+def test_id_list_with_a_comma_or_semicolon_names_the_line(tmp_path: Path):
+    path = tmp_path / "ids.txt"
+    path.write_text("# my ids\nSAMN1\n\nSAMN2,SAMN3\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="line 4 has a comma"):
+        read_id_list(path)
+    path.write_text("query_id;note\nSAMN1;x\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="line 1 has a semicolon"):
+        read_id_list(path)
+
+
+def test_plain_id_list_keeps_the_first_cell_of_each_line(tmp_path: Path):
+    path = tmp_path / "ids.txt"
+    path.write_text("SAMN1\nSAMN2\tfrom the freezer, box 3\n", encoding="utf-8")
+    assert read_id_list(path) == ["SAMN1", "SAMN2"]

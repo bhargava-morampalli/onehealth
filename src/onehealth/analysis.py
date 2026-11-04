@@ -208,10 +208,34 @@ def decimal_year(text: str) -> float | None:
 # --- name matching for genotype and distance files -------------------------------
 
 _ASSEMBLY_FILE = re.compile(r"^(GC[AF]_\d+\.\d+)_", re.IGNORECASE)
+# Sequence files as typing tools name them (mlst's FILE column, for one), optionally compressed.
+_SEQUENCE_FILE = re.compile(r"\.(fa|fas|fasta|fna|ffn|fsa|gb|gbk|gbff|genbank|embl)(\.(gz|bz2|xz|zip))?$", re.IGNORECASE)
+
+
+def _name_candidates(name: str) -> list[str]:
+    """What an external name may stand for, most specific first: the name itself, an NCBI
+    assembly file's accession, a sequence file's name without its directory and extension,
+    and the file's directory, as in shovill's ISO1/contigs.fa."""
+    name = name.strip()
+    parts = [part for part in re.split(r"[/\\]", name) if part]
+    base = parts[-1] if parts else name
+    candidates = [name]
+    stem = _ASSEMBLY_FILE.match(base)
+    if stem:
+        candidates.append(stem.group(1))
+    if _SEQUENCE_FILE.search(base):
+        candidates.append(_SEQUENCE_FILE.sub("", base))
+        if len(parts) > 1:
+            candidates.append(parts[-2])
+    return list(dict.fromkeys(c.upper() for c in candidates if c))
 
 
 def match_names(names: list[str], dataset: Dataset) -> tuple[dict[str, str], list[str]]:
-    """Map external sample names to isolate keys. Ambiguous identifiers are not used."""
+    """Map external sample names to isolate keys.
+
+    The most specific candidate that names any isolate decides (see _name_candidates). If it
+    names more than one, the name is ambiguous and left unmatched rather than guessed.
+    """
     owners: dict[str, set[str]] = {}
     for iso in dataset.isolates:
         for ident in iso.ids:
@@ -219,15 +243,11 @@ def match_names(names: list[str], dataset: Dataset) -> tuple[dict[str, str], lis
     mapping: dict[str, str] = {}
     unmatched: list[str] = []
     for name in names:
-        candidates = [name.strip().upper()]
-        stem = _ASSEMBLY_FILE.match(name.strip())
-        if stem:
-            candidates.append(stem.group(1).upper())
-        key = next((next(iter(owners[c])) for c in candidates if len(owners.get(c, ())) == 1), None)
-        if key is None:
-            unmatched.append(name)
+        found = next((owners[c] for c in _name_candidates(name) if c in owners), set())
+        if len(found) == 1:
+            mapping[name] = next(iter(found))
         else:
-            mapping[name] = key
+            unmatched.append(name)
     return mapping, unmatched
 
 

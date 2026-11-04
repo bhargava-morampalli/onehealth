@@ -8,8 +8,8 @@
 
 ## Format
 
-- **Tab-separated**, with a header row. A comma-separated file is read as a single column, so every row would go to review as `missing_source`: export it as TSV first.
-- **UTF-8.** The byte-order mark Excel adds is fine. Any other encoding stops with an error naming the byte, rather than being guessed.
+- **Tab-separated**, with a header row. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error that says so, rather than being read as one column.
+- **UTF-8.** A byte-order mark at the start is fine. Any other encoding stops with an error naming the byte, rather than being guessed. Excel's tab-delimited export may not be UTF-8, so a table with accented or other non-ASCII letters can fail this check; LibreOffice and Google Sheets can save tab-separated UTF-8.
 - **One line is one row.** Blank lines are skipped, and lines starting with `#` are comments, even above the header.
 - **Quotes:** a cell wrapped in double quotes, as Excel and pandas write a cell that contains a quote, is unwrapped. Any other quote is kept as typed.
 - **Cells** are trimmed of surrounding spaces. A row with fewer cells than the header is padded with empty cells; a row with more stops with an error naming the line, unless the extra cells are empty.
@@ -24,11 +24,11 @@
 | sample_type | `source_type`, `tissue`, `sample_type` |
 | host_disease | `host_disease`, `host disease` |
 
-A table needs at least one of these for `classify` to have anything to go on. [`classify`](../commands/classify.md#what-the-classes-are-based-on) explains how the fields are used.
+A table with none of these columns stops with an error, because every row would go to review; see [`classify`](../commands/classify.md#what-the-classes-are-based-on), which also explains how the fields are used.
 
 ## Identifier columns
 
-Identifiers link rows to overrides, truth labels, lineages, features and distances, and tell which rows are the same isolate.
+Identifiers link rows to overrides, truth labels, lineages, features and distances, and tell which rows are the same isolate. A `--metadata` table for `resolve` must have at least one of them.
 
 | Identifier | Columns |
 |---|---|

@@ -13,7 +13,7 @@ from onehealth.constants import (
     SRA_ALIASES,
 )
 from onehealth.ids import ParsedId, assembly_join_keys, is_sra_study, parse_id, pdt_stem
-from onehealth.io_tsv import get_field, metadata_view, read_tsv, row_match_ids
+from onehealth.io_tsv import ID_LIST_ALIASES, first_present, get_field, metadata_view, read_tsv, row_match_ids
 from onehealth.errors import InputError
 from onehealth.ncbi import (
     HttpError,
@@ -25,9 +25,15 @@ from onehealth.ncbi import (
 
 
 def load_local_metadata(path: Path | None) -> list[dict[str, str]]:
+    """The --metadata table. Without an ID column no row could match, and every ID would
+    quietly be looked up at NCBI (or sent to review with --no-network), so that is an error."""
     if path is None:
         return []
-    return read_tsv(path)
+    rows = read_tsv(path)
+    if rows and first_present(rows[0], ID_LIST_ALIASES) is None:
+        found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
+        raise InputError(f"{path}: no ID column to match IDs on ({', '.join(ID_LIST_ALIASES[:6])}, ...; found: {found})")
+    return rows
 
 
 def resolve_ids(
