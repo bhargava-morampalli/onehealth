@@ -616,6 +616,10 @@ def build_report(
                            "representatives during dereplication.")
     derep_note = " Counts use one representative per genomic cluster per source (dereplicated)." if derep else ""
     strata_text = " and ".join({"year": "collection year", "country": "country"}[f] for f in stratify)
+    tested = permutations > 0  # --permutations 0 skips every permutation test
+    if not tested:
+        quality.append("Permutation tests were skipped (--permutations 0), so no p- or q-values are reported and "
+                       "nothing is called significant.")
 
     # 1. Sampling
     counts = A.source_counts(dataset)
@@ -641,7 +645,7 @@ def build_report(
             f"identifier was kept ({derep.isolates_before} to {derep.isolates_after} isolates; "
             f"{derep.clusters_collapsed} clusters collapsed), following the dereplication in Vezina et al. "
             f"{refs.cite('vezina')}. Isolates from different sources were never merged, and linkage analyses used all isolates.")
-    if stratify:
+    if stratify and tested:
         strata = A.strata_summary(population.isolates, stratify)
         methods.append(
             f"All permutation tests shuffled source labels only among isolates with the same {strata_text} "
@@ -665,7 +669,10 @@ def build_report(
         held = 100 * summary["isolates_in_shared"] / max(1, summary["typed_isolates"])
         kpis.append(("Lineages", f"{summary['lineages']:,}"))
         kpis.append(("Lineages in ≥2 sources", f"{summary['shared_lineages']} ({share:.0f}%)"))
-        r_hg, r_gr, r_hu, r_th, r_he, r_ps = (refs.cite(k) for k in ("hunter", "grundmann", "hurlbert", "thorpe", "hetland", "phipson"))
+        r_hg, r_gr, r_hu = (refs.cite(k) for k in ("hunter", "grundmann", "hurlbert"))
+        r_th = refs.cite("thorpe") if tested else ""  # cited here only for the enrichment test
+        r_he = refs.cite("hetland")
+        r_ps = refs.cite("phipson") if tested else ""
         stem = "02_diversity"
         sections.append(_section(
             stem, "Lineage diversity",
@@ -691,11 +698,14 @@ def build_report(
             stem, "Common lineages and where they were found",
             f"{summary['shared_lineages']} of {summary['lineages']} lineages ({share:.0f}%) were found in two or more "
             f"sources; they hold {held:.0f}% of typed isolates. "
-            + (f"{len(significant)} lineage–source combinations differ from chance (q < 0.05; * on the axis marks enrichment)."
+            + ("Enrichment was not tested (--permutations 0)." if not tested else
+               f"{len(significant)} lineage–source combinations differ from chance (q < 0.05; * on the axis marks enrichment)."
                if significant else "No lineage was significantly enriched in a source."),
             _render(fig_lineages(lineage_rows, groups_present, enriched), stem, figures_dir),
-            f"The 20 most common lineages, split by source. Enrichment uses {permutations:,} permutations of source "
-            f"labels with Benjamini–Hochberg correction {r_th}{r_ps}.{derep_note}",
+            "The 20 most common lineages, split by source."
+            + (f" Enrichment uses {permutations:,} permutations of source labels with Benjamini–Hochberg correction "
+               f"{r_th}{r_ps}." if tested else "")
+            + derep_note,
             _table_html(enrichment or lineage_rows,
                         [("lineage", "Lineage"), ("source", "Source"), ("observed", "Observed"), ("expected", "Expected"),
                          ("ratio", "Obs/Exp"), ("p", "p"), ("q", "q (BH)"), ("direction", "Direction")]
@@ -714,9 +724,11 @@ def build_report(
             _write_table(tables_dir, stem, inter)))
         methods.append(
             f"Lineage diversity per source was measured with Simpson's index {r_hg} and 95% confidence intervals {r_gr}, "
-            f"and compared with rarefaction curves {r_hu}. Lineage–source associations were tested by permuting source "
-            f"labels ({permutations:,} permutations, seed {seed}), with two-sided p-values computed as (b+1)/(m+1) {r_ps} "
-            f"and Benjamini–Hochberg correction, following Thorpe et al. {r_th}.")
+            f"and compared with rarefaction curves {r_hu}. "
+            + (f"Lineage–source associations were tested by permuting source labels ({permutations:,} permutations, "
+               f"seed {seed}), with two-sided p-values computed as (b+1)/(m+1) {r_ps} and Benjamini–Hochberg "
+               f"correction, following Thorpe et al. {r_th}." if tested else
+               "Lineage–source associations were not tested (--permutations 0)."))
     else:
         quality.append("No lineage column was found (ST, lineage, cluster ...), so lineage analyses were skipped. "
                        "Add one to the table or pass --lineages.")
@@ -732,20 +744,25 @@ def build_report(
         fig = fig_features(result) if result.rows else None
         if fig:
             sig = [t for t in result.tests if t["q"] < 0.05]
-            r_wi, r_ch = refs.cite("wilson"), refs.cite("hetland")
+            r_wi = refs.cite("wilson")
+            r_ch = refs.cite("hetland") if tested else ""
             stem = "06_features"
             sections.append(_section(
                 stem, "Resistance, virulence and plasmid features by source",
-                f"{len(sig)} of {len([t for t in result.tests if not math.isnan(t['p'])])} variable features differ in "
-                "prevalence between sources (q < 0.05, marked *). Features carried by every isolate are omitted from the chart.",
+                (f"{len(sig)} of {len([t for t in result.tests if not math.isnan(t['p'])])} variable features differ in "
+                 "prevalence between sources (q < 0.05, marked *). " if tested else
+                 "Differences in prevalence between sources were not tested (--permutations 0). ")
+                + "Features carried by every isolate are omitted from the chart.",
                 _render(fig, stem, figures_dir),
                 f"Cell shade is the percentage of genotyped isolates from that source carrying the feature; hover or "
-                f"open the table for counts and Wilson 95% intervals {r_wi}. Tests are permutation chi-squared tests of "
-                f"independence from source {r_ch}, BH-corrected.{derep_note} "
-                + ("Dereplication removes outbreak clusters, but lineages can still share features; a GWAS that models "
-                   "population structure (pyseer) is the stricter check." if derep else
-                   "Isolates from one clone are not independent, so these tests overstate significance when clones "
-                   "dominate; rerun with --dereplicate, or use a GWAS that models population structure (pyseer)."),
+                f"open the table for counts and Wilson 95% intervals {r_wi}."
+                + ((f" Tests are permutation chi-squared tests of independence from source {r_ch}, BH-corrected."
+                    f"{derep_note} "
+                    + ("Dereplication removes outbreak clusters, but lineages can still share features; a GWAS that "
+                       "models population structure (pyseer) is the stricter check." if derep else
+                       "Isolates from one clone are not independent, so these tests overstate significance when clones "
+                       "dominate; rerun with --dereplicate, or use a GWAS that models population structure (pyseer)."))
+                   if tested else derep_note),
                 _table_html(result.tests, [("feature", "Feature"), ("class", "Class"),
                                            ("isolates_with_feature", "Isolates"), ("percent_overall", "% overall"),
                                            ("chi2", "Chi-squared"), ("p", "p"), ("q", "q (BH)")]),
@@ -753,8 +770,9 @@ def build_report(
                 extra_downloads=[_write_table(tables_dir, "06_feature_tests", result.tests)]))
             methods.append(
                 f"Feature prevalence per source is reported with Wilson 95% intervals {r_wi}; association with source "
-                f"was tested with a permutation chi-squared test ({permutations:,} permutations) and BH correction, "
-                f"as in Hetland et al. {r_ch}. Only isolates present in the features file count as genotyped "
+                + (f"was tested with a permutation chi-squared test ({permutations:,} permutations) and BH correction, "
+                   f"as in Hetland et al. {r_ch}." if tested else "was not tested (--permutations 0).")
+                + " Only isolates present in the features file count as genotyped "
                 f"({', '.join(f'{g}: {n}' for g, n in result.genotyped.items())}).")
 
     # 4. Genomic linkage
@@ -769,7 +787,8 @@ def build_report(
         n_between = sum(r["events"] for r in between)
         n_within = sum(r["events"] for r in within)
         kpis.append((f"Cross-source links (≤{threshold:g} SNPs)", f"{n_between}"))
-        r_th, r_he, r_da, r_mu, r_ps = (refs.cite(k) for k in ("thorpe", "hetland", "david", "muloi", "phipson"))
+        r_th, r_he, r_da = (refs.cite(k) for k in ("thorpe", "hetland", "david"))
+        r_mu, r_ps = (refs.cite("muloi"), refs.cite("phipson")) if tested else ("", "")
         close_rows = [
             {"pairs": label, "all_pairs": total, f"within_{threshold:g}_snps": int((values <= threshold).sum()),
              "within_100_snps": int((values <= 100).sum())}
@@ -797,7 +816,9 @@ def build_report(
             "clusters merge.",
             _table_html(link.sweep, [("threshold", "SNP threshold"), ("within_events", "Within-source events"),
                                      ("between_events", "Between-source events")]),
-            _write_table(tables_dir, stem, link.sweep)))
+            _write_table(tables_dir, stem, link.sweep),
+            # Normally in the observed-vs-expected section, which needs permutations.
+            extra_downloads=[] if tested else [_write_table(tables_dir, "08_sharing_events", link.events)]))
         stem = "09_linked_isolates"
         sections.append(_section(
             stem, "Which sources share close relatives?",
@@ -808,7 +829,7 @@ def build_report(
             _table_html(link.linked_fraction, [("from_source", "From"), ("to_source", "To"), ("isolates", "Isolates"),
                                                ("with_close_relative", "With close relative"), ("percent", "%")]),
             _write_table(tables_dir, stem, link.linked_fraction)))
-        oe = fig_observed_expected(link)
+        oe = fig_observed_expected(link) if tested else None
         if oe:
             stem = "10_observed_expected"
             sig = [r for r in between if r["q"] < 0.05]
@@ -858,9 +879,10 @@ def build_report(
             f"Pairwise SNP distances were read for {link.matched} isolates. Isolates within {threshold:g} SNPs were "
             f"joined by single linkage; each unique source pair connected inside a cluster counted as one sharing "
             f"event, excluding pairs from the same host individual {r_th}{r_he}. Events were normalised per 100 isolates "
-            f"of the two sources and compared with {permutations:,} permutations of source labels over the fixed "
-            f"genetic network {r_mu}, with two-sided p-values {r_ps} and BH correction. Results were repeated at "
-            f"{swept} SNPs.")
+            "of the two sources"
+            + (f" and compared with {permutations:,} permutations of source labels over the fixed genetic network "
+               f"{r_mu}, with two-sided p-values {r_ps} and BH correction" if tested else "")
+            + f". Results were repeated at {swept} SNPs.")
 
     if dataset.unclassified:
         quality.append(f"{dataset.unclassified} isolates have no source class and are excluded from source comparisons.")

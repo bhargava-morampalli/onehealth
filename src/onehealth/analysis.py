@@ -257,7 +257,9 @@ def benjamini_hochberg(pvalues: list[float]) -> list[float]:
 
 
 def perm_pvalue(exceed: int, permutations: int) -> float:
-    """Phipson & Smyth (2010): never zero."""
+    """Phipson & Smyth (2010): never zero. NaN when no permutations ran, since then nothing was tested."""
+    if permutations < 1:
+        return math.nan
     return (exceed + 1) / (permutations + 1)
 
 
@@ -678,7 +680,7 @@ def linkage(
     perm_values = []
     labelled = np.flatnonzero(src >= 0)
     codes = strata_codes([isolates[i] for i in labelled], strata)
-    if n_s and len(a):
+    if n_s and len(a) and permutations > 0:
         rng = np.random.default_rng(seed)
         draws = []
         for _ in range(permutations):

@@ -407,3 +407,21 @@ def test_feature_permutations_match_a_one_at_a_time_reference():
         exceed += A._chi2(onehot[A.permute_within(src, codes, draw)].T @ matrix, n_s, totals) >= observed - 1e-9
     expected = {f: A.perm_pvalue(int(e), permutations) for f, e in zip(features, exceed) if 0 < totals[features.index(f)] < len(isolates)}
     assert {t["feature"]: t["p"] for t in result.tests if not math.isnan(t["p"])} == expected
+
+
+def test_zero_permutations_skip_the_tests_instead_of_crashing():
+    assert math.isnan(A.perm_pvalue(0, 0))
+    ds, names, d = _random_linkage_inputs()
+    skipped = A.linkage(ds, names, d, threshold=25, permutations=0)
+    tested = A.linkage(ds, names, d, threshold=25, permutations=19)
+    assert [r["events"] for r in skipped.events] == [r["events"] for r in tested.events]
+    assert all(math.isnan(r[k]) for r in skipped.events for k in ("expected", "expected_low", "expected_high", "p", "q"))
+    assert skipped.sweep == tested.sweep and skipped.cross_edges == tested.cross_edges
+
+    rows = [_row(i, "Animal" if i < 10 else "Human", "ST1" if i < 10 else f"ST{i % 3 + 2}") for i in range(30)]
+    enrichment = A.lineage_enrichment(A.build_dataset(rows), permutations=0)
+    assert enrichment and all(math.isnan(r["p"]) and math.isnan(r["q"]) for r in enrichment)
+    presence = {f"ISO{i}": {"blaKPC"} if i < 10 else set() for i in range(30)}
+    features = A.feature_prevalence(A.build_dataset(rows), presence, {}, permutations=0)
+    assert all(math.isnan(t["p"]) and math.isnan(t["q"]) for t in features.tests)
+    assert features.rows  # prevalence and Wilson intervals are still reported

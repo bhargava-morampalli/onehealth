@@ -84,7 +84,7 @@ Add `--stratify-by year`, `country` or `year,country` to shuffle source labels o
 
 Add `--dereplicate` (with `--distances`) to run the lineage and feature analyses on one isolate per genomic cluster per source. Isolates from the same source within `--threshold` SNPs collapse to one representative, so outbreak clusters do not inflate the tests; isolates from different sources are never merged. Sampling and linkage sections always use every isolate.
 
-The SNP threshold defaults to 21, the published *K. pneumoniae* value. Choose one for your organism and pipeline; the report always shows a sweep from 0 to 100 SNPs. Tests use 9,999 permutations with a fixed `--seed`, so results reproduce exactly.
+The SNP threshold defaults to 21, the published *K. pneumoniae* value. Choose one for your organism and pipeline; the report always shows a sweep from 0 to 100 SNPs. Tests use 9,999 permutations with a fixed `--seed`, so results reproduce exactly. `--permutations 0` skips them for a quick look: p-values are left blank and the observed-vs-expected section is omitted.
 
 Try it on synthetic data:
 
