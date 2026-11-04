@@ -20,7 +20,7 @@ A comma-separated file was read as a table with one column. `classify` then foun
 
 Reports on existing inputs are unchanged: the NCBI Pathogen Detection and demo reports are identical before and after.
 
-## Unreleased: documentation site (branch `docs-site`)
+## 4 November 2026: documentation site ([#8](https://github.com/bhargava-morampalli/onehealth/pull/8))
 
 A documentation site in `documentation/`, built with MkDocs: install, a tutorial on the example data, a page for each command with every option and output column, guides to input files and the lexicon, the benchmarks, and this changelog. A GitHub Actions workflow builds it on every pull request and fails on a broken link. It publishes the site to GitHub Pages from `main` once the repository is public, and does nothing while it is private. A test fails if a command gains an option its page does not mention.
 
