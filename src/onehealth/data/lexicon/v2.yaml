@@ -2,7 +2,6 @@ version: "2"
 description: >
   Seed lexicon for One Health L1 classification of isolation-source metadata.
   Unknown values are handled in code and never map to Environmental.
-  Changes from v1 and their justification are in REVIEW.md.
 
 # How rules are applied (classify.py):
 #   * Matching is on lower-case word tokens, so "drain" does not match "drainage".
@@ -75,8 +74,8 @@ rules:
     priority: 95
     note: >
       Built-environment drain fixture, not wound drainage. Unqualified drains
-      (sink drain, floor drain) are assumed to be in a healthcare setting; see
-      REVIEW.md "Decisions left to you".
+      (sink drain, floor drain) are assumed to be in a healthcare setting. If a
+      dataset mixes hospitals with food plants, require a hospital word.
 
   - id: clinical-environment
     fields: [isolation_source, sample_type]

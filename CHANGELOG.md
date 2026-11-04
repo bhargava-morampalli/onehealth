@@ -1,6 +1,6 @@
 # Changelog
 
-What changed in `onehealth`, newest first, in terms of what you see as a user. Earlier work is described in [REVIEW.md](REVIEW.md) (code and method review, 17 October 2026) and [ROADMAP.md](ROADMAP.md) (`onehealth report` and its analyses). Each entry links to its pull request, where the full reasoning and checks are.
+What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
 ## Unreleased: edge-case sweep (branch `edge-case-sweep`)
 
@@ -27,6 +27,8 @@ Every command was run against about 90 awkward inputs: missing, empty or mis-enc
 - `validate` stops when the truth file gives one isolate two different labels, directly or under two of its IDs. Before, the last label silently won.
 - An overrides file with no ID or no `l1` column is an error. Before, it was ignored, or sent every isolate to review.
 - When a report section cannot be drawn (empty features file, no variable features, a distance matrix sharing fewer than two isolates with the table, an empty lineage table), the data-quality section says why. Before, the section silently vanished.
+
+**Internal notes are no longer published.** `ROADMAP.md`, `REVIEW.md` and `docs/` are working notes. They are now in `.gitignore` and removed from the repository (they remain in its history). Links to them from the README, lexicon and code are reworded.
 
 **Test data.** The NCBI Pathogen Detection gene fixture (`tests/data/ncbi_pd_klebsiella/features.tsv`) had stray quotes on the first and last gene of every list. The cause was NCBI's quoted list cells, which the build script never unwrapped. 23 genes were counted under two names. The fixture was rebuilt from the same release. The real-data report's gene table goes from 186 to 168 features, and no other result changes.
 
@@ -59,4 +61,3 @@ Every table and figure is byte-for-byte the same as before.
 
 - **PDT lookups mostly fail.** 60 of 65 real Pathogen Detection PDTs come back `pdt_unresolved`, because `resolve` searches for an assembly named after the PDT, and most genomes keep their submitter's name. The fix is to look PDTs up in Pathogen Detection's own metadata.
 - **Lexicon gaps.** Lexicon additions found by the IMP benchmark, such as `Shower 3`, `bedpan washer` and `WC sink drains`, are not made yet. They change results, so they should come with a new lexicon version.
-- **`docs/`** is listed in `.gitignore` but its two files are still tracked, and they describe bugs fixed long ago.

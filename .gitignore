@@ -8,7 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
-docs/
+
+# Internal working notes: kept on your machine, not published.
+# Add future notes here (or put them in docs/) so they stay out of the public repo.
+/ROADMAP.md
+/REVIEW.md
+/docs/
 
 # Analysis outputs
 work/

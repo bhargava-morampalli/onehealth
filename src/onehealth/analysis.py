@@ -1,6 +1,6 @@
 """Standard One Health population analyses on a classified table.
 
-The analysis set follows recent One Health genomic studies (see ROADMAP.md):
+The analysis set follows recent One Health genomic studies (cited in the report's methods):
 source composition, lineage diversity and sharing, lineage-source enrichment,
 resistance/virulence prevalence by source, and genomic linkage between sources
 at a SNP threshold with a permutation null. Every function is pure and returns
