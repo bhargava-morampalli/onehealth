@@ -12,8 +12,9 @@ from onehealth.constants import (
     RESOLVE_FIELDS,
     SRA_ALIASES,
 )
-from onehealth.ids import ParsedId, assembly_join_keys, is_sra_study, parse_id
+from onehealth.ids import ParsedId, assembly_join_keys, is_sra_study, parse_id, pdt_stem
 from onehealth.io_tsv import get_field, metadata_view, read_tsv, row_match_ids
+from onehealth.errors import InputError
 from onehealth.ncbi import (
     HttpError,
     NCBIClient,
@@ -34,7 +35,10 @@ def resolve_ids(
     local_rows: list[dict[str, str]] | None = None,
     client: NCBIClient | None = None,
     allow_network: bool = False,
+    pd_groups: list[str] | None = None,
 ) -> list[dict[str, str]]:
+    """One row per ID, in order. `pd_groups` (e.g. ["Klebsiella"]) looks PDTs up in those
+    Pathogen Detection organism groups' metadata before trying anything else for them."""
     index = _index_local(local_rows or [])
     resolved: list[dict[str, str]] = []
     online: list[tuple[dict[str, str], ParsedId]] = []  # rows to look up at NCBI, filled in place below
@@ -71,22 +75,38 @@ def resolve_ids(
         resolved.append(row)
         online.append((row, parsed))
     if online and client is not None:
-        _resolve_online(online, client)
+        _resolve_online(online, client, pd_groups or [])
     return resolved
 
 
-def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient) -> None:
+def _pathogen_detection(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, groups: list[str]) -> dict:
+    """PDT stem -> current Pathogen Detection record, or {} (then PDTs take the assembly-name route)."""
+    pdts = [parsed.normalized for _, parsed in online if parsed.id_type == "pdt"]
+    if not pdts or not groups:
+        return {}
+    try:
+        names = client.pathogen_detection_groups(groups)  # an unknown group name stops the run here
+        return client.pathogen_detection_targets(pdts, names)
+    except InputError:
+        raise
+    except (HttpError, ValueError) as exc:
+        client.note(f"Pathogen Detection lookup failed ({exc}); PDTs are looked up by assembly name instead")
+        return {}
+
+
+def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, pd_groups: list[str]) -> None:
     """Look rows up at NCBI, filling each row in place.
 
     Assembly and BioSample reports are fetched many per request. Whatever a batch does
     not answer cleanly is looked up on its own, exactly as a single ID always was, so
     batching changes the number of requests, not the result.
     """
+    targets = _pathogen_detection(online, client, pd_groups)
     genomes = client.genome_reports(parsed.normalized for _, parsed in online if parsed.id_type == "assembly")
     found: list[tuple[dict[str, str], dict[str, str], str]] = []
     for row, parsed in online:
         try:
-            fetched, biosample = _find_biosample(parsed, client, genomes)
+            fetched, biosample = _find_biosample(parsed, client, genomes, targets)
         except (HttpError, ValueError) as exc:
             _ncbi_error(row, exc, client)
             continue
@@ -218,7 +238,7 @@ def _lookup_local(
 
 
 def _find_biosample(
-    parsed: ParsedId, client: NCBIClient, genomes: dict[str, dict]
+    parsed: ParsedId, client: NCBIClient, genomes: dict[str, dict], targets: dict[str, dict[str, str]]
 ) -> tuple[dict[str, str], str]:
     """The one BioSample an ID points to, with what was learnt on the way.
 
@@ -245,7 +265,16 @@ def _find_biosample(
             return {"resolve_status": "review", "resolve_reason": "sra_no_biosample"}, ""
         out["resolve_reason"] = "ncbi_sra"
     elif parsed.id_type == "pdt":
-        biosamples = client.pdt_to_biosample(parsed.normalized)
+        record = targets.get(pdt_stem(parsed.normalized))
+        if record and record["biosample"]:
+            # Pathogen Detection's own table: the current PDT version, its BioSample and assembly.
+            biosamples = [record["biosample"]]
+            out["pdt"] = record["target"]
+            if record["assembly"]:
+                out["assembly"] = record["assembly"]
+        else:
+            # Only works when NCBI assembled the genome itself and named it after the PDT.
+            biosamples = client.pdt_to_biosample(parsed.normalized)
         if not biosamples:
             return {"resolve_status": "review", "resolve_reason": "pdt_unresolved"}, ""
         out["resolve_reason"] = "ncbi_pdt"
