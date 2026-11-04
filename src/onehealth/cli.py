@@ -9,9 +9,23 @@ from pathlib import Path
 
 from onehealth import __version__
 from onehealth.classify import classify_fieldnames, classify_rows
-from onehealth.constants import RESOLVE_FIELDS, SEED_LEXICON_VERSION
+from onehealth.constants import (
+    HOST_ALIASES,
+    HOST_DISEASE_ALIASES,
+    ISOLATION_SOURCE_ALIASES,
+    RESOLVE_FIELDS,
+    SAMPLE_TYPE_ALIASES,
+    SEED_LEXICON_VERSION,
+)
 from onehealth.errors import InputError
-from onehealth.io_tsv import read_id_list, read_tsv, require_columns, write_tsv
+from onehealth.io_tsv import (
+    ID_LIST_ALIASES,
+    first_present,
+    read_id_list,
+    read_tsv,
+    require_columns,
+    write_tsv,
+)
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides
@@ -242,6 +256,7 @@ def cmd_classify(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
     lexicon = load_lexicon(args.lexicon)
     overrides = load_overrides(args.overrides)
+    _check_classify_columns(rows, args.input, has_overrides=bool(overrides))
     classified = classify_rows(rows, lexicon, overrides)
     fieldnames = classify_fieldnames(classified)
     write_tsv(args.out, classified, fieldnames)
@@ -269,6 +284,26 @@ def cmd_plot(args: argparse.Namespace) -> int:
 
 
 _CLASSIFY_FIRST = "Is this the output of onehealth classify?"
+
+# Every column the lexicon can read (io_tsv.metadata_view).
+_EVIDENCE_COLUMNS = (*ISOLATION_SOURCE_ALIASES, *HOST_ALIASES, *SAMPLE_TYPE_ALIASES, *HOST_DISEASE_ALIASES)
+
+
+def _check_classify_columns(rows: list[dict[str, str]], path: Path, has_overrides: bool) -> None:
+    """A table with none of the columns classify reads would send every row to review.
+
+    The usual cause is an ID list given to classify instead of resolve; its first ID is
+    then read as the header. Overrides can still classify the rows they name, but only
+    if the table has an ID column to match them on.
+    """
+    if not rows or first_present(rows[0], _EVIDENCE_COLUMNS) is not None:
+        return
+    found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
+    problem = (f"{path}: no column classify can read (isolation_source, host, source_type, ...; found: {found})")
+    if has_overrides and first_present(rows[0], ID_LIST_ALIASES) is not None:
+        print(f"warning: {problem}, so only rows with an override can be classified", file=sys.stderr)
+        return
+    raise InputError(f"{problem}. For a list of IDs, run onehealth resolve first.")
 
 
 def _percent(value: float) -> str:

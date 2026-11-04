@@ -10,7 +10,7 @@ onehealth resolve ids.txt -o work/resolved.tsv --email you@example.com
 
 ## The ID list
 
-One ID per line, or a TSV with a header whose ID column is `query_id`, `id`, `accession`, `biosample`, `assembly`, `sra`, `pdt` or a similar name (otherwise its first column is used). Blank lines and lines starting with `#` are ignored. Case does not matter.
+One ID per line, or a TSV with a header whose ID column is `query_id`, `id`, `accession`, `biosample`, `assembly`, `sra`, `pdt` or a similar name (otherwise its first column is used). Blank lines and lines starting with `#` are ignored. Case does not matter. No accession contains a comma or semicolon, so a line with one, as in a CSV file or several IDs on one line, stops with an error naming the line.
 
 | ID type | Examples | Notes |
 |---|---|---|
@@ -26,7 +26,7 @@ Anything else, such as a BioProject (`PRJNA…`), goes to review as `unknown_id`
 | Option | What it does |
 |---|---|
 | `-o`, `--out` | Output TSV (required). |
-| `--metadata` | A local metadata TSV to join first. IDs found there are not looked up at NCBI. |
+| `--metadata` | A local metadata TSV to join first. IDs found there are not looked up at NCBI. It needs an ID column; see [Input files](../guides/input-files.md#identifier-columns). |
 | `--no-network` | Use only `--metadata`; IDs not found there go to review as `missing_metadata`. |
 | `--email` | Your contact address, sent to NCBI E-utilities as NCBI asks. |
 | `--api-key` | An [NCBI API key](https://account.ncbi.nlm.nih.gov/settings/). Raises the request rate from 3 to 10 per second. |

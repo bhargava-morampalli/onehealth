@@ -48,6 +48,8 @@ The lexicon reads four fields of each row:
 
 NCBI's `source_type` (`human`, `animal`, `food`, `environmental`) is a One Health category, so it is read before `tissue` and `sample_type`. NCBI's material type (`whole organism`, `pure culture`) is never treated as evidence.
 
+A table with none of these columns stops with an error, because every row would go to review. The usual cause is an ID list given to `classify` instead of [`resolve`](resolve.md). With `--overrides` and an ID column, it is a warning instead, and only the rows the overrides name are classified.
+
 ### Specimens follow the host
 
 Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinical") occur in any host:

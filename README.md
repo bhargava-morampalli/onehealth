@@ -62,7 +62,7 @@ Rows that cannot be resolved or classified are written next to the output as `<s
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
-Input tables are tab-separated UTF-8 text with a header row; Excel's "UTF-8" export works, and cells may contain quote characters. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
+Input tables are tab-separated UTF-8 text with a header row; a byte-order mark is fine, and cells may contain quote characters. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error rather than being misread. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Validate
 
@@ -88,7 +88,7 @@ onehealth report work/classified.tsv -o work/report \
 | Input | Enables | Format |
 | --- | --- | --- |
 | classified TSV (required) | Sampling, lineage diversity, rarefaction, lineage overlap and enrichment | Output of `classify`; lineage from a column named `st`, `mlst`, `lineage`, `cluster_id`, ... or `--lineages` |
-| `--lineages` | Lineages from a typing tool | Kleborate v2/v3, mlst, PopPUNK `clusters.csv` |
+| `--lineages` | Lineages from a typing tool | Kleborate v2/v3, mlst (with or without a header row), PopPUNK `clusters.csv` |
 | `--features` | Resistance / virulence / plasmid prevalence by source | Long table: isolate, feature, optional class. AMRFinderPlus run with `--name` fits as is. Only isolates listed count as genotyped. |
 | `--distances` | Genomic linkage between sources | snp-dists square matrix or `-m` long format |
 

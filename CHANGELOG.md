@@ -2,7 +2,25 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: documentation site (branch `docs-site`)
+## Unreleased: input files that were misread without a word (branch `csv-and-mlst-input`)
+
+A comma-separated file was read as a table with one column. `classify` then found no host or isolation source and sent every row to review as `missing_source`, and `resolve --metadata` matched none of its rows, so every ID was looked up at NCBI instead (or sent to review with `--no-network`). Both commands finished as if nothing were wrong.
+
+- **A comma- or semicolon-separated table** now stops with an error that says so, in every command that reads a table: metadata, overrides, truth labels, features. Semicolons are what Excel writes in many European locales. A comma inside a tab-separated table is still just text.
+- **An ID list with a comma or semicolon** stops with an error naming the line. No accession contains one, so the line is a CSV row or several IDs on one line; before, it was looked up as one ID and came back `unknown_id`.
+- **`classify` on a table with none of the columns it reads** stops with an error. The usual cause is an ID list given to `classify` instead of `resolve`, whose first ID was read as the column name and lost. With `--overrides` and an ID column it is a warning, and the overrides still apply.
+- **`resolve --metadata` without an ID column** stops with an error, instead of matching nothing.
+- The README said Excel's UTF-8 export works. That export is CSV, so it never did; the README and the Input files page of the documentation now say what does.
+
+`report --lineages` reads mlst's default output, which has no header row; before, it stopped with "no lineage column". The README already listed mlst, but only output with a header row worked.
+
+- The isolate is mlst's FILE column, and file names now match isolates in the lineages, features and distances files: `ISO1.fasta`, `assemblies/ISO1.fna.gz` and shovill's `ISO1/contigs.fa` all find `ISO1`. The most specific form that names an isolate decides. If it names two, the name is left unmatched rather than tried in a shorter form.
+- An ST of `-` (none assigned) gives no lineage. mlst's `--csv` output works too.
+- A name listed twice in a lineage table with two different lineages now stops with an error; before, the last one silently won.
+
+Reports on existing inputs are unchanged: the NCBI Pathogen Detection and demo reports are identical before and after.
+
+## 4 November 2026: documentation site ([#8](https://github.com/bhargava-morampalli/onehealth/pull/8))
 
 A documentation site in `documentation/`, built with MkDocs: install, a tutorial on the example data, a page for each command with every option and output column, guides to input files and the lexicon, the benchmarks, and this changelog. A GitHub Actions workflow builds it on every pull request and fails on a broken link. It publishes the site to GitHub Pages from `main` once the repository is public, and does nothing while it is private. A test fails if a command gains an option its page does not mention.
 

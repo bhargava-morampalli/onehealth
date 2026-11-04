@@ -223,6 +223,25 @@ def test_match_names_accepts_ncbi_assembly_file_names():
     assert mapping == {"GCA_000005845.2_ASM584v2_genomic": "SAMN1"} and unmatched == ["other"]
 
 
+def test_match_names_accepts_sequence_file_names():
+    """mlst and other typing tools name isolates by their assembly file."""
+    ds = A.build_dataset([{**_row(1), "strain": "KP1"}, {**_row(2), "strain": "KP2"}, {**_row(3), "assembly": "GCF_000005845.2"}])
+    names = ["KP1.fasta", "assemblies/kp2.fna.gz", "KP1/contigs.fa", r"C:\runs\KP2\scaffolds.fasta",
+             "ncbi/GCF_000005845.2_ASM584v2_genomic.fna.gz", "KP3.fasta", "other/contigs.fa", "KP1.txt"]
+    mapping, unmatched = A.match_names(names, ds)
+    assert mapping == {"KP1.fasta": "SAMN1", "assemblies/kp2.fna.gz": "SAMN2", "KP1/contigs.fa": "SAMN1",
+                       r"C:\runs\KP2\scaffolds.fasta": "SAMN2", "ncbi/GCF_000005845.2_ASM584v2_genomic.fna.gz": "SAMN3"}
+    assert unmatched == ["KP3.fasta", "other/contigs.fa", "KP1.txt"]
+
+
+def test_an_ambiguous_name_is_not_rescued_by_a_shorter_form():
+    # Two isolates share the strain name "KP1.fasta"; "KP1" is a third isolate. Guessing "KP1"
+    # from the file name would silently pick an isolate the file may not be about.
+    ds = A.build_dataset([{**_row(1), "strain": "KP1.fasta"}, {**_row(2), "strain": "KP1.fasta"}, {**_row(3), "strain": "KP1"}])
+    mapping, unmatched = A.match_names(["KP1.fasta", "KP1"], ds)
+    assert mapping == {"KP1": "SAMN3"} and unmatched == ["KP1.fasta"]
+
+
 # --- readers -------------------------------------------------------------------------------
 
 
@@ -270,6 +289,49 @@ def test_read_lineages_from_kleborate_v3_and_poppunk(tmp_path: Path):
     poppunk = tmp_path / "clusters.csv"
     poppunk.write_text("Taxon,Cluster\nISO1,4\n", encoding="utf-8")
     assert read_lineages(poppunk) == {"ISO1": "4"}
+
+
+def test_read_lineages_from_mlst_with_and_without_a_header(tmp_path: Path):
+    default = tmp_path / "mlst.tsv"  # mlst's default output: no header
+    default.write_text(
+        "asm/ISO1.fasta\tkpneumoniae\t258\tgapA(3)\tinfB(3)\tphoE(1,2)\n"
+        "asm/ISO2.fasta\tkpneumoniae\t-\tgapA(3)\tinfB(~4)\tpgi(-)\n"  # no ST assigned
+        "asm/ISO3.fasta\t-\t-\n",  # no scheme matched
+        encoding="utf-8",
+    )
+    assert read_lineages(default) == {"asm/ISO1.fasta": "258"}
+    as_csv = tmp_path / "mlst.csv"  # mlst --csv; the allele phoE(1,2) splits, but FILE and ST do not move
+    as_csv.write_text("ISO1.fasta,kpneumoniae,258,gapA(3),phoE(1,2)\nISO2.fasta,kpneumoniae,11,gapA(3),infB(1)\n",
+                      encoding="utf-8")
+    assert read_lineages(as_csv) == {"ISO1.fasta": "258", "ISO2.fasta": "11"}
+    legacy = tmp_path / "legacy.tsv"  # mlst --legacy writes a header row
+    legacy.write_text("FILE\tSCHEME\tST\tgapA\tinfB\nISO1.fasta\tkpneumoniae\t258\t3\t3\n", encoding="utf-8")
+    assert read_lineages(legacy) == {"ISO1.fasta": "258"}
+
+
+def test_read_lineages_reports_conflicts_and_broken_mlst_lines(tmp_path: Path):
+    path = tmp_path / "mlst.tsv"
+    path.write_text("ISO1.fasta\tkpneumoniae\t258\tgapA(3)\nISO1.fasta\tkpneumoniae\t258\tgapA(3)\n", encoding="utf-8")
+    assert read_lineages(path) == {"ISO1.fasta": "258"}  # the same answer twice is fine
+    path.write_text("ISO1.fasta\tkpneumoniae\t258\tgapA(3)\nISO1.fasta\tkpneumoniae\t11\tgapA(4)\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="ISO1.fasta is listed twice, as 258 and 11"):
+        read_lineages(path)
+    path.write_text("ISO1.fasta\tkpneumoniae\t258\tgapA(3)\nnot mlst\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="'not mlst' is not an mlst line"):
+        read_lineages(path)
+    kleborate = tmp_path / "k.tsv"
+    kleborate.write_text("strain\tST\nISO1\tST258\nISO1\tST11\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="listed twice"):
+        read_lineages(kleborate)
+
+
+def test_mlst_output_gives_the_same_lineages_as_an_st_column():
+    rows = [_row(i, l1="Human" if i % 2 else "Animal", st=f"ST{i % 3}") for i in range(6)]
+    from_column = A.build_dataset(rows)
+    from_mlst = A.build_dataset([{k: v for k, v in r.items() if k != "st"} for r in rows])
+    files = {f"ISO{i}/contigs.fa" if i % 2 else f"assemblies/ISO{i}.fasta": f"ST{i % 3}" for i in range(6)}
+    assert A.apply_lineages(from_mlst, files) == []
+    assert {iso.key: iso.lineage for iso in from_mlst.isolates} == {iso.key: iso.lineage for iso in from_column.isolates}
 
 
 # --- dereplication -------------------------------------------------------------------------

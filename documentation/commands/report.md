@@ -127,7 +127,7 @@ The default of 21 SNPs separated hospital clusters of *Klebsiella pneumoniae* in
 
 ## Input files
 
-Names in the features, distances and lineages files are matched to isolates by any of their IDs, in any case: the query ID, BioSample, assembly, SRA or PDT accession, or the `strain`, `isolate`, `sample_name` or `name` column. An assembly file name such as `GCA_000005845.2_ASM584v2_genomic.fna` matches its assembly. A name that matches no isolate, or more than one, is not used, and Data quality reports how many.
+Names in the features, distances and lineages files are matched to isolates by any of their IDs, in any case: the query ID, BioSample, assembly, SRA or PDT accession, or the `strain`, `isolate`, `sample_name` or `name` column. An assembly file name such as `GCA_000005845.2_ASM584v2_genomic.fna` matches its assembly, and a sequence file matches the isolate it is named after: `ISO1.fasta`, `assemblies/ISO1.fna.gz` and shovill's `ISO1/contigs.fa` all match `ISO1`. The most specific of these forms that names an isolate decides. A name that matches no isolate, or more than one, is not used, and Data quality reports how many.
 
 ### Features
 
@@ -149,7 +149,12 @@ Pairwise SNP distances from snp-dists, in its default square format or its long 
 
 A lineage column in the input table is found by name: the first of `st`, `mlst_st`, `sequence_type`, `mlst`, `lineage`, `sublineage`, `sl`, `poppunk_cluster`, `cluster_id` or `cluster`. Use `--lineage-column` for another name.
 
-Or pass a typing table with `--lineages`: Kleborate output, a PopPUNK `clusters.csv`, an mlst table, or any table with an isolate column and a lineage column. The table needs a header row. Its lineage column is the first of `st`, `mlst_st`, `sequence_type`, `lineage`, `sublineage`, `sl`, `poppunk_cluster`, `cluster` or a Kleborate `…__ST` column; its isolate column is the first of `id`, `strain`, `name`, `taxon`, `sample`, `sample_id`, `isolate`, `genome`, `assembly`, `biosample`, or else its first column.
+Or pass a typing table with `--lineages`: Kleborate output, a PopPUNK `clusters.csv`, mlst output, or any table with an isolate column and a lineage column, tab- or comma-separated.
+
+- **mlst** output is read with or without its header row. The isolate is the file name in its first column, and the lineage is the ST; `-` (no ST assigned) gives no lineage.
+- **Any other table** needs a header row. Its lineage column is the first of `st`, `mlst_st`, `sequence_type`, `lineage`, `sublineage`, `sl`, `poppunk_cluster`, `cluster` or a Kleborate `…__ST` column; its isolate column is the first of `id`, `strain`, `name`, `taxon`, `sample`, `sample_id`, `isolate`, `genome`, `assembly`, `biosample`, or else its first column.
+
+A name listed twice in the table with two different lineages stops with an error.
 
 ### Other columns
 
