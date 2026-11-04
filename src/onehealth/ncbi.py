@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Iterable, Iterator, Protocol
 
 from onehealth.constants import UNKNOWN_EXACT
 from onehealth.ids import parse_id, pdt_stem
@@ -17,6 +17,11 @@ from onehealth.text import normalize_text
 
 DATASETS_BASE = "https://api.ncbi.nlm.nih.gov/datasets/v2"
 EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+# Accessions per batched Datasets request. 300 worked when tested; 100 keeps URLs short.
+DATASETS_BATCH = 100
+# The genome endpoint returns 20 reports per page unless asked for more.
+_DATASETS_PAGE_SIZE = 1000
+_DATASETS_MAX_PAGES = 20
 
 _TEXT_FIELDS = (
     "organism",
@@ -143,6 +148,66 @@ class NCBIClient:
         url = f"{DATASETS_BASE}/biosample/accession/{urllib.parse.quote(accession)}/biosample_report"
         payload = self.fetcher.get_json(url, headers=self._datasets_headers())
         return _usable_datasets_report(payload, require_accession=True)
+
+    def biosample_reports(self, accessions: Iterable[str]) -> dict[str, dict[str, Any]]:
+        """Datasets BioSample reports for many accessions, DATASETS_BATCH per request, keyed by upper-case accession.
+
+        A fast path only. An accession NCBI leaves out (Datasets answers an unknown or
+        empty record with an empty report), or one in a request that fails, is missing
+        from the result; the caller then looks it up on its own, as for a single ID.
+        """
+        found: dict[str, dict[str, Any]] = {}
+        for chunk in _chunks(accessions, "biosample"):
+            for report in self._datasets_reports(f"{DATASETS_BASE}/biosample/accession/{_joined(chunk)}/biosample_report"):
+                accession = str(report.get("accession") or "").strip().upper()
+                if accession:
+                    found.setdefault(accession, report)
+        return found
+
+    def genome_reports(self, accessions: Iterable[str]) -> dict[str, dict[str, Any]]:
+        """Datasets assembly reports for many accessions, keyed by the (upper-case) accession asked for.
+
+        Replies come back in no particular order. A versioned accession must come back as
+        itself; an unversioned one takes the single report that shares its stem (Datasets
+        answers with the current version). Anything else, such as an outdated version, is
+        missing from the result, and the caller looks it up with genome_report, which also
+        tries the unversioned stem.
+        """
+        found: dict[str, dict[str, Any]] = {}
+        for chunk in _chunks(accessions, "assembly"):
+            reports = self._datasets_reports(f"{DATASETS_BASE}/genome/accession/{_joined(chunk)}/dataset_report")
+            by_accession = {str(r.get("accession") or "").strip().upper(): r for r in reports}
+            by_stem: dict[str, list[dict[str, Any]]] = {}
+            for accession, report in by_accession.items():
+                if accession:
+                    by_stem.setdefault(accession.split(".", 1)[0], []).append(report)
+            for asked in chunk:
+                if "." in asked:
+                    report = by_accession.get(asked)
+                else:
+                    matches = by_stem.get(asked, [])
+                    report = matches[0] if len(matches) == 1 else None
+                if report is not None:
+                    found[asked] = report
+        return found
+
+    def _datasets_reports(self, url: str) -> list[dict[str, Any]]:
+        """Every non-empty report from a Datasets report URL, across pages. [] if any request fails."""
+        reports: list[dict[str, Any]] = []
+        token = ""
+        try:
+            for _ in range(_DATASETS_MAX_PAGES):
+                query = {"page_size": str(_DATASETS_PAGE_SIZE), **({"page_token": token} if token else {})}
+                payload = self.fetcher.get_json(f"{url}?{urllib.parse.urlencode(query)}", headers=self._datasets_headers())
+                if not isinstance(payload, dict):
+                    return []
+                reports.extend(r for r in payload.get("reports") or [] if isinstance(r, dict) and r)
+                token = str(payload.get("next_page_token") or "")
+                if not token:
+                    return reports
+        except (HttpError, ValueError):
+            pass  # the whole batch falls back to one-at-a-time lookups
+        return []
 
     def genome_report(self, accession: str) -> dict[str, Any] | None:
         report = self._genome_report_once(accession)
@@ -273,6 +338,22 @@ class NCBIClient:
         if self.api_key:
             params["api_key"] = self.api_key
         params["tool"] = "onehealth"
+
+
+def _chunks(accessions: Iterable[str], kind: str, size: int = DATASETS_BATCH) -> Iterator[list[str]]:
+    """Distinct well-formed accessions of one kind, upper-case and in order, `size` at a time.
+
+    Anything else is left for one-at-a-time lookup, so one odd value cannot make NCBI
+    reject a whole batch.
+    """
+    parsed = (parse_id(item) for item in accessions if item and item.strip())
+    unique = list(dict.fromkeys(p.normalized.upper() for p in parsed if p.id_type == kind))
+    for start in range(0, len(unique), size):
+        yield unique[start : start + size]
+
+
+def _joined(accessions: list[str]) -> str:
+    return urllib.parse.quote(",".join(accessions), safe=",")
 
 
 def _usable_datasets_report(payload: dict[str, Any], *, require_accession: bool) -> dict[str, Any] | None:

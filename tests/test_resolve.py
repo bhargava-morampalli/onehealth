@@ -555,3 +555,140 @@ def test_api_key_raises_the_request_rate_and_reaches_datasets_as_a_header():
     NCBIClient(api_key="K", fetcher=fetcher).biosample_report("SAMN1")
     assert Recording.headers[-1].get("api-key") == "K"
     assert all("K" not in url.split("?")[-1] for url in fetcher.urls)
+
+
+# --- batched lookups --------------------------------------------------------------------------
+
+
+class DatasetsStub:
+    """In-memory NCBI that answers like the live API did when probed (November 2026).
+
+    BioSample batches return one report per accession asked, an empty one for an unknown
+    record. Genome batches come back in no particular order, 20 per page unless page_size
+    says otherwise, answer an unversioned accession with its current version, and return
+    nothing for an outdated version. E-utilities finds nothing, so the XML fallback is a miss.
+    """
+
+    def __init__(self, biosamples: dict[str, dict], genomes: dict[str, dict], max_page: int = 3, fail: tuple = ()):
+        self.biosamples, self.genomes, self.max_page, self.fail = biosamples, genomes, max_page, fail
+        self.urls: list[str] = []
+
+    def get_json(self, url, headers=None):
+        import urllib.parse
+
+        from onehealth.ncbi import HttpError
+
+        self.urls.append(url)
+        path, _, query = url.partition("?")
+        params = dict(urllib.parse.parse_qsl(query))
+        if any(bad in path for bad in self.fail):
+            raise HttpError(f"HTTP 400 for {path}: bad request")
+        if "/biosample/accession/" in path:
+            asked = urllib.parse.unquote(path.split("/biosample/accession/")[1].split("/")[0]).split(",")
+            return {"reports": [self.biosamples.get(a.upper(), {}) for a in asked]}
+        if "/genome/accession/" in path:
+            asked = urllib.parse.unquote(path.split("/genome/accession/")[1].split("/")[0]).split(",")
+            hits: dict[str, dict] = {}
+            for a in (x.upper() for x in asked):
+                if "." in a:
+                    report = self.genomes.get(a)
+                else:
+                    versions = sorted(k for k in self.genomes if k.split(".")[0] == a)
+                    report = self.genomes[versions[-1]] if versions else None
+                if report is not None and report.get("current", True):
+                    hits[report["accession"]] = report
+            found = list(reversed(hits.values()))  # not the order asked
+            size = min(int(params.get("page_size", 20)), self.max_page)
+            start = int(params.get("page_token", 0))
+            page = {"reports": found[start : start + size], "total_count": len(found)}
+            if start + size < len(found):
+                page["next_page_token"] = str(start + size)
+            return page
+        if "esearch.fcgi" in path:
+            return {"esearchresult": {"idlist": []}}
+        raise AssertionError(f"unexpected URL {url}")
+
+    def get_text(self, url, headers=None):
+        raise AssertionError(f"unexpected URL {url}")
+
+
+def _biosample(accession: str, source: str) -> dict:
+    return {"accession": accession, "attributes": [{"name": "isolation_source", "value": source}]}
+
+
+def _genome(accession: str, biosample: str, current: bool = True) -> dict:
+    return {"accession": accession, "assembly_info": {"biosample": {"accession": biosample}}, "current": current}
+
+
+def _stub(**kwargs) -> DatasetsStub:
+    biosamples = {f"SAMN{i}": _biosample(f"SAMN{i}", f"source {i}") for i in range(1, 251)}
+    biosamples["SAMN900"] = {}  # Datasets has an empty record for it
+    genomes = {
+        "GCA_000000001.2": _genome("GCA_000000001.2", "SAMN1"),
+        "GCA_000000001.1": _genome("GCA_000000001.1", "SAMN1", current=False),  # outdated version
+        "GCF_000000001.1": _genome("GCF_000000001.1", "SAMN1"),
+        **{f"GCA_00000000{i}.1": _genome(f"GCA_00000000{i}.1", f"SAMN{i}") for i in range(2, 10)},
+        "GCA_000000010.1": {"accession": "GCA_000000010.1", "assembly_info": {}},  # no BioSample
+    }
+    return DatasetsStub(biosamples, genomes, **kwargs)
+
+
+MIXED_IDS = (
+    [f"SAMN{i}" for i in (3, 1, 250, 120)]
+    + ["GCA_000000001.2", "GCA_000000001", "gcf_000000001.1", "GCA_000000001.1", "GCA_000000010.1", "GCA_999999999.1"]
+    + [f"GCA_00000000{i}.1" for i in range(2, 10)]
+    + ["SAMN900", "SAMN99999", "SAMN3", "GCA_000000004.1", "not-an-id", "SRP000001"]
+)
+
+
+def _one_at_a_time(client: NCBIClient) -> NCBIClient:
+    """The same client with batching switched off: every ID takes the single-ID path."""
+    client.biosample_reports = lambda accessions: {}
+    client.genome_reports = lambda accessions: {}
+    return client
+
+
+def test_batched_lookups_give_exactly_the_rows_of_one_at_a_time_lookups():
+    batched_stub, single_stub = _stub(), _stub()
+    batched = resolve_ids(MIXED_IDS, client=NCBIClient(fetcher=batched_stub), allow_network=True)
+    single = resolve_ids(MIXED_IDS, client=_one_at_a_time(NCBIClient(fetcher=single_stub)), allow_network=True)
+    assert batched == single
+    assert [row["query_id"] for row in batched] == MIXED_IDS
+    reasons = {row["query_id"]: (row["resolve_status"], row["resolve_reason"], row["assembly"], row["biosample"]) for row in batched}
+    assert reasons["GCA_000000001"] == ("ok", "ncbi_assembly", "GCA_000000001.2", "SAMN1")  # unversioned: current
+    assert reasons["GCA_000000001.1"] == ("ok", "ncbi_assembly", "GCA_000000001.2", "SAMN1")  # outdated: via the stem
+    assert reasons["gcf_000000001.1"][:2] == ("ok", "ncbi_assembly")
+    assert reasons["GCA_000000010.1"][:2] == ("review", "assembly_no_biosample")
+    assert reasons["GCA_999999999.1"][:2] == ("review", "assembly_not_found")
+    assert reasons["SAMN900"][:2] == reasons["SAMN99999"][:2] == ("review", "biosample_not_found")
+    assert len(batched_stub.urls) < len(single_stub.urls) / 2
+
+
+def test_genome_batches_follow_every_page():
+    stub = _stub(max_page=3)  # 12 assemblies come back 3 to a page
+    rows = resolve_ids([f"GCA_00000000{i}.1" for i in range(2, 10)], client=NCBIClient(fetcher=stub), allow_network=True)
+    assert all(row["resolve_status"] == "ok" for row in rows)
+    single_genome_urls = [u for u in stub.urls if "/genome/" in u and "," not in u]
+    assert single_genome_urls == []  # every assembly came from the paged batch
+
+
+def test_many_biosamples_take_one_request_per_hundred():
+    stub = _stub()
+    ids = [f"SAMN{i}" for i in range(1, 251)]
+    rows = resolve_ids(ids, client=NCBIClient(fetcher=stub), allow_network=True)
+    assert [row["isolation_source"] for row in rows] == [f"source {i}" for i in range(1, 251)]
+    assert len(stub.urls) == 3
+
+
+def test_a_rejected_batch_falls_back_to_one_at_a_time():
+    # Only the comma-joined batch URLs fail; the same accessions asked one by one succeed.
+    stub = _stub(fail=(",",))
+    rows = resolve_ids(MIXED_IDS, client=NCBIClient(fetcher=stub), allow_network=True)
+    assert rows == resolve_ids(MIXED_IDS, client=_one_at_a_time(NCBIClient(fetcher=_stub())), allow_network=True)
+
+
+def test_a_value_that_is_not_an_accession_is_never_put_in_a_batch():
+    from onehealth.ncbi import _chunks
+
+    assert list(_chunks(["SAMN1", "12345", " samn2 ", "SAMN1", "GCA_000000001.1"], "biosample")) == [["SAMN1", "SAMN2"]]
+    assert list(_chunks(["GCA_000000001.1", "SAMN1", "gca_000000002"], "assembly")) == [["GCA_000000001.1", "GCA_000000002"]]
