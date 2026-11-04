@@ -92,6 +92,17 @@ def _one_line(value: object) -> object:
     return value
 
 
+def require_columns(rows: list[dict[str, str]], path: Path, columns: Iterable[str], hint: str = "") -> None:
+    """A table with rows must have these columns; a header-only table passes (it has nothing to misread)."""
+    if not rows:
+        return
+    missing = [name for name in columns if name not in rows[0]]
+    if missing:
+        names = ", ".join(repr(name) for name in missing)
+        found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
+        raise InputError(f"{path}: no {names} column{'s' if len(missing) > 1 else ''} (found: {found}). {hint}".strip())
+
+
 def read_id_list(path: Path) -> list[str]:
     """One ID per line, or a TSV whose header has an id-like column (else its first column)."""
     lines = [line.strip() for line in read_text(path).splitlines()]

@@ -96,7 +96,8 @@ def read_truth(path: Path, column: str, level: str) -> dict[str, str]:
         raise InputError(f"{path}: needs an ID column ({', '.join(_TRUTH_ID_COLUMNS[:5])}, ...) and a {column!r} column")
     classes = {name.lower(): name for name in LEVELS[level]}
     classes["environment"] = "Environmental"
-    truth, unknown = {}, set()
+    truth: dict[str, str] = {}
+    unknown, conflicts = set(), set()
     for row in rows:
         label = row[column].strip()
         if not row[id_column] or not label:
@@ -104,12 +105,19 @@ def read_truth(path: Path, column: str, level: str) -> dict[str, str]:
         if label.lower() not in classes:
             unknown.add(label)
             continue
-        truth[row[id_column].strip().upper()] = classes[label.lower()]
+        key, value = row[id_column].strip().upper(), classes[label.lower()]
+        if truth.get(key, value) != value:
+            conflicts.add(key)
+        truth[key] = value
     if unknown:
         raise InputError(
             f"{path}: truth labels {sorted(unknown)} are not {level} classes ({', '.join(LEVELS[level])}); "
             "map them before validating"
         )
+    if conflicts:
+        # Keeping either label would bias accuracy without anyone noticing.
+        raise InputError(f"{path}: {len(conflicts)} isolates have two different truth labels "
+                         f"(e.g. {', '.join(sorted(conflicts)[:3])}); keep one label per isolate")
     return truth
 
 
@@ -123,15 +131,20 @@ def validate(classified: list[dict[str, str]], truth: dict[str, str], level: str
             by_id.setdefault(identifier, row)
 
     result = Validation(level=level, isolates=0, unmatched=[])
-    seen: set[int] = set()
+    seen: dict[int, tuple[str, str]] = {}  # isolate -> first truth ID and label for it
+    conflicts: list[str] = []
     for identifier, expected in truth.items():
         row = by_id.get(identifier)
         if row is None:
             result.unmatched.append(identifier)
             continue
         if id(row) in seen:
-            continue  # two truth IDs for one isolate: count it once
-        seen.add(id(row))
+            # Two truth IDs for one isolate (say BioSample and assembly): count it once, if they agree.
+            first_id, first_label = seen[id(row)]
+            if first_label != expected:
+                conflicts.append(f"{first_id} and {identifier}")
+            continue
+        seen[id(row)] = (identifier, expected)
         predicted = (row.get(level) or UNCLASSIFIED).strip() or UNCLASSIFIED
         result.isolates += 1
         result.confusion[(expected, predicted)] += 1
@@ -147,4 +160,7 @@ def validate(classified: list[dict[str, str]], truth: dict[str, str], level: str
                     "classify_reason": row.get("classify_reason", ""),
                 }
             )
+    if conflicts:
+        raise InputError(f"the truth labels disagree for {len(conflicts)} isolates listed under two IDs "
+                         f"(e.g. {'; '.join(conflicts[:3])}); keep one label per isolate")
     return result

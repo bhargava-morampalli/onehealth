@@ -11,7 +11,7 @@ from onehealth import __version__
 from onehealth.classify import classify_fieldnames, classify_rows
 from onehealth.constants import RESOLVE_FIELDS, SEED_LEXICON_VERSION
 from onehealth.errors import InputError
-from onehealth.io_tsv import read_id_list, read_tsv, write_tsv
+from onehealth.io_tsv import read_id_list, read_tsv, require_columns, write_tsv
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides
@@ -143,7 +143,9 @@ def _build_parser() -> argparse.ArgumentParser:
 def cmd_validate(args: argparse.Namespace) -> int:
     from onehealth.validate import read_truth, validate
 
-    result = validate(read_tsv(args.input), read_truth(args.truth, args.truth_column, args.level), args.level)
+    rows = read_tsv(args.input)
+    require_columns(rows, args.input, [args.level], _CLASSIFY_FIRST)
+    result = validate(rows, read_truth(args.truth, args.truth_column, args.level), args.level)
     summary = [
         {"metric": "isolates", "value": result.isolates, "meaning": "isolates with a truth label found in the input"},
         {"metric": "coverage", "value": f"{result.coverage:.4f}", "meaning": "share of truly classifiable isolates that onehealth classified"},
@@ -160,8 +162,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
     write_tsv(_sidecar(args.out, "disagreements"), result.disagreements,
               ["id", "truth", "predicted", "host", "isolation_source", "sample_type", "classify_reason"])
 
-    print(f"validate: {result.isolates} isolates; coverage {result.coverage:.1%}, accuracy {result.accuracy:.1%}, "
-          f"agreement {result.agreement:.1%}", file=sys.stderr)
+    print(f"validate: {result.isolates} isolates; coverage {_percent(result.coverage)}, accuracy "
+          f"{_percent(result.accuracy)}, agreement {_percent(result.agreement)}", file=sys.stderr)
     print("truth \\ onehealth  " + "  ".join(f"{p:>13}" for p in classes), file=sys.stderr)
     for row in confusion:
         print(f"{row['truth']:<19}" + "  ".join(f"{row[p]:>13}" for p in classes), file=sys.stderr)
@@ -175,8 +177,10 @@ def cmd_report(args: argparse.Namespace) -> int:
         print("onehealth report: --dereplicate needs --distances", file=sys.stderr)
         return 2
 
+    rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1", "paper_rollup"] if args.group_by == "paper_rollup" else ["l1"], _CLASSIFY_FIRST)
     path = build_report(
-        read_tsv(args.input),
+        rows,
         args.out,
         features_path=args.features,
         distances_path=args.distances,
@@ -234,6 +238,7 @@ def cmd_classify(args: argparse.Namespace) -> int:
 
 def cmd_summarize(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1"], _CLASSIFY_FIRST)
     summary = summarize(rows)
     write_tsv(args.out, summary, summary_fieldnames())
     print(f"wrote {args.out} ({len(summary)} rows)", file=sys.stderr)
@@ -242,9 +247,17 @@ def cmd_summarize(args: argparse.Namespace) -> int:
 
 def cmd_plot(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
+    require_columns(rows, args.input, ["l1", "paper_rollup"], _CLASSIFY_FIRST)
     plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
+
+
+_CLASSIFY_FIRST = "Is this the output of onehealth classify?"
+
+
+def _percent(value: float) -> str:
+    return "n/a" if math.isnan(value) else f"{value:.1%}"
 
 
 def _threshold(text: str) -> float:

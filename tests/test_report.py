@@ -133,3 +133,64 @@ def test_report_rejects_a_bad_permutation_count(tmp_path: Path, capsys, value, m
         main(["report", str(classified), "-o", str(tmp_path / "r"), "--permutations", value])
     assert exc.value.code == 2
     assert message in capsys.readouterr().err
+
+
+# --- edge cases found by the sweep ---------------------------------------------------------------
+
+
+def _quality(page: str) -> list[str]:
+    import html as _html
+
+    block = page.split('id="quality"')[1].split("</section>")[0]
+    return [_html.unescape(re.sub("<[^>]+>", "", item)) for item in re.findall(r"<li>(.*?)</li>", block)]
+
+
+def _table(tmp_path: Path, name: str, text: str) -> Path:
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_report_on_a_single_isolate(tmp_path: Path):
+    table = _table(tmp_path, "one.tsv", "id\tl1\tpaper_rollup\thealthcare_environment\tst\nI1\tHuman\tHuman\tno\tST1\n")
+    assert main(["report", str(table), "-o", str(tmp_path / "r"), "--permutations", "9"]) == 0
+    page = (tmp_path / "r" / "report.html").read_text(encoding="utf-8")
+    assert "Lineage accumulation needs a source with at least two typed isolates" in " ".join(_quality(page))
+    assert "Lineage accumulation</h2>" not in page
+
+
+def test_a_threshold_beyond_the_histogram_axis_is_described_not_drawn(tmp_path: Path):
+    classified, _, distances = _write_inputs(tmp_path)
+    out = tmp_path / "r"
+    assert main(["report", str(classified), "-o", str(out), "--distances", str(distances), "--threshold", "1e9",
+                 "--permutations", "9"]) == 0
+    page = (out / "report.html").read_text(encoding="utf-8")
+    assert "threshold is beyond this axis" in page
+    assert (out / "figures" / "07_distances.png").stat().st_size < 2_000_000
+
+
+def test_skipped_report_sections_are_explained(tmp_path: Path):
+    classified, _, _ = _write_inputs(tmp_path)
+    empty = _table(tmp_path, "empty.tsv", "")
+    same_gene = _table(tmp_path, "same.tsv", "Name\tElement symbol\n" + "".join(f"ISO{i}\tfosA\n" for i in range(28)))
+    stranger = _table(tmp_path, "stranger.tsv", "x\tA\tB\nA\t0\t1\nB\t1\t0\n")
+    cases = [
+        (["--features", str(empty)], "lists no isolates, so the features section was skipped"),
+        (["--features", str(same_gene)], "nothing to compare by source"),
+        (["--distances", str(empty)], "genomic linkage sections were skipped"),
+        (["--distances", str(stranger)], "genomic linkage sections were skipped"),
+        (["--lineages", str(empty)], "lists no isolates"),
+    ]
+    for extra, note in cases:
+        out = tmp_path / "r"
+        assert main(["report", str(classified), "-o", str(out), "--permutations", "9", *extra]) == 0, extra
+        assert note in " ".join(_quality((out / "report.html").read_text(encoding="utf-8"))), extra
+
+
+def test_unclassified_isolates_with_lineages_get_the_right_reason(tmp_path: Path):
+    table = _table(tmp_path, "u.tsv", "id\tl1\tpaper_rollup\thealthcare_environment\tst\n"
+                   + "".join(f"I{i}\tUnclassified\tUnclassified\t\tST1\n" for i in range(4)))
+    assert main(["report", str(table), "-o", str(tmp_path / "r"), "--permutations", "9"]) == 0
+    notes = " ".join(_quality((tmp_path / "r" / "report.html").read_text(encoding="utf-8")))
+    assert "No isolate with a source class has a lineage in 'st'" in notes
+    assert "No lineage column was found" not in notes

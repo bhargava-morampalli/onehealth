@@ -140,6 +140,8 @@ def _vgrid(ax) -> None:
 
 
 def _legend_sources(ax, sources, loc="upper left", anchor=(0, 1.02), ncol=None, kind="patch") -> None:
+    if not sources:
+        return
     if kind == "patch":
         handles = [Patch(facecolor=colour(s), label=s) for s in sources]
     else:  # legends mirror the mark: a short line key for line charts
@@ -366,9 +368,10 @@ def fig_distance_histogram(link: A.LinkageResult, limit: int = 100) -> Figure:
         line = f.ax.step(bins[:-1], counts, where="post", color=LIGHT[token], label=f"{label} ({len(close)} pairs ≤{limit} SNPs)")[0]
         f.tip(line, f"{label}: {len(close)} pairs within {limit} SNPs ({int((values <= link.threshold).sum())} "
                     f"within the {link.threshold:g}-SNP threshold)")
-    f.ax.axvline(link.threshold, color=LIGHT["ink-2"], linewidth=1)
-    f.ax.text(link.threshold, f.ax.get_ylim()[1], f"  threshold {link.threshold:g} SNPs", va="top", fontsize=8.5,
-              color=LIGHT["ink-2"])
+    if link.threshold <= limit:
+        f.ax.axvline(link.threshold, color=LIGHT["ink-2"], linewidth=1)
+        f.ax.text(link.threshold, f.ax.get_ylim()[1], f"  threshold {link.threshold:g} SNPs", va="top", fontsize=8.5,
+                  color=LIGHT["ink-2"])
     f.ax.set_xlabel("Pairwise SNP distance")
     f.ax.set_ylabel("Isolate pairs")
     f.ax.set_xlim(0, limit)
@@ -592,7 +595,10 @@ def build_report(
     dataset = A.build_dataset(rows, by=by, lineage_column=lineage_column)
     quality: list[str] = []
     if lineages_path:
-        unmatched = A.apply_lineages(dataset, read_lineages(lineages_path))
+        lineage_table = read_lineages(lineages_path)
+        if not lineage_table:
+            quality.append(f"The lineage table {lineages_path.name} lists no isolates.")
+        unmatched = A.apply_lineages(dataset, lineage_table)
         if unmatched:
             quality.append(f"{len(unmatched)} names in the lineage table matched no isolate (e.g. {', '.join(unmatched[:3])}).")
     sections: list[str] = []
@@ -687,15 +693,18 @@ def build_report(
                               ("simpson", "Simpson D"), ("ci_low", "95% CI low"), ("ci_high", "95% CI high")]),
             _write_table(tables_dir, stem, div)))
         stem = "03_rarefaction"
-        sections.append(_section(
-            stem, "Lineage accumulation",
-            "Curves that are still rising have not reached saturation, so more sampling would find more lineages.",
-            _render(fig_rarefaction(rare, groups_present), stem, figures_dir),
-            f"Expected number of lineages in random subsamples of each source (rarefaction {r_hu}). Compare sources at "
-            f"the same x value; raw lineage counts favour the larger sample.{derep_note}",
-            _table_html(rare, [("source", "Source"), ("isolates_sampled", "Isolates sampled"),
-                               ("expected_lineages", "Expected lineages")]),
-            _write_table(tables_dir, stem, rare)))
+        if not rare:
+            quality.append("Lineage accumulation needs a source with at least two typed isolates, so it was skipped.")
+        else:
+            sections.append(_section(
+                stem, "Lineage accumulation",
+                "Curves that are still rising have not reached saturation, so more sampling would find more lineages.",
+                _render(fig_rarefaction(rare, groups_present), stem, figures_dir),
+                f"Expected number of lineages in random subsamples of each source (rarefaction {r_hu}). Compare sources "
+                f"at the same x value; raw lineage counts favour the larger sample.{derep_note}",
+                _table_html(rare, [("source", "Source"), ("isolates_sampled", "Isolates sampled"),
+                                   ("expected_lineages", "Expected lineages")]),
+                _write_table(tables_dir, stem, rare)))
         stem = "04_lineages"
         sections.append(_section(
             stem, "Common lineages and where they were found",
@@ -732,6 +741,9 @@ def build_report(
                f"seed {seed}), with two-sided p-values computed as (b+1)/(m+1) {r_ps} and Benjamini–Hochberg "
                f"correction, following Thorpe et al. {r_th}." if tested else
                "Lineage–source associations were not tested (--permutations 0)."))
+    elif population.lineage_column:
+        quality.append(f"No isolate with a source class has a lineage in {population.lineage_column!r}, so lineage "
+                       "analyses were skipped.")
     else:
         quality.append("No lineage column was found (ST, lineage, cluster ...), so lineage analyses were skipped. "
                        "Add one to the table or pass --lineages.")
@@ -745,6 +757,13 @@ def build_report(
             quality.append(f"{len(result.unmatched)} isolates in the features file matched no classified isolate "
                            f"(e.g. {', '.join(result.unmatched[:3])}).")
         fig = fig_features(result) if result.rows else None
+        if not presence:
+            quality.append(f"The features file {features_path.name} lists no isolates, so the features section was skipped.")
+        elif not result.rows:
+            quality.append("No isolate in the features file has a source class, so the features section was skipped.")
+        elif fig is None:
+            quality.append("Every feature is carried by all genotyped isolates or by none, so there is nothing to compare "
+                           "by source and the features section was skipped.")
         if fig:
             sig = [t for t in result.tests if t["q"] < 0.05]
             r_wi = refs.cite("wilson")
@@ -785,108 +804,117 @@ def build_report(
         if link.unmatched:
             quality.append(f"{len(link.unmatched)} names in the distance matrix matched no isolate "
                            f"(e.g. {', '.join(link.unmatched[:3])}).")
-        between = [r for r in link.events if r["kind"] == "between"]
-        within = [r for r in link.events if r["kind"] == "within"]
-        n_between = sum(r["events"] for r in between)
-        n_within = sum(r["events"] for r in within)
-        kpis.append((f"Cross-source links (≤{threshold:g} SNPs)", f"{n_between}"))
-        r_th, r_he, r_da = (refs.cite(k) for k in ("thorpe", "hetland", "david"))
-        r_mu, r_ps = (refs.cite("muloi"), refs.cite("phipson")) if tested else ("", "")
-        close_rows = [
-            {"pairs": label, "all_pairs": total, f"within_{threshold:g}_snps": int((values <= threshold).sum()),
-             "within_100_snps": int((values <= 100).sum())}
-            for label, total, values in (("Same source", link.pairs_within, link.close_within),
-                                         ("Different sources", link.pairs_between, link.close_between))
-        ]
-        stem = "07_distances"
-        sections.append(_section(
-            stem, "How close are isolates from the same and different sources?",
-            f"{int((link.close_within <= threshold).sum())} same-source pairs and "
-            f"{int((link.close_between <= threshold).sum())} cross-source pairs are within {threshold:g} SNPs.",
-            _render(fig_distance_histogram(link), stem, figures_dir),
-            f"Pairwise SNP distances up to 100 SNPs. The vertical line is the linkage threshold. Thresholds are "
-            f"organism- and pipeline-specific: 21 SNPs separated hospital clusters of K. pneumoniae {r_da} and 22 was "
-            f"optimal in a Norwegian One Health study {r_he}.",
-            _table_html(close_rows, [(k, k.replace("_", " ").capitalize()) for k in close_rows[0]]),
-            _write_table(tables_dir, stem, close_rows)))
-        stem = "08_threshold_sweep"
-        sections.append(_section(
-            stem, "Sensitivity to the SNP threshold",
-            f"At {threshold:g} SNPs there are {n_within} within-source and {n_between} between-source sharing events. "
-            "A conclusion that holds across thresholds is more robust.",
-            _render(fig_sweep(link), stem, figures_dir),
-            f"Events are counted once per source pair per cluster {r_th}. Counts can fall at large thresholds because "
-            "clusters merge.",
-            _table_html(link.sweep, [("threshold", "SNP threshold"), ("within_events", "Within-source events"),
-                                     ("between_events", "Between-source events")]),
-            _write_table(tables_dir, stem, link.sweep),
-            # Normally in the observed-vs-expected section, which needs permutations.
-            extra_downloads=[] if tested else [_write_table(tables_dir, "08_sharing_events", link.events)]))
-        stem = "09_linked_isolates"
-        sections.append(_section(
-            stem, "Which sources share close relatives?",
-            "Each cell is the share of isolates from the row source with at least one close relative from the column source.",
-            _render(fig_linked(link), stem, figures_dir),
-            f"Close relative = within {threshold:g} SNPs, excluding isolates from the same host individual {r_he}. "
-            "The diagonal is within-source sharing.",
-            _table_html(link.linked_fraction, [("from_source", "From"), ("to_source", "To"), ("isolates", "Isolates"),
-                                               ("with_close_relative", "With close relative"), ("percent", "%")]),
-            _write_table(tables_dir, stem, link.linked_fraction)))
-        oe = fig_observed_expected(link) if tested else None
-        if oe:
-            stem = "10_observed_expected"
-            sig = [r for r in between if r["q"] < 0.05]
-            lower = [r for r in sig if r["events"] < r["expected"]]
-            higher = [r for r in sig if r["events"] > r["expected"]]
-            if sig:
-                finding = (f"{len(sig)} source pairs differ from chance (q < 0.05): {len(lower)} share fewer close "
-                           f"relatives than expected and {len(higher)} share more.")
-                if lower and not higher:
-                    finding += " That pattern fits transmission that happens mostly within sources."
-            else:
-                finding = "No source pair differs from the permutation expectation."
+        if link.matched < 2:
+            quality.append("Fewer than two isolates in the distance matrix match the table, so there are no pairs to "
+                           "compare and the genomic linkage sections were skipped.")
+        else:
+            between = [r for r in link.events if r["kind"] == "between"]
+            within = [r for r in link.events if r["kind"] == "within"]
+            n_between = sum(r["events"] for r in between)
+            n_within = sum(r["events"] for r in within)
+            kpis.append((f"Cross-source links (≤{threshold:g} SNPs)", f"{n_between}"))
+            r_th, r_he, r_da = (refs.cite(k) for k in ("thorpe", "hetland", "david"))
+            r_mu, r_ps = (refs.cite("muloi"), refs.cite("phipson")) if tested else ("", "")
+            close_rows = [
+                {"pairs": label, "all_pairs": total, f"within_{threshold:g}_snps": int((values <= threshold).sum()),
+                 "within_100_snps": int((values <= 100).sum())}
+                for label, total, values in (("Same source", link.pairs_within, link.close_within),
+                                             ("Different sources", link.pairs_between, link.close_between))
+            ]
+            stem = "07_distances"
             sections.append(_section(
-                stem, "Is cross-source sharing more or less than chance?",
-                finding,
-                _render(oe, stem, figures_dir),
-                f"Shaded bands show the 95% range of events when source labels are shuffled over the same genomes "
-                f"({permutations:,} permutations), which keeps sampling effort fixed {r_mu}{r_th}. * marks q < 0.05 {r_ps}. "
-                + (f"Labels were shuffled only among isolates with the same {strata_text}, so differences in when or "
-                   "where sources were sampled do not drive the expectation." if stratify else
-                   "Caveat: shuffling ignores when and where samples were taken, so sources sampled at different times "
-                   "or places also show fewer links than chance; rerun with --stratify-by year,country."),
-                _table_html(link.events, [("source_a", "Source A"), ("source_b", "Source B"), ("events", "Events"),
-                                          ("events_per_100", "Per 100 isolates"), ("expected", "Expected"),
-                                          ("expected_low", "2.5%"), ("expected_high", "97.5%"), ("q", "q (BH)")]),
-                _write_table(tables_dir, stem, link.events)))
-        cl = fig_clusters(link)
-        if cl:
-            stem = "11_cross_source_clusters"
-            cross = [c for c in link.clusters if c["n_sources"] >= 2]
-            gaps = [e["years_apart"] for e in link.cross_edges if not math.isnan(e["years_apart"])]
-            timing = f" Linked cross-source isolates were collected a median {np.median(gaps):.1f} years apart." if gaps else ""
+                stem, "How close are isolates from the same and different sources?",
+                f"{int((link.close_within <= threshold).sum())} same-source pairs and "
+                f"{int((link.close_between <= threshold).sum())} cross-source pairs are within {threshold:g} SNPs.",
+                _render(fig_distance_histogram(link), stem, figures_dir),
+                "Pairwise SNP distances up to 100 SNPs. "
+                + ("The vertical line is the linkage threshold. " if threshold <= 100 else
+                   f"The {threshold:g}-SNP threshold is beyond this axis. ")
+                + f"Thresholds are "
+                f"organism- and pipeline-specific: 21 SNPs separated hospital clusters of K. pneumoniae {r_da} and 22 was "
+                f"optimal in a Norwegian One Health study {r_he}.",
+                _table_html(close_rows, [(k, k.replace("_", " ").capitalize()) for k in close_rows[0]]),
+                _write_table(tables_dir, stem, close_rows)))
+            stem = "08_threshold_sweep"
             sections.append(_section(
-                stem, "Clusters that span sources",
-                f"{len(cross)} clusters contain isolates from two or more sources.{timing}",
-                _render(cl, stem, figures_dir),
-                "Each panel is one cluster; nodes are isolates (shape and colour = source). Lines show the minimum "
-                "spanning tree of pairs within the threshold, labelled with SNP distance. Shared clusters are candidates "
-                "for follow-up, not proof of direction or route.",
-                _table_html(link.cross_edges, [("cluster", "Cluster"), ("isolate_a", "Isolate A"), ("source_a", "Source A"),
-                                               ("isolate_b", "Isolate B"), ("source_b", "Source B"),
-                                               ("lineage", "Lineage"), ("snps", "SNPs"), ("years_apart", "Years apart")]),
-                _write_table(tables_dir, "11_cross_source_pairs", link.cross_edges),
-                extra_downloads=[_write_table(tables_dir, "11_clusters", link.clusters)]))
-        swept = ", ".join(f"{row['threshold']:g}" for row in link.sweep)
-        methods.append(
-            f"Pairwise SNP distances were read for {link.matched} isolates. Isolates within {threshold:g} SNPs were "
-            f"joined by single linkage; each unique source pair connected inside a cluster counted as one sharing "
-            f"event, excluding pairs from the same host individual {r_th}{r_he}. Events were normalised per 100 isolates "
-            "of the two sources"
-            + (f" and compared with {permutations:,} permutations of source labels over the fixed genetic network "
-               f"{r_mu}, with two-sided p-values {r_ps} and BH correction" if tested else "")
-            + f". Results were repeated at {swept} SNPs.")
+                stem, "Sensitivity to the SNP threshold",
+                f"At {threshold:g} SNPs there are {n_within} within-source and {n_between} between-source sharing events. "
+                "A conclusion that holds across thresholds is more robust.",
+                _render(fig_sweep(link), stem, figures_dir),
+                f"Events are counted once per source pair per cluster {r_th}. Counts can fall at large thresholds because "
+                "clusters merge.",
+                _table_html(link.sweep, [("threshold", "SNP threshold"), ("within_events", "Within-source events"),
+                                         ("between_events", "Between-source events")]),
+                _write_table(tables_dir, stem, link.sweep),
+                # Normally in the observed-vs-expected section, which needs permutations.
+                extra_downloads=[] if tested else [_write_table(tables_dir, "08_sharing_events", link.events)]))
+            stem = "09_linked_isolates"
+            sections.append(_section(
+                stem, "Which sources share close relatives?",
+                "Each cell is the share of isolates from the row source with at least one close relative from the column source.",
+                _render(fig_linked(link), stem, figures_dir),
+                f"Close relative = within {threshold:g} SNPs, excluding isolates from the same host individual {r_he}. "
+                "The diagonal is within-source sharing.",
+                _table_html(link.linked_fraction, [("from_source", "From"), ("to_source", "To"), ("isolates", "Isolates"),
+                                                   ("with_close_relative", "With close relative"), ("percent", "%")]),
+                _write_table(tables_dir, stem, link.linked_fraction)))
+            oe = fig_observed_expected(link) if tested else None
+            if oe:
+                stem = "10_observed_expected"
+                sig = [r for r in between if r["q"] < 0.05]
+                lower = [r for r in sig if r["events"] < r["expected"]]
+                higher = [r for r in sig if r["events"] > r["expected"]]
+                if sig:
+                    finding = (f"{len(sig)} source pairs differ from chance (q < 0.05): {len(lower)} share fewer close "
+                               f"relatives than expected and {len(higher)} share more.")
+                    if lower and not higher:
+                        finding += " That pattern fits transmission that happens mostly within sources."
+                else:
+                    finding = "No source pair differs from the permutation expectation."
+                sections.append(_section(
+                    stem, "Is cross-source sharing more or less than chance?",
+                    finding,
+                    _render(oe, stem, figures_dir),
+                    f"Shaded bands show the 95% range of events when source labels are shuffled over the same genomes "
+                    f"({permutations:,} permutations), which keeps sampling effort fixed {r_mu}{r_th}. * marks q < 0.05 {r_ps}. "
+                    + (f"Labels were shuffled only among isolates with the same {strata_text}, so differences in when or "
+                       "where sources were sampled do not drive the expectation." if stratify else
+                       "Caveat: shuffling ignores when and where samples were taken, so sources sampled at different times "
+                       "or places also show fewer links than chance; rerun with --stratify-by year,country."),
+                    _table_html(link.events, [("source_a", "Source A"), ("source_b", "Source B"), ("events", "Events"),
+                                              ("events_per_100", "Per 100 isolates"), ("expected", "Expected"),
+                                              ("expected_low", "2.5%"), ("expected_high", "97.5%"), ("q", "q (BH)")]),
+                    _write_table(tables_dir, stem, link.events)))
+            cl = fig_clusters(link)
+            if cl:
+                stem = "11_cross_source_clusters"
+                cross = [c for c in link.clusters if c["n_sources"] >= 2]
+                gaps = [e["years_apart"] for e in link.cross_edges if not math.isnan(e["years_apart"])]
+                timing = f" Linked cross-source isolates were collected a median {np.median(gaps):.1f} years apart." if gaps else ""
+                sections.append(_section(
+                    stem, "Clusters that span sources",
+                    f"{len(cross)} clusters contain isolates from two or more sources.{timing}",
+                    _render(cl, stem, figures_dir),
+                    "Each panel is one cluster; nodes are isolates (shape and colour = source). Lines show the minimum "
+                    "spanning tree of pairs within the threshold, labelled with SNP distance. Shared clusters are candidates "
+                    "for follow-up, not proof of direction or route.",
+                    _table_html(link.cross_edges, [("cluster", "Cluster"), ("isolate_a", "Isolate A"), ("source_a", "Source A"),
+                                                   ("isolate_b", "Isolate B"), ("source_b", "Source B"),
+                                                   ("lineage", "Lineage"), ("snps", "SNPs"), ("years_apart", "Years apart")]),
+                    _write_table(tables_dir, "11_cross_source_pairs", link.cross_edges),
+                    extra_downloads=[_write_table(tables_dir, "11_clusters", link.clusters)]))
+            swept = ", ".join(f"{row['threshold']:g}" for row in link.sweep)
+            methods.append(
+                f"Pairwise SNP distances were read for {link.matched} isolates. Isolates within {threshold:g} SNPs were "
+                f"joined by single linkage; each unique source pair connected inside a cluster counted as one sharing "
+                f"event, excluding pairs from the same host individual {r_th}{r_he}. Events were normalised per 100 isolates "
+                "of the two sources"
+                + (f" and compared with {permutations:,} permutations of source labels over the fixed genetic network "
+                   f"{r_mu}, with two-sided p-values {r_ps} and BH correction" if tested else "")
+                + f". Results were repeated at {swept} SNPs.")
 
+    if not dataset.isolates:
+        quality.append("The table lists no isolates.")
     if dataset.unclassified:
         quality.append(f"{dataset.unclassified} isolates have no source class and are excluded from source comparisons.")
     if dataset.duplicates:

@@ -8,10 +8,12 @@ from pathlib import Path
 
 from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, PAPER_ROLLUP_VALUES
 from onehealth.ids import parse_id
-from onehealth.io_tsv import get_field, read_tsv, row_match_ids
+from onehealth.errors import InputError
+from onehealth.io_tsv import first_present, get_field, read_tsv, row_match_ids
 from onehealth.text import normalize_text
 
 _OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt")
+_L1_COLUMNS = ("l1", "source_l1", "classification")
 
 
 @dataclass(frozen=True)
@@ -41,11 +43,17 @@ def load_overrides(path: Path | None) -> dict[str, list[OverrideRow]]:
     if path is None:
         return {}
     grouped: dict[str, list[OverrideRow]] = defaultdict(list)
-    for raw in read_tsv(path):
+    rows = read_tsv(path)
+    # Without these columns every override would be ignored, or sent to review, with no sign why.
+    if rows and first_present(rows[0], _OVERRIDE_ID_COLUMNS) is None:
+        raise InputError(f"{path}: no ID column ({', '.join(_OVERRIDE_ID_COLUMNS)})")
+    if rows and first_present(rows[0], _L1_COLUMNS) is None:
+        raise InputError(f"{path}: no l1 column ({', '.join(_L1_COLUMNS)})")
+    for raw in rows:
         key = _override_key(raw)
         if not key:
             continue
-        l1 = _canonical(get_field(raw, ("l1", "source_l1", "classification")), L1_VALUES)
+        l1 = _canonical(get_field(raw, _L1_COLUMNS), L1_VALUES)
         grouped[key].append(
             OverrideRow(
                 key=key,

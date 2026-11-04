@@ -101,3 +101,18 @@ def test_overrides_saved_by_excel_with_a_byte_order_mark_are_applied(tmp_path, l
     path.write_text("﻿id\tl1\nSAMN1\tAnimal\n", encoding="utf-8")
     row = classify_rows([{"id": "SAMN1", "isolation_source": "blood", "host": "Homo sapiens"}], lexicon, load_overrides(path))[0]
     assert (row["l1"], row["override_applied"]) == ("Animal", "yes")
+
+
+def test_an_overrides_file_without_id_or_l1_columns_is_an_error(tmp_path):
+    import pytest
+
+    from onehealth.overrides import load_overrides
+
+    no_id = tmp_path / "a.tsv"
+    no_id.write_text("sample\tl1\nSAMN1\tAnimal\n", encoding="utf-8")
+    no_l1 = tmp_path / "b.tsv"
+    no_l1.write_text("id\tclass\nSAMN1\tAnimal\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no ID column"):
+        load_overrides(no_id)
+    with pytest.raises(ValueError, match="no l1 column"):
+        load_overrides(no_l1)

@@ -152,3 +152,23 @@ def test_a_bug_still_shows_its_traceback(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(cli, "summarize", broken)
     with pytest.raises(RuntimeError, match="a real bug"):
         cli.main(["summarize", str(table), "-o", str(tmp_path / "s.tsv")])
+
+
+def test_commands_refuse_a_table_that_was_never_classified(tmp_path: Path, capsys, fixtures: Path):
+    raw = fixtures / "metadata.tsv"  # resolve-style metadata, no l1 or paper_rollup
+    for argv in (["summarize", str(raw), "-o", str(tmp_path / "s.tsv")],
+                 ["plot", str(raw), "-o", str(tmp_path / "p.png")],
+                 ["report", str(raw), "-o", str(tmp_path / "r")]):
+        code, line = _error(capsys, argv)
+        assert code == 1 and "no 'l1'" in line and "onehealth classify" in line, argv
+    truth = tmp_path / "truth.tsv"
+    truth.write_text("id\ttruth\nSAMN1\tHuman\n", encoding="utf-8")
+    code, line = _error(capsys, ["validate", str(raw), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")])
+    assert code == 1 and "no 'paper_rollup'" in line
+
+
+def test_a_header_only_classified_table_is_still_fine(tmp_path: Path):
+    table = tmp_path / "t.tsv"
+    table.write_text("id\tl1\tpaper_rollup\n", encoding="utf-8")
+    assert main(["summarize", str(table), "-o", str(tmp_path / "s.tsv")]) == 0
+    assert main(["report", str(table), "-o", str(tmp_path / "r")]) == 0

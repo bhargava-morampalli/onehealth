@@ -89,3 +89,27 @@ def test_validate_command_writes_all_tables(tmp_path: Path):
     assert summary["isolates"] == "4351"
     for table in ("by_class", "confusion", "disagreements"):
         assert (tmp_path / f"validation.{table}.tsv").exists()
+
+
+def test_conflicting_truth_labels_are_an_error_not_a_coin_toss(tmp_path: Path, capsys):
+    classified = tmp_path / "c.tsv"
+    classified.write_text("query_id\tbiosample\tassembly\tpaper_rollup\nSAMN1\tSAMN1\tGCA_000000001.1\tHuman\n", encoding="utf-8")
+    same_id = tmp_path / "t1.tsv"
+    same_id.write_text("id\ttruth\nSAMN1\tHuman\nSAMN1\tAnimal\n", encoding="utf-8")
+    two_ids = tmp_path / "t2.tsv"
+    two_ids.write_text("id\ttruth\nSAMN1\tHuman\nGCA_000000001.1\tAnimal\n", encoding="utf-8")
+    agree = tmp_path / "t3.tsv"
+    agree.write_text("id\ttruth\nSAMN1\tHuman\nSAMN1\thuman\nGCA_000000001.1\tHuman\n", encoding="utf-8")
+    for truth, message in ((same_id, "two different truth labels"), (two_ids, "listed under two IDs")):
+        assert main(["validate", str(classified), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")]) == 1
+        assert message in capsys.readouterr().err
+    assert main(["validate", str(classified), "--truth", str(agree), "-o", str(tmp_path / "v.tsv")]) == 0
+
+
+def test_validate_with_no_overlap_says_n_a(tmp_path: Path, capsys):
+    classified = tmp_path / "c.tsv"
+    classified.write_text("query_id\tpaper_rollup\nSAMN1\tHuman\n", encoding="utf-8")
+    truth = tmp_path / "t.tsv"
+    truth.write_text("id\ttruth\nSAMN9\tHuman\n", encoding="utf-8")
+    assert main(["validate", str(classified), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")]) == 0
+    assert "coverage n/a, accuracy n/a, agreement n/a" in capsys.readouterr().err
