@@ -2,7 +2,32 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: PDT lookups that work (branch `fix-pdt-lookups`)
+## Unreleased: lexicon v3 (branch `lexicon-v3`)
+
+The seed lexicon is now v3, and classified tables record `lexicon_version` 3. v2 still ships: `classify --lexicon v2` reproduces earlier results exactly. The additions are general terms found in the review queues of the IMP benchmark and the NCBI Pathogen Detection test data. Each is marked `v3` in the file.
+
+- **Hospital environment:** `bedpan`, `hospital waste water` (two words), and plurals of the drain phrases (`sink drains`, `floor drains`, ...). Matching is by whole word, so `drains` never matched `drain`.
+- **Other environment:** `waste water`, `wastewater treatment`, `WWTP`, `influent`, `environmental swab(s)`, and `water` as a whole value.
+- **Patient samples (the host decides):** any `catheter`, not only `catheter tip`, and diagnoses ending in `tract infection`. A source that is only `human` or `patient` is Human, and is a conflict with an animal host.
+- **Laboratory:** `passaging`.
+
+Effect:
+
+| | v2 | v3 |
+|---|---|---|
+| IMP benchmark coverage | 84.5% | 84.8% |
+| IMP benchmark accuracy | 99.2% | 99.5% |
+| IMP review queue | 674 | 661 |
+| NCBI Pathogen Detection rows classified | 253 of 307 | 263 of 307 |
+
+Every newly classified row agrees with its curated or NCBI label, and no row moves from a correct class to a wrong one. Both datasets were used to find the additions, so this shows they work as intended; it is not a measure of accuracy on new data. As a cross-check, the additions found in one dataset changed nothing wrongly in the other. One change makes coverage look worse: 12 `environmental swab` samples recorded with host *Homo sapiens* were called Human by v2, which the curation says is wrong. v3 sends them to review as a host/source conflict.
+
+Left as they are, on purpose:
+
+- A bare fixture without a setting word (`Shower 3`, `Sink swab`) still goes to review, like bare `sink` and `faucet`. A wrong hospital flag would quietly move isolates into the report's healthcare-environment group. Counting them as hospital fixtures would lift IMP coverage to 86.0%.
+- Strings tied to one study (`ensuite 7/8`, `arjo bathroom`) and typos are not added.
+
+## 4 November 2026: PDT lookups that work ([#6](https://github.com/bhargava-morampalli/onehealth/pull/6))
 
 `resolve` could find a PDT only when NCBI had assembled the genome itself and named the assembly after it. Most genomes keep their submitter's name (`ASM80747v2`), so 60 of 65 real Klebsiella PDTs came back `pdt_unresolved`. New option: `--pd-organism Klebsiella` (several groups, comma-separated). It reads that Pathogen Detection organism group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella and 900 MB for Salmonella. Reading stops once every PDT is found.
 
@@ -66,4 +91,4 @@ Every table and figure is byte-for-byte the same as before.
 
 ## Known, not yet fixed
 
-- **Lexicon gaps.** Lexicon additions found by the IMP benchmark, such as `Shower 3`, `bedpan washer` and `WC sink drains`, are not made yet. They change results, so they should come with a new lexicon version.
+- **Setting words apart from the fixture.** `washroom sink in hospital intensive care unit` goes to review, because rules match whole phrases (`hospital sink`), not words spread through a sentence. That needs a change to how rules match, not more lexicon entries.
