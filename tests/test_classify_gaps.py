@@ -217,3 +217,53 @@ def test_real_sources_are_not_reported_as_taxon_names(lexicon):
         assert _cls(lexicon, source).classify_reason != "taxon_only_source", source
     assert is_taxon_only_source("Klebsiella pneumoniae") is True
     assert is_taxon_only_source("Pseudomonas aeruginosa") is True
+
+
+# --- lexicon v3 additions ------------------------------------------------------------------------
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "source, host, expected",
+    [
+        ("bedpan washer", "", ("Environmental", "yes")),
+        ("Bedpan", "", ("Environmental", "yes")),
+        ("WC sink drains", "", ("Environmental", "yes")),
+        ("Hospital waste water", "", ("Environmental", "yes")),
+        ("waste water", "", ("Environmental", "no")),
+        ("WWTP influent", "", ("Environmental", "no")),
+        ("water", "", ("Environmental", "no")),
+        ("environmental swab", "", ("Environmental", "no")),
+        ("urinary tract infection", "", ("Human", "no")),
+        ("respiratory tract infection", "Bos taurus", ("Animal", "no")),
+        ("catheter", "", ("Human", "no")),
+        ("indwelling urinary catheter", "Sus scrofa", ("Animal", "no")),
+        ("human", "", ("Human", "no")),
+        ("patient", "Homo sapiens", ("Human", "no")),
+        ("passaging", "", ("Laboratory", "no")),
+    ],
+)
+def test_lexicon_v3_additions(lexicon, source, host, expected):
+    result = _cls(lexicon, source, host=host)
+    assert (result.l1, result.healthcare_environment) == expected, result.classify_reason
+
+
+@pytest.mark.parametrize(
+    "source, reason",
+    [
+        ("Shower 3", "unmatched"),  # bare fixtures stay in review, like bare sink and faucet
+        ("Sink swab", "unmatched"),
+        ("infection control screening", "unmatched"),  # only "tract infection" is a specimen word
+        ("water bath", "unmatched"),  # bare water is an exact match only
+    ],
+)
+def test_lexicon_v3_leaves_these_for_review(lexicon, source, reason):
+    result = _cls(lexicon, source)
+    assert (result.classify_status, result.classify_reason) == ("review", reason)
+
+
+def test_human_as_a_source_with_an_animal_host_is_a_conflict(lexicon):
+    assert _cls(lexicon, "human", host="Gallus gallus").classify_reason == "host_source_conflict"
+    assert _cls(lexicon, "patient room surface").l1 != "Human"

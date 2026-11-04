@@ -33,16 +33,17 @@ Real public data used by `tests/test_validation.py` to measure the classifier ag
 
 The 69 genomes in Table S1 without a public BioSample are excluded. One BioSample had two curated labels (human and clinical); both map to Human.
 
-## Baseline (lexicon v2)
+## Baseline
 
-Measured with `onehealth classify` then `onehealth validate`:
+Measured with `onehealth classify` then `onehealth validate`. v3 is the current seed lexicon; `--lexicon v2` gives the earlier column.
 
-| Metric | Value |
-|---|---|
-| Coverage (classified, not sent to review) | 84.5% |
-| Accuracy (of classified isolates) | 99.2% |
-| Human recall / precision | 92.0% / 99.1% |
-| Environmental recall / precision | 13.5% / 100% |
-| Animal recall / precision | 74.5% / 86.4% |
+| Metric | Lexicon v2 | Lexicon v3 |
+|---|---|---|
+| Coverage (classified, not sent to review) | 84.5% | 84.8% |
+| Accuracy (of classified isolates) | 99.2% | 99.5% |
+| Human recall / precision | 92.0% / 99.1% | 92.2% / 99.4% |
+| Environmental recall / precision | 13.5% / 100% | 17.6% / 100% |
+| Animal recall / precision | 74.5% / 86.4% | 74.5% / 86.4% |
+| Sent to review | 674 | 661 |
 
-Most of the gap is missing information, not wrong calls. 555 of the 674 review cases have no isolation source and no host in their current BioSample record; the curators had other context, such as NCBI's isolation type. EBI-submitted records (SAME) rarely carry an isolation source. The paper's `isolation_source` column sometimes holds values that the current BioSample does not, so it is kept only for reference.
+Most of the gap is missing information, not wrong calls. With v3, 555 of the 661 review cases have no isolation source and no host in their current BioSample record; the curators had other context, such as NCBI's isolation type. EBI-submitted records (SAME) rarely carry an isolation source. The paper's `isolation_source` column sometimes holds values that the current BioSample does not, so it is kept only for reference.

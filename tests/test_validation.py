@@ -55,11 +55,11 @@ def imp_validation(lexicon):
 
 
 def test_imp_benchmark_baseline(imp_validation):
-    """Floors just under the lexicon v2 baseline: lexicon changes must not make these worse."""
+    """Floors just under the lexicon v3 baseline (84.8% coverage, 99.51% accuracy): changes must not make these worse."""
     result = imp_validation
     assert result.isolates == 4351 and not result.unmatched
-    assert result.coverage >= 0.84
-    assert result.accuracy >= 0.99
+    assert result.coverage >= 0.847
+    assert result.accuracy >= 0.995
     precision = {r["class"]: r["precision"] for r in result.per_class()}
     assert precision["Human"] >= 0.99 and precision["Environmental"] >= 0.99
 
@@ -113,3 +113,25 @@ def test_validate_with_no_overlap_says_n_a(tmp_path: Path, capsys):
     truth.write_text("id\ttruth\nSAMN9\tHuman\n", encoding="utf-8")
     assert main(["validate", str(classified), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")]) == 0
     assert "coverage n/a, accuracy n/a, agreement n/a" in capsys.readouterr().err
+
+
+def test_lexicon_v2_still_ships_and_reproduces_its_benchmark():
+    from onehealth.lexicon import load_lexicon
+
+    v2 = load_lexicon(Path("v2"))
+    result = validate(classify_rows(read_tsv(IMP), v2), read_truth(IMP, "truth", "paper_rollup"))
+    assert v2.version == "2"
+    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8448, 0.9918)  # 84.5% and 99.2%
+
+
+def test_lexicon_v3_classifies_more_of_the_ncbi_data_without_new_errors():
+    """v3 classifies 10 more NCBI Pathogen Detection rows (waste water spellings) and gets none of them wrong."""
+    from onehealth.lexicon import load_lexicon
+
+    rows = read_tsv(KLEBSIELLA)
+    expected = {"clinical": {"Human", "Animal"}, "environmental/other": {"Environmental"}}
+    for version, classified_floor in (("v2", 253), ("v3", 263)):
+        classified = [r for r in classify_rows(rows, load_lexicon(Path(version))) if r["classify_status"] == "ok"]
+        labelled = [r for r in classified if r["epi_type"] in expected]
+        wrong = [r for r in labelled if r["paper_rollup"] not in expected[r["epi_type"]]]
+        assert len(classified) >= classified_floor and len(wrong) <= 2, version

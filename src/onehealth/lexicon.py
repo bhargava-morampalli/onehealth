@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
@@ -48,11 +49,29 @@ def _healthcare(value: Any) -> str:
 
 
 def default_lexicon_path() -> Path:
-    return Path(str(files("onehealth").joinpath(f"data/lexicon/v{SEED_LEXICON_VERSION}.yaml")))
+    return shipped_lexicon_path(SEED_LEXICON_VERSION)
+
+
+def shipped_lexicon_path(version: str) -> Path:
+    return Path(str(files("onehealth").joinpath(f"data/lexicon/v{version}.yaml")))
+
+
+def _lexicon_file(path: Path | None) -> Path:
+    """The default, a YAML file, or a version that ships with onehealth ("v2"), so older results can be reproduced."""
+    if path is None:
+        return default_lexicon_path()
+    version = re.fullmatch(r"v?(\d+)", str(path))
+    if version and not path.exists():
+        shipped = shipped_lexicon_path(version.group(1))
+        if not shipped.exists():
+            available = sorted(p.stem for p in shipped.parent.glob("v*.yaml"))
+            raise InputError(f"no lexicon {path}: onehealth ships {', '.join(available)}")
+        return shipped
+    return path
 
 
 def load_lexicon(path: Path | None = None) -> Lexicon:
-    lexicon_path = path or default_lexicon_path()
+    lexicon_path = _lexicon_file(path)
     try:
         payload = yaml.safe_load(read_text(lexicon_path))
     except yaml.YAMLError as exc:

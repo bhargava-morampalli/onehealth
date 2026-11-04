@@ -72,7 +72,7 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v2 classifies 84.5% of isolates, and 99.2% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v3 classifies 84.8% of isolates, and 99.5% of those agree with the curation (v2: 84.5% and 99.2%). Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
 ## Report
 
@@ -141,7 +141,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-The seeded lexicon is versioned at `src/onehealth/data/lexicon/v2.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+The seeded lexicon is versioned at `src/onehealth/data/lexicon/v3.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML, or `--lexicon v2` to reproduce results made with the previous seed, which still ships. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 
