@@ -117,7 +117,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Lineage and feature analyses use one isolate per genomic cluster per source (within --threshold SNPs); "
         "needs --distances",
     )
-    report_p.add_argument("--permutations", type=int, default=9999, help="Permutations for every test (default 9999)")
+    report_p.add_argument("--permutations", type=_permutations, default=9999, metavar="N",
+                          help="Permutations for every test (default 9999; 0 skips the tests for a quick look)")
     report_p.add_argument("--seed", type=int, default=1, help="Random seed (default 1)")
     report_p.add_argument("--title", default="One Health population report")
     report_p.add_argument("--note", default="", help="Banner text under the title, e.g. the dataset description")
@@ -231,6 +232,16 @@ def cmd_plot(args: argparse.Namespace) -> int:
     plot_counts(rows, args.out)
     print(f"wrote {args.out}", file=sys.stderr)
     return 0
+
+
+def _permutations(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a whole number: {text!r}") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be 0 or more (0 skips the permutation tests)")
+    return value
 
 
 def _strata(text: str) -> tuple[str, ...]:

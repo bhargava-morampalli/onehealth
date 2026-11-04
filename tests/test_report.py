@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from onehealth.cli import main
 
@@ -109,3 +110,26 @@ def test_diversity_headline_skips_a_source_with_one_typed_isolate(tmp_path: Path
         encoding="utf-8"), re.S).group(1)
     assert "nan" not in finding
     assert finding.startswith("Only Animal has two or more typed isolates")
+
+
+def test_zero_permutations_give_a_report_that_says_the_tests_were_skipped(tmp_path: Path):
+    classified, features, distances = _write_inputs(tmp_path)
+    out = tmp_path / "report"
+    code = main(["report", str(classified), "-o", str(out), "--features", str(features), "--distances", str(distances),
+                 "--threshold", "5", "--permutations", "0"])
+    assert code == 0
+    page = (out / "report.html").read_text(encoding="utf-8")
+    assert "Permutation tests were skipped (--permutations 0)" in page
+    assert "Enrichment was not tested" in page and "were not tested (--permutations 0)" in page
+    assert "Is cross-source sharing more or less than chance?" not in page
+    assert "No lineage was significantly enriched" not in page
+    assert (out / "tables" / "08_sharing_events.tsv").exists()
+
+
+@pytest.mark.parametrize("value, message", [("-1", "must be 0 or more"), ("x", "not a whole number")])
+def test_report_rejects_a_bad_permutation_count(tmp_path: Path, capsys, value, message):
+    classified, _, _ = _write_inputs(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        main(["report", str(classified), "-o", str(tmp_path / "r"), "--permutations", value])
+    assert exc.value.code == 2
+    assert message in capsys.readouterr().err
