@@ -28,8 +28,6 @@ Every command was run against about 90 awkward inputs: missing, empty or mis-enc
 - An overrides file with no ID or no `l1` column is an error. Before, it was ignored, or sent every isolate to review.
 - When a report section cannot be drawn (empty features file, no variable features, a distance matrix sharing fewer than two isolates with the table, an empty lineage table), the data-quality section says why. Before, the section silently vanished.
 
-**Internal notes are no longer published.** `ROADMAP.md`, `REVIEW.md` and `docs/` are working notes. They are now in `.gitignore` and removed from the repository (they remain in its history). Links to them from the README, lexicon and code are reworded.
-
 **Test data.** The NCBI Pathogen Detection gene fixture (`tests/data/ncbi_pd_klebsiella/features.tsv`) had stray quotes on the first and last gene of every list. The cause was NCBI's quoted list cells, which the build script never unwrapped. 23 genes were counted under two names. The fixture was rebuilt from the same release. The real-data report's gene table goes from 186 to 168 features, and no other result changes.
 
 ## 4 November 2026: NCBI lookups in batches ([#4](https://github.com/bhargava-morampalli/onehealth/pull/4))
