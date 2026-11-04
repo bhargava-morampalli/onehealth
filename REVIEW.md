@@ -1,6 +1,6 @@
 # Code and method review: `onehealth` v0.1.0
 
-**Date:** 2026-10-17
+**Date:** 2026-10-17 (later changes are in [CHANGELOG.md](CHANGELOG.md))
 **Scope:** every file under `src/`, `tests/`, `examples/`, the README, and the existing notes in `docs/`.
 **Result:** 8 groups of scientific or methodological problems and 15 software bugs were found and fixed. 5 design questions are left for you to decide (section 6). The test suite grew from 73 to 133 tests, and all pass.
 
@@ -226,7 +226,7 @@ Duplicates are reported in the `dataset` section but not removed, so row-level o
 ## 7. Known limitations still present
 
 - **The lexicon is a seed.** Plurals do not match (`product` vs `products`). Many specimen names are missing, such as `synovial fluid` or `nasopharyngeal aspirate`. These go to review, which is safe but adds curation work.
-- **The taxon-name guard is a heuristic.** Any 2–3-word phrase it does not know can be flagged as `taxon_only_source`. The outcome is still review, but the label can be wrong. A new test (`tests/test_lexicon.py`) makes sure no seed-lexicon phrase is misflagged. If you add phrases to your own lexicon, run it.
+- **The taxon-name guard is a heuristic.** Any 2–3-word phrase it does not know can be flagged as `taxon_only_source`. The outcome is still review, but the label can be wrong. *Updated November 2026:* a lexicon rule written for source text now overrides the guess, so adding a phrase such as `bedpan washer` to your own lexicon works; words ending in -ing, -tion, -sion, -ment or -ness and missing-value terms (`not collected`) are no longer flagged ([CHANGELOG.md](CHANGELOG.md)).
 - **Priority silently resolves mixed strings.** For example, `soil contaminated with faeces` with no host becomes Human, because the specimen rule outranks soil. The README promises review for conflicts, but cross-priority mixes are resolved by rank.
 - **`farm` counts as an animal word.** So `farm worker stool` with no host becomes Animal. With host `Homo sapiens` it is correctly a conflict.
 - **Shared cluster or plasmid is not transmission.** `mixed = yes` only says that one cluster ID contains isolates from several sources. Sequence types and PopPUNK clusters are lineage-level groupings [R17]. Transmission claims need SNP thresholds; about 21 SNPs separated hospital clusters in the European *K. pneumoniae* survey [R18]. One Health studies with shared STs have still found the human and livestock populations distinct [R19]. The Pavia study found only occasional transmission between clinical and non-clinical settings [R5].

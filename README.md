@@ -52,6 +52,8 @@ Rows that cannot be resolved or classified are written next to the output as `<s
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
+Input tables are tab-separated UTF-8 text with a header row; Excel's "UTF-8" export works, and cells may contain quote characters. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
+
 ## Validate
 
 Check the classifier against labels you trust before relying on it for a new dataset. The truth file needs an ID column and a label column naming a class (Human, Animal, Environmental, Unclassified; or the L1 classes with `--level l1`).

@@ -1,6 +1,6 @@
 # One Health analysis: literature review, assessment and roadmap
 
-**Date:** 2026-10-17
+**Date:** 2026-10-17 (later changes are in [CHANGELOG.md](CHANGELOG.md))
 **Question asked:** Can `onehealth` help with the kind of analyses recent One Health genomic studies publish, and what would make it a standardised tool that runs those analyses and presents the results clearly?
 
 **Short answer:** Yes, for the part every study currently does by hand. Recent studies all start by harmonising messy source metadata, then run the same small set of population analyses: lineage diversity and sharing, resistance by source, and genomic linkage between sources. `onehealth` already covered the first step. This round adds the second as `onehealth report`, which produces a self-contained HTML report, publication figures and every underlying table. Genome processing (assembly, typing, SNP calling) stays with established tools that `onehealth` reads from.
