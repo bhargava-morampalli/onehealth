@@ -747,3 +747,175 @@ def test_local_metadata_with_ncbi_datasets_column_names_joins():
     local = [{"Assembly Accession": "GCA_000005845.2", "Assembly BioSample Accession": "SAMN02604091", "Isolation source": "urine"}]
     row = resolve_ids(["GCA_000005845.2"], local_rows=local)[0]
     assert (row["resolve_status"], row["biosample"], row["isolation_source"]) == ("ok", "SAMN02604091", "urine")
+
+
+# --- Pathogen Detection metadata for PDT IDs ----------------------------------------------------
+
+
+PD_HEADER = "#label\tHHS_region\tasm_acc\tbiosample_acc\tcollection_date\ttarget_acc\tsra_center"
+
+
+class PathogenDetectionStub:
+    """NCBI's Pathogen Detection FTP as probed (November 2026), plus the Datasets and E-utilities calls resolve makes.
+
+    The metadata table starts with a '#' header, writes NULL for empty and lists only the
+    current version of each PDT. `assembly_names` are PDTs that E-utilities finds by
+    assembly name (the old route).
+    """
+
+    def __init__(self, tables: dict[str, list[str]], kmer_has_table: bool = True, fail_after: int | None = None,
+                 assembly_names: dict[str, str] | None = None):
+        self.tables, self.kmer_has_table, self.fail_after = tables, kmer_has_table, fail_after
+        self.assembly_names = assembly_names or {}
+        self.urls: list[str] = []
+        self.lines_read: dict[str, int] = {}
+
+    def get_text(self, url, headers=None):
+        from onehealth.ncbi import PD_BASE, HttpError
+
+        self.urls.append(url)
+        if url == f"{PD_BASE}/":
+            return "".join(f'<a href="{g}/">{g}/</a>\n' for g in ["Klebsiella", "Salmonella", "Escherichia_coli_Shigella"])
+        group, link = url[len(PD_BASE) + 1:].split("/")[:2]
+        if group not in self.tables:
+            raise HttpError(f"HTTP 404 for {url}")
+        if link == "latest_kmer" and not self.kmer_has_table:
+            return '<a href="PDG000000012.2570.kmer.descriptor.xml">x</a>'
+        release = "PDG000000012.2570" if link == "latest_kmer" else "PDG000000012.2569"
+        return f'<a href="{release}.metadata.tsv">{release}.metadata.tsv</a>'
+
+    def iter_lines(self, url):
+        from onehealth.ncbi import PD_BASE, HttpError
+
+        self.urls.append(url)
+        group = url[len(PD_BASE) + 1:].split("/")[0]
+        self.lines_read[group] = 0
+        for number, line in enumerate([PD_HEADER, *self.tables[group]]):
+            if self.fail_after is not None and number == self.fail_after:
+                raise HttpError(f"Network error for {url}: reset (part-way through the file)")
+            self.lines_read[group] += 1
+            yield line
+
+    def get_json(self, url, headers=None):
+        import urllib.parse
+
+        self.urls.append(url)
+        if "/biosample/accession/" in url:
+            asked = urllib.parse.unquote(url.split("/biosample/accession/")[1].split("/")[0]).split(",")
+            return {"reports": [{"accession": a, "attributes": [{"name": "isolation_source", "value": f"from {a}"}]} for a in asked]}
+        if "esearch.fcgi" in url:
+            term = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["term"][0]
+            name = term.split("[")[0].rstrip("*")
+            hits = [uid for uid, (pdt, _) in enumerate(self.assembly_names.items()) if pdt == name or (term.endswith("*") and pdt.startswith(name))]
+            return {"esearchresult": {"idlist": [str(uid) for uid in hits]}}
+        if "esummary.fcgi" in url:
+            uid = int(urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["id"][0])
+            pdt, biosample = list(self.assembly_names.items())[uid]
+            return {"result": {str(uid): {"assemblyname": pdt, "biosampleaccn": biosample}}}
+        raise AssertionError(f"unexpected URL {url}")
+
+
+def _pd_row(target: str, biosample: str = "", assembly: str = "") -> str:
+    return f"Klebsiella pneumoniae\t1\t{assembly or 'NULL'}\t{biosample or 'NULL'}\t2019\t{target}\tX"
+
+
+KLEBSIELLA = [_pd_row(f"PDT{n:09d}.2", f"SAMN{n}", f"GCA_{n:09d}.1") for n in range(1, 50)] + [
+    _pd_row("PDT000000050.3", "SAMN50", ""),  # reads only, no assembly
+    _pd_row("PDT000000051.1"),  # no BioSample
+]
+
+
+def _pd_client(stub, notes=None) -> NCBIClient:
+    return NCBIClient(fetcher=stub, log=(notes.append if notes is not None else None))
+
+
+def test_pdts_are_found_in_pathogen_detection_metadata():
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA})
+    ids = ["PDT000000003.2", "PDT000000007.1", "pdt000000009", "PDT000000050.3"]  # exact, outdated, unversioned, no assembly
+    rows = resolve_ids(ids, client=_pd_client(stub), allow_network=True, pd_groups=["klebsiella"])
+    got = [(r["query_id"], r["resolve_status"], r["resolve_reason"], r["pdt"], r["biosample"], r["assembly"], r["isolation_source"]) for r in rows]
+    assert got == [
+        ("PDT000000003.2", "ok", "ncbi_pdt", "PDT000000003.2", "SAMN3", "GCA_000000003.1", "from SAMN3"),
+        ("PDT000000007.1", "ok", "ncbi_pdt", "PDT000000007.2", "SAMN7", "GCA_000000007.1", "from SAMN7"),
+        ("pdt000000009", "ok", "ncbi_pdt", "PDT000000009.2", "SAMN9", "GCA_000000009.1", "from SAMN9"),
+        ("PDT000000050.3", "ok", "ncbi_pdt", "PDT000000050.3", "SAMN50", "", "from SAMN50"),
+    ]
+    assert not [u for u in stub.urls if "esearch" in u]  # the assembly-name route was not needed
+
+
+def test_a_pdt_missing_from_the_table_takes_the_assembly_name_route():
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA}, assembly_names={"PDT000000099.1": "SAMN99"})
+    rows = resolve_ids(["PDT000000099.1", "PDT000000051.1", "PDT000000002.2"], client=_pd_client(stub),
+                       allow_network=True, pd_groups=["Klebsiella"])
+    assert [(r["resolve_status"], r["resolve_reason"], r["biosample"]) for r in rows] == [
+        ("ok", "ncbi_pdt", "SAMN99"),  # not in the table, but NCBI named its assembly after it
+        ("review", "pdt_unresolved", ""),  # in the table without a BioSample, and no assembly of that name
+        ("ok", "ncbi_pdt", "SAMN2"),
+    ]
+
+
+def test_reading_stops_once_every_pdt_is_found_and_later_groups_are_skipped():
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA, "Salmonella": [_pd_row("PDT000000900.1", "SAMN900")]})
+    resolve_ids(["PDT000000002.2"], client=_pd_client(stub), allow_network=True, pd_groups=["Klebsiella", "Salmonella"])
+    assert stub.lines_read == {"Klebsiella": 3}  # header, PDT1, PDT2: then stop; Salmonella never opened
+
+
+def test_pdts_not_in_the_first_group_are_looked_for_in_the_next():
+    notes: list[str] = []
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA, "Salmonella": [_pd_row("PDT000000900.1", "SAMN900")]})
+    rows = resolve_ids(["PDT000000900.1", "PDT000000004.2"], client=_pd_client(stub, notes), allow_network=True,
+                       pd_groups=["Klebsiella", "Salmonella"])
+    assert [r["biosample"] for r in rows] == ["SAMN900", "SAMN4"]
+    assert notes == ["Pathogen Detection Klebsiella PDG000000012.2570: 1 PDTs found (1 of 2 in all)",
+                     "Pathogen Detection Salmonella PDG000000012.2570: 1 PDTs found (2 of 2 in all)"]
+
+
+def test_latest_snps_is_used_when_latest_kmer_has_no_table():
+    notes: list[str] = []
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA}, kmer_has_table=False)
+    rows = resolve_ids(["PDT000000005.2"], client=_pd_client(stub, notes), allow_network=True, pd_groups=["Klebsiella"])
+    assert rows[0]["biosample"] == "SAMN5" and "PDG000000012.2569" in notes[0]
+
+
+def test_an_unknown_organism_group_stops_the_run_with_suggestions():
+    import pytest
+
+    from onehealth.errors import InputError
+
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA})
+    with pytest.raises(InputError, match="'Klebsiela' is not a Pathogen Detection organism group. Did you mean Klebsiella"):
+        resolve_ids(["PDT000000002.2", "SAMN1"], client=_pd_client(stub), allow_network=True, pd_groups=["Klebsiela"])
+    assert not [u for u in stub.urls if "biosample" in u]  # stopped before any lookup
+
+
+def test_a_failed_metadata_download_falls_back_to_assembly_names():
+    notes: list[str] = []
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA}, fail_after=2, assembly_names={"PDT000000003.2": "SAMN3"})
+    rows = resolve_ids(["PDT000000003.2"], client=_pd_client(stub, notes), allow_network=True, pd_groups=["Klebsiella"])
+    assert (rows[0]["resolve_status"], rows[0]["biosample"]) == ("ok", "SAMN3")
+    assert notes and notes[0].startswith("Pathogen Detection lookup failed") and "assembly name instead" in notes[0]
+
+
+def test_without_pd_groups_pdts_resolve_as_before():
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA}, assembly_names={"PDT000000003.2": "SAMN3"})
+    rows = resolve_ids(["PDT000000003.2"], client=_pd_client(stub), allow_network=True)
+    assert rows[0]["biosample"] == "SAMN3"
+    assert not [u for u in stub.urls if "ftp.ncbi" in u]
+
+
+def test_cli_explains_pd_organism(monkeypatch, tmp_path, capsys):
+    from onehealth import cli
+
+    ids = tmp_path / "ids.txt"
+    ids.write_text("PDT000000003.2\n", encoding="utf-8")
+    assert cli.main(["resolve", str(ids), "-o", str(tmp_path / "r.tsv"), "--no-network", "--pd-organism", "Klebsiella"]) == 0
+    assert "--pd-organism needs NCBI" in capsys.readouterr().err
+
+    stub = PathogenDetectionStub({"Klebsiella": KLEBSIELLA})
+    real_client = cli.NCBIClient
+    monkeypatch.setattr(cli, "NCBIClient", lambda **kw: real_client(fetcher=stub, **{k: v for k, v in kw.items() if k != "fetcher"}))
+    assert cli.main(["resolve", str(ids), "-o", str(tmp_path / "r.tsv"), "--email", "x@example.org"]) == 0
+    assert "pass --pd-organism" in capsys.readouterr().err  # not found by assembly name: the hint
+    assert cli.main(["resolve", str(ids), "-o", str(tmp_path / "r.tsv"), "--pd-organism", "Klebsiella"]) == 0
+    err = capsys.readouterr().err
+    assert "resolve: Pathogen Detection Klebsiella PDG000000012.2570: 1 PDTs found" in err and "pass --pd-organism" not in err

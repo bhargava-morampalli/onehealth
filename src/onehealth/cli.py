@@ -60,6 +60,14 @@ def _build_parser() -> argparse.ArgumentParser:
     resolve_p.add_argument("--email", default="", help="Contact email for NCBI E-utilities")
     resolve_p.add_argument("--api-key", default="", help="Optional NCBI API key")
     resolve_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
+    resolve_p.add_argument(
+        "--pd-organism",
+        type=_names,
+        default=(),
+        metavar="GROUP",
+        help="Pathogen Detection organism group(s) of your PDT IDs, comma-separated (e.g. Klebsiella, "
+        "Escherichia_coli_Shigella). Their current metadata table is read from NCBI to find each PDT's BioSample.",
+    )
     resolve_p.set_defaults(handler=cmd_resolve)
 
     classify_p = sub.add_parser("classify", help="Assign L1, healthcare-environment, and paper rollup")
@@ -211,8 +219,10 @@ def cmd_resolve(args: argparse.Namespace) -> int:
                 "contact you before blocking an IP",
                 file=sys.stderr,
             )
-        client = NCBIClient(email=args.email, api_key=args.api_key)
-    rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network)
+        client = NCBIClient(email=args.email, api_key=args.api_key, log=lambda note: print(f"resolve: {note}", file=sys.stderr))
+    elif args.pd_organism:
+        print("warning: --pd-organism needs NCBI, so it has no effect with --no-network", file=sys.stderr)
+    rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network, pd_groups=list(args.pd_organism))
     # Union over all rows, so optional cluster/plasmid columns survive even when
     # the first row has none.
     extra = sorted({key for row in rows for key in row} - set(RESOLVE_FIELDS))
@@ -220,6 +230,10 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     write_tsv(args.out, rows, fieldnames)
     _write_review(args.review or _sidecar(args.out, "review"), rows, fieldnames, status_field="resolve_status")
     _print_counts("resolve", rows, "resolve_status")
+    unresolved = sum(1 for row in rows if row.get("resolve_reason") == "pdt_unresolved")
+    if unresolved and allow_network and not args.pd_organism:
+        print(f"resolve: {unresolved} PDT IDs were not found by assembly name; pass --pd-organism (for example "
+              "Klebsiella) to look them up in NCBI Pathogen Detection's own table", file=sys.stderr)
     return 0
 
 
@@ -258,6 +272,10 @@ _CLASSIFY_FIRST = "Is this the output of onehealth classify?"
 
 def _percent(value: float) -> str:
     return "n/a" if math.isnan(value) else f"{value:.1%}"
+
+
+def _names(text: str) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(part.strip() for part in text.split(",") if part.strip()))
 
 
 def _threshold(text: str) -> float:

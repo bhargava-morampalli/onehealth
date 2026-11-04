@@ -48,6 +48,14 @@ onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com
 
 NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists. BioSample and assembly reports are fetched 100 per request, so a list of thousands of BioSamples or assemblies takes a few dozen requests. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues.
 
+PDT IDs need the Pathogen Detection organism group:
+
+```bash
+onehealth resolve pdts.txt -o work/resolved.tsv --email you@example.com --pd-organism Klebsiella
+```
+
+This reads the group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella, 900 MB for Salmonella, and reading stops once every PDT is found. Several groups can be given, comma-separated. Group names are as at <https://ftp.ncbi.nlm.nih.gov/pathogen/Results/>. An outdated PDT version gets the current one. Without `--pd-organism`, a PDT is found only if NCBI named its assembly after it, which few genomes are.
+
 Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`.
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.

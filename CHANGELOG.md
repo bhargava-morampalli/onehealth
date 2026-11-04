@@ -2,7 +2,16 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: edge-case sweep (branch `edge-case-sweep`)
+## Unreleased: PDT lookups that work (branch `fix-pdt-lookups`)
+
+`resolve` could find a PDT only when NCBI had assembled the genome itself and named the assembly after it. Most genomes keep their submitter's name (`ASM80747v2`), so 60 of 65 real Klebsiella PDTs came back `pdt_unresolved`. New option: `--pd-organism Klebsiella` (several groups, comma-separated). It reads that Pathogen Detection organism group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella and 900 MB for Salmonella. Reading stops once every PDT is found.
+
+- On the same 917 real IDs, all 65 PDTs now resolve (5 before), and every BioSample agrees with the Pathogen Detection fixture. All 307 fixture PDTs resolve to the right BioSample and assembly. The run is also faster, 30 s instead of 83 s, because the per-PDT searches are skipped.
+- An outdated or unversioned PDT gets its current version. The `pdt` and `assembly` columns are filled in from the table.
+- A PDT the table does not list, or one listed without a BioSample, still gets the old assembly-name lookup. If the table cannot be read, `resolve` says so and uses that lookup for every PDT.
+- A misspelt group stops the run before any lookup and suggests the closest names, for example "Did you mean Klebsiella?". Without the option nothing changes, except a hint when PDTs stay unresolved.
+
+## 4 November 2026: edge-case sweep ([#5](https://github.com/bhargava-morampalli/onehealth/pull/5))
 
 Every command was run against about 90 awkward inputs: missing, empty or mis-encoded files, Excel exports, broken lexicons, impossible options, tiny and mismatched tables. Problems found and fixed:
 
@@ -57,5 +66,4 @@ Every table and figure is byte-for-byte the same as before.
 
 ## Known, not yet fixed
 
-- **PDT lookups mostly fail.** 60 of 65 real Pathogen Detection PDTs come back `pdt_unresolved`, because `resolve` searches for an assembly named after the PDT, and most genomes keep their submitter's name. The fix is to look PDTs up in Pathogen Detection's own metadata.
 - **Lexicon gaps.** Lexicon additions found by the IMP benchmark, such as `Shower 3`, `bedpan washer` and `WC sink drains`, are not made yet. They change results, so they should come with a new lexicon version.

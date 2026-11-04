@@ -2,22 +2,28 @@
 
 from __future__ import annotations
 
+import difflib
 import http.client
 import json
+import re
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Protocol
+from typing import Any, Callable, Iterable, Iterator, Protocol
 
 from onehealth.constants import UNKNOWN_EXACT
+from onehealth.errors import InputError
 from onehealth.ids import parse_id, pdt_stem
 from onehealth.text import normalize_text
 
 DATASETS_BASE = "https://api.ncbi.nlm.nih.gov/datasets/v2"
 EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+# NCBI Pathogen Detection results, one folder per organism group (Klebsiella, Salmonella, ...).
+PD_BASE = "https://ftp.ncbi.nlm.nih.gov/pathogen/Results"
 # Accessions per batched Datasets request. 300 worked when tested; 100 keeps URLs short.
 DATASETS_BATCH = 100
 # The genome endpoint returns 20 reports per page unless asked for more.
@@ -49,6 +55,8 @@ class Fetcher(Protocol):
     def get_json(self, url: str, headers: dict[str, str] | None = None) -> dict[str, Any]: ...
 
     def get_text(self, url: str, headers: dict[str, str] | None = None) -> str: ...
+
+    def iter_lines(self, url: str) -> Iterator[str]: ...
 
 
 class UrllibFetcher:
@@ -95,24 +103,38 @@ class UrllibFetcher:
                 time.sleep(self.backoff_s * (attempt + 1))
         raise AssertionError("unreachable")
 
+    def iter_lines(self, url: str) -> Iterator[str]:
+        """A large text file line by line, never held in memory whole.
+
+        Opening is retried like any request. A failure part-way through raises
+        HttpError, because the read cannot resume where it stopped.
+        """
+        response = None
+        for attempt in range(self.retries + 1):
+            try:
+                with _network_errors(url):
+                    self._pause()
+                    response = urllib.request.urlopen(urllib.request.Request(url), timeout=60)
+                break
+            except _Retryable as exc:
+                if attempt == self.retries:
+                    raise HttpError(str(exc)) from exc
+                time.sleep(self.backoff_s * (attempt + 1))
+        assert response is not None
+        with response:
+            try:
+                with _network_errors(url):
+                    for raw in response:
+                        yield raw.decode("utf-8", errors="replace").rstrip("\r\n")
+            except _Retryable as exc:
+                raise HttpError(f"{exc} (part-way through the file)") from exc
+
     def _get_once(self, url: str, headers: dict[str, str] | None) -> str:
-        self._pause()
-        request = urllib.request.Request(url, headers=headers or {"Accept": "application/json"})
-        try:
+        with _network_errors(url):
+            self._pause()
+            request = urllib.request.Request(url, headers=headers or {"Accept": "application/json"})
             with urllib.request.urlopen(request, timeout=30) as response:
                 return response.read().decode("utf-8")
-        except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            # No query string: it carries api_key and email, and this text lands in the TSV.
-            message = " ".join(f"HTTP {exc.code} for {_endpoint(url)}: {body[:200]}".split())
-            if exc.code == 429 or exc.code >= 500:
-                raise _Retryable(message) from exc
-            raise HttpError(message) from exc
-        except urllib.error.URLError as exc:
-            raise _Retryable(f"Network error for {_endpoint(url)}: {exc.reason}") from exc
-        except (OSError, http.client.HTTPException) as exc:
-            # A read that times out, a connection dropped mid-reply or a TLS error escapes urlopen's URLError.
-            raise _Retryable(f"Network error for {_endpoint(url)}: {type(exc).__name__} {exc}".strip()) from exc
 
     def _pause(self) -> None:
         now = time.monotonic()
@@ -126,11 +148,31 @@ def _endpoint(url: str) -> str:
     return url.split("?", 1)[0]
 
 
+@contextmanager
+def _network_errors(url: str) -> Iterator[None]:
+    """HTTP 429, 5xx and network failures become _Retryable; other HTTP errors HttpError."""
+    try:
+        yield
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        # No query string: it carries api_key and email, and this text lands in the TSV.
+        message = " ".join(f"HTTP {exc.code} for {_endpoint(url)}: {body[:200]}".split())
+        if exc.code == 429 or exc.code >= 500:
+            raise _Retryable(message) from exc
+        raise HttpError(message) from exc
+    except urllib.error.URLError as exc:
+        raise _Retryable(f"Network error for {_endpoint(url)}: {exc.reason}") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        # A read that times out, a connection dropped mid-reply or a TLS error escapes urlopen's URLError.
+        raise _Retryable(f"Network error for {_endpoint(url)}: {type(exc).__name__} {exc}".strip()) from exc
+
+
 @dataclass
 class NCBIClient:
     email: str = ""
     api_key: str = ""
     fetcher: Fetcher = field(default_factory=UrllibFetcher)
+    log: Callable[[str], None] | None = field(default=None, repr=False)  # progress notes for the user
 
     def __post_init__(self) -> None:
         # With a key NCBI allows 10 requests/s, not 3. Keep any pace the caller chose.
@@ -251,6 +293,78 @@ class NCBIClient:
                 biosamples.append(accession_name)
         return biosamples
 
+    def note(self, message: str) -> None:
+        """Pass a progress note to `log`, if there is one."""
+        if self.log is not None:
+            self.log(message)
+
+    def pathogen_detection_groups(self, requested: Iterable[str]) -> list[str]:
+        """Organism group names as NCBI spells them (case-insensitive). An unknown name is an InputError."""
+        listing = self.fetcher.get_text(f"{PD_BASE}/", headers={"Accept": "text/html"})
+        known = {name.lower(): name for name in re.findall(r'href="([A-Za-z0-9_]+)/"', listing)}
+        groups = []
+        for name in requested:
+            match = known.get(name.strip().lower())
+            if match is None:
+                close = difflib.get_close_matches(name.strip(), list(known.values()), n=3)
+                hint = f" Did you mean {', '.join(close)}?" if close else ""
+                raise InputError(f"{name!r} is not a Pathogen Detection organism group.{hint} The list is at {PD_BASE}/")
+            groups.append(match)
+        return list(dict.fromkeys(groups))
+
+    def pathogen_detection_targets(self, accessions: Iterable[str], groups: Iterable[str]) -> dict[str, dict[str, str]]:
+        """Each PDT's current Pathogen Detection record (target, biosample, assembly), keyed by PDT stem.
+
+        Each group's metadata from its newest release is streamed and not kept: about
+        200 MB for Klebsiella, 900 MB for Salmonella. Reading stops as soon as every PDT
+        is found. A release lists only the current version of each PDT, so an outdated or
+        unversioned PDT gets the current one.
+        """
+        wanted = {pdt_stem(a) for a in accessions if parse_id(a).id_type == "pdt"}
+        found: dict[str, dict[str, str]] = {}
+        for group in groups:
+            if not wanted - found.keys():
+                break
+            release, url = self._pd_metadata_url(group)
+            before = len(found)
+            lines = self.fetcher.iter_lines(url)
+            try:
+                header = next(lines, "").lstrip("#").split("\t")
+                col = {name: i for i, name in enumerate(header)}
+                if "target_acc" not in col or "biosample_acc" not in col:
+                    raise HttpError(f"{url}: no target_acc and biosample_acc columns")
+                for line in lines:
+                    cells = line.split("\t")
+                    stem = _pd_cell(cells, col, "target_acc").split(".", 1)[0].upper()
+                    if stem in wanted and stem not in found:
+                        found[stem] = {
+                            "target": _pd_cell(cells, col, "target_acc"),
+                            "biosample": _pd_cell(cells, col, "biosample_acc"),
+                            "assembly": _pd_cell(cells, col, "asm_acc"),
+                        }
+                        if not wanted - found.keys():
+                            break
+            finally:
+                close = getattr(lines, "close", None)
+                if close is not None:
+                    close()
+            self.note(f"Pathogen Detection {group} {release}: {len(found) - before} PDTs found "
+                       f"({len(found)} of {len(wanted)} in all)")
+        return found
+
+    def _pd_metadata_url(self, group: str) -> tuple[str, str]:
+        """The newest release with a metadata table: latest_kmer, or else latest_snps (which lags behind)."""
+        for link in ("latest_kmer", "latest_snps"):
+            folder = f"{PD_BASE}/{group}/{link}/Metadata/"
+            try:
+                listing = self.fetcher.get_text(folder, headers={"Accept": "text/html"})
+            except HttpError:
+                continue
+            releases = re.findall(r'href="(PDG\d+\.\d+)\.metadata\.tsv"', listing)
+            if releases:
+                return releases[0], f"{folder}{releases[0]}.metadata.tsv"
+        raise HttpError(f"no metadata table for {group} under {PD_BASE}/{group}/")
+
     def pdt_to_biosample(self, accession: str) -> list[str]:
         """Resolve PDT as an assembly *name*, not a BioSample accession.
 
@@ -342,6 +456,13 @@ class NCBIClient:
         if self.api_key:
             params["api_key"] = self.api_key
         params["tool"] = "onehealth"
+
+
+def _pd_cell(cells: list[str], col: dict[str, int], name: str) -> str:
+    """A Pathogen Detection metadata cell; NCBI writes NULL for empty."""
+    index = col.get(name)
+    value = cells[index].strip() if index is not None and index < len(cells) else ""
+    return "" if value == "NULL" else value
 
 
 def _chunks(accessions: Iterable[str], kind: str, size: int = DATASETS_BATCH) -> Iterator[list[str]]:
