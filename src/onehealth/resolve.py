@@ -37,6 +37,7 @@ def resolve_ids(
 ) -> list[dict[str, str]]:
     index = _index_local(local_rows or [])
     resolved: list[dict[str, str]] = []
+    online: list[tuple[dict[str, str], ParsedId]] = []  # rows to look up at NCBI, filled in place below
     for raw in ids:
         parsed = parse_id(raw)
         row = _blank_row(parsed)
@@ -67,29 +68,60 @@ def resolve_ids(
             row["resolve_reason"] = "missing_metadata"
             resolved.append(row)
             continue
-        try:
-            fetched = _fetch(parsed, client)
-        except (HttpError, ValueError) as exc:
-            # One bad answer must not end a run of thousands of IDs (ValueError: JSON
-            # from a custom fetcher). NCBI echoes a rejected API key in its error body,
-            # and this text lands in the table, so the key is masked.
-            message = str(exc).replace(client.api_key, "***") if client.api_key else str(exc)
-            row["resolve_status"] = "review"
-            row["resolve_reason"] = f"ncbi_error:{message}"
-            resolved.append(row)
-            continue
-        row.update(fetched)
-        if fetched.get("resolve_status") == "review":
-            row["resolve_status"] = "review"
-            row["resolve_reason"] = fetched.get("resolve_reason") or "ncbi_incomplete"
-        elif _single_biosample(row.get("biosample")):
-            row["resolve_status"] = "ok"
-            row["resolve_reason"] = fetched.get("resolve_reason") or row.get("resolve_reason") or "ncbi"
-        else:
-            row["resolve_status"] = "review"
-            row["resolve_reason"] = row.get("resolve_reason") or "ncbi_incomplete"
         resolved.append(row)
+        online.append((row, parsed))
+    if online and client is not None:
+        _resolve_online(online, client)
     return resolved
+
+
+def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient) -> None:
+    """Look rows up at NCBI, filling each row in place.
+
+    Assembly and BioSample reports are fetched many per request. Whatever a batch does
+    not answer cleanly is looked up on its own, exactly as a single ID always was, so
+    batching changes the number of requests, not the result.
+    """
+    genomes = client.genome_reports(parsed.normalized for _, parsed in online if parsed.id_type == "assembly")
+    found: list[tuple[dict[str, str], dict[str, str], str]] = []
+    for row, parsed in online:
+        try:
+            fetched, biosample = _find_biosample(parsed, client, genomes)
+        except (HttpError, ValueError) as exc:
+            _ncbi_error(row, exc, client)
+            continue
+        if biosample:
+            found.append((row, fetched, biosample))
+        else:
+            _finish(row, fetched)
+    reports = client.biosample_reports(biosample for _, _, biosample in found)
+    for row, fetched, biosample in found:
+        try:
+            _finish(row, _add_biosample(fetched, biosample, reports.get(biosample.upper()), client))
+        except (HttpError, ValueError) as exc:
+            _ncbi_error(row, exc, client)
+
+
+def _ncbi_error(row: dict[str, str], exc: Exception, client: NCBIClient) -> None:
+    # One bad answer must not end a run of thousands of IDs (ValueError: JSON from a
+    # custom fetcher). NCBI echoes a rejected API key in its error body, and this text
+    # lands in the table, so the key is masked.
+    message = str(exc).replace(client.api_key, "***") if client.api_key else str(exc)
+    row["resolve_status"] = "review"
+    row["resolve_reason"] = f"ncbi_error:{message}"
+
+
+def _finish(row: dict[str, str], fetched: dict[str, str]) -> None:
+    row.update(fetched)
+    if fetched.get("resolve_status") == "review":
+        row["resolve_status"] = "review"
+        row["resolve_reason"] = fetched.get("resolve_reason") or "ncbi_incomplete"
+    elif _single_biosample(row.get("biosample")):
+        row["resolve_status"] = "ok"
+        row["resolve_reason"] = fetched.get("resolve_reason") or row.get("resolve_reason") or "ncbi"
+    else:
+        row["resolve_status"] = "review"
+        row["resolve_reason"] = row.get("resolve_reason") or "ncbi_incomplete"
 
 
 def _blank_row(parsed: ParsedId) -> dict[str, str]:
@@ -185,33 +217,40 @@ def _lookup_local(
     return None, False
 
 
-def _fetch(parsed: ParsedId, client: NCBIClient) -> dict[str, str]:
+def _find_biosample(
+    parsed: ParsedId, client: NCBIClient, genomes: dict[str, dict]
+) -> tuple[dict[str, str], str]:
+    """The one BioSample an ID points to, with what was learnt on the way.
+
+    Returns (fields, "") when the ID ends here, with a review reason in fields.
+    """
     out: dict[str, str] = {}
     biosamples: list[str] = []
     if parsed.id_type == "biosample":
         biosamples = [parsed.normalized]
     elif parsed.id_type == "assembly":
-        report = client.genome_report(parsed.normalized)
+        # From the batch when it answered; otherwise on its own (which also tries the unversioned stem).
+        report = genomes.get(parsed.normalized.upper()) or client.genome_report(parsed.normalized)
         if report is None:
-            return {"resolve_status": "review", "resolve_reason": "assembly_not_found"}
+            return {"resolve_status": "review", "resolve_reason": "assembly_not_found"}, ""
         out["assembly"] = assembly_accession(report) or parsed.normalized
         biosample = biosample_from_genome(report)
         if not biosample:
-            return {**out, "resolve_status": "review", "resolve_reason": "assembly_no_biosample"}
+            return {**out, "resolve_status": "review", "resolve_reason": "assembly_no_biosample"}, ""
         biosamples = [biosample]
         out["resolve_reason"] = "ncbi_assembly"
     elif parsed.id_type == "sra":
         biosamples = client.sra_to_biosample(parsed.normalized)
         if not biosamples:
-            return {"resolve_status": "review", "resolve_reason": "sra_no_biosample"}
+            return {"resolve_status": "review", "resolve_reason": "sra_no_biosample"}, ""
         out["resolve_reason"] = "ncbi_sra"
     elif parsed.id_type == "pdt":
         biosamples = client.pdt_to_biosample(parsed.normalized)
         if not biosamples:
-            return {"resolve_status": "review", "resolve_reason": "pdt_unresolved"}
+            return {"resolve_status": "review", "resolve_reason": "pdt_unresolved"}, ""
         out["resolve_reason"] = "ncbi_pdt"
     else:
-        return {"resolve_status": "review", "resolve_reason": "unknown_id"}
+        return {"resolve_status": "review", "resolve_reason": "unknown_id"}, ""
 
     unique = list(dict.fromkeys(item.strip() for item in biosamples if item and item.strip()))
     if len(unique) > 1:
@@ -220,12 +259,18 @@ def _fetch(parsed: ParsedId, client: NCBIClient) -> dict[str, str]:
             "biosample": ",".join(unique),
             "resolve_status": "review",
             "resolve_reason": "multiple_biosamples",
-        }
+        }, ""
     if not unique:
-        return {**out, "resolve_status": "review", "resolve_reason": "ncbi_incomplete"}
+        return {**out, "resolve_status": "review", "resolve_reason": "ncbi_incomplete"}, ""
+    return out, unique[0]
 
-    known = unique[0]
-    report = client.biosample_report(known)
+
+def _add_biosample(
+    out: dict[str, str], known: str, report: dict | None, client: NCBIClient
+) -> dict[str, str]:
+    """BioSample attributes from the batch report, or looked up on its own (Datasets, then E-utilities XML)."""
+    if report is None:
+        report = client.biosample_report(known)
     if report is None:
         report = client.biosample_xml_report(known)
     if report is None:

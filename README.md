@@ -46,7 +46,7 @@ Live NCBI lookup (metadata only; no FASTA/SRA download):
 onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com
 ```
 
-NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues.
+NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists. BioSample and assembly reports are fetched 100 per request, so a list of thousands of BioSamples or assemblies takes a few dozen requests. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues.
 
 Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`.
 
