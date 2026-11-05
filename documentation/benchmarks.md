@@ -3,7 +3,7 @@
 How well does `classify` do on real data? Two public datasets ship with `onehealth` in `tests/data/`, and the test suite fails if a change makes the results below worse.
 
 !!! note
-    The v3 additions to the lexicon were found in the review queues of these two datasets. The v3 numbers show the additions work as intended; they are not a measure of accuracy on data the lexicon has not seen. Run [`validate`](commands/validate.md) on labels from your own study before relying on the classes.
+    The v3 and v4 changes to the lexicon were found by looking at these two datasets. Their numbers show the changes work as intended; they are not a measure of accuracy on data the lexicon has not seen. Run [`validate`](commands/validate.md) on labels from your own study before relying on the classes.
 
 ## IMP carbapenemase isolates
 
@@ -15,31 +15,31 @@ onehealth validate work/imp/classified.tsv \
     --truth tests/data/imp_carbapenemase_sources/samples.tsv -o work/imp/validation.tsv
 ```
 
-| | Lexicon v2 | Lexicon v3 |
-|---|---|---|
-| Coverage | 84.5% | 84.8% |
-| Accuracy | 99.2% | 99.5% |
-| Agreement | 83.6% | 84.2% |
-| Human recall / precision | 92.0% / 99.1% | 92.2% / 99.4% |
-| Environmental recall / precision | 13.5% / 100% | 17.6% / 100% |
-| Animal recall / precision | 74.5% / 86.4% | 74.5% / 86.4% |
-| Sent to review | 674 | 661 |
+| | Lexicon v2 | Lexicon v3 | Lexicon v4 |
+|---|---|---|---|
+| Coverage | 84.5% | 84.8% | 84.5% |
+| Accuracy | 99.2% | 99.5% | 99.8% |
+| Agreement | 83.6% | 84.2% | 84.3% |
+| Human recall / precision | 92.0% / 99.1% | 92.2% / 99.4% | 92.1% / 99.9% |
+| Environmental recall / precision | 13.5% / 100% | 17.6% / 100% | 17.6% / 100% |
+| Animal recall / precision | 74.5% / 86.4% | 74.5% / 86.4% | 74.5% / 86.4% |
+| Sent to review | 674 | 661 | 681 |
 
-The confusion matrix with v3:
+The confusion matrix with v4:
 
 | Curated \ onehealth | Human | Environmental | Animal | Unclassified |
 |---|---|---|---|---|
-| Human | 3,547 | 0 | 5 | 295 |
-| Environmental | 12 | 78 | 1 | 353 |
+| Human | 3,545 | 0 | 5 | 297 |
+| Environmental | 3 | 78 | 1 | 362 |
 | Animal | 0 | 0 | 38 | 13 |
-| Unclassified | 9 | 0 | 0 | 0 |
+| Unclassified | 0 | 0 | 0 | 9 |
 
 ### What the numbers mean
 
-- **Most of the gap is missing information.** 555 of the 661 rows sent to review have no isolation source and no host in their BioSample record; the curators had other context. 87 have a source no rule matches, 17 a host that contradicts the source, and 2 a host the lexicon does not recognise.
+- **Most of the gap is missing information.** 555 of the 681 rows sent to review have no isolation source and no host in their BioSample record; the curators had other context. 75 name a fixture without its setting (`Shower 3`, `Rm 14 Drain`), 32 have a source no rule matches, 17 a host that contradicts the source, and 2 a host the lexicon does not recognise.
 - **Environmental recall is low** because most environmental isolates in this study have no isolation source in their BioSample. None of the 78 called Environmental is wrong.
-- **12 environmental isolates are called Human.** Nine are room drains and swabs without a setting word (`Rm 14 Drain`, `Sink swab`) recorded with host *Homo sapiens*: no rule matches the source, so the host decides. Three are stool samples with host *Homo sapiens*.
-- **9 drain samples** the curators could not classify are called Human, also from host *Homo sapiens*.
+- **3 environmental isolates are called Human.** All three are stool samples with host *Homo sapiens*.
+- **What v4 changed.** v3 called 9 room drains and swabs without a setting word (`Rm 14 Drain`, `Sink swab`) Human, because their host is *Homo sapiens*, and the curators say they are environmental. It also called Human the 9 drain samples the curators could not classify. v4 sends all 18 to review. Two human samples go to review with them, `Drain Swab` and `drain inserting site`, because a fixture word alone cannot tell them apart.
 
 ## NCBI Pathogen Detection *Klebsiella*
 
@@ -49,11 +49,11 @@ The confusion matrix with v3:
 onehealth classify tests/data/ncbi_pd_klebsiella/metadata.tsv -o work/pd/classified.tsv
 ```
 
-| | Lexicon v2 | Lexicon v3 |
-|---|---|---|
-| Classified | 253 of 307 | 263 of 307 |
+| | Lexicon v2 | Lexicon v3 | Lexicon v4 |
+|---|---|---|---|
+| Classified | 253 of 307 | 263 of 307 | 263 of 307 |
 
-With v3:
+With v4, the same as v3:
 
 | NCBI `epi_type` | Isolates | Human | Environmental | Animal | Review |
 |---|---|---|---|---|---|

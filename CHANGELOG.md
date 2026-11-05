@@ -2,7 +2,28 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: input files that were misread without a word (branch `csv-and-mlst-input`)
+## Unreleased: lexicon v4, fixtures without a setting go to review (branch `bare-fixtures-to-review`)
+
+The seed lexicon is now v4, and classified tables record `lexicon_version` 4. v3 still ships, and `classify --lexicon v3` reproduces earlier results exactly.
+
+A fixture named without its setting, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says neither whose sample it is nor where the fixture is. Without a host it already went to review. With host *Homo sapiens*, which submitters often record for hospital fixture swabs, v3 called it Human. v4 sends it to review, with the reason `fixture-no-setting`.
+
+- A setting word, a specimen or an animal host still decides. `sink drain` and `hospital sink` are healthcare environment, and a bare drain with a pig host is Animal, as other farm settings are.
+- `drain tip`, the tip of a surgical drain, is now a specimen, so the host decides, as for `catheter tip`.
+- A rule that sends rows to review no longer counts as a class when `classify` checks the host against the source. Without this, a bare drain with an animal host would have gone to review as a conflict. No v2 or v3 result changes: their only such rule, `animal-feed`, has the highest priority.
+
+Effect on the IMP benchmark:
+
+| | v3 | v4 |
+|---|---|---|
+| Coverage | 84.8% | 84.5% |
+| Accuracy | 99.5% | 99.8% |
+| Environmental isolates called Human | 12 | 3 |
+| Review queue | 661 | 681 |
+
+The 9 room drains and swabs that the curators call environmental, and the 9 drain samples they could not classify, now go to review instead of Human. Two human samples go with them (`Drain Swab`, `drain inserting site`). The NCBI Pathogen Detection and demo data are unchanged. As with v3, the change was found by looking at the benchmark, so this is not an independent test.
+
+## 4 November 2026: input files that were misread without a word ([#9](https://github.com/bhargava-morampalli/onehealth/pull/9))
 
 A comma-separated file was read as a table with one column. `classify` then found no host or isolation source and sent every row to review as `missing_source`, and `resolve --metadata` matched none of its rows, so every ID was looked up at NCBI instead (or sent to review with `--no-network`). Both commands finished as if nothing were wrong.
 

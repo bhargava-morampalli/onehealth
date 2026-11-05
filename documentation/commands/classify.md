@@ -14,7 +14,7 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 |---|---|
 | `-o`, `--out` | Output TSV (required). |
 | `--overrides` | A curator overrides file. A complete override always wins; see [Overrides](#overrides). |
-| `--lexicon` | A lexicon YAML, or a version that ships with onehealth: `v3` (the default) or `v2`. |
+| `--lexicon` | A lexicon YAML, or a version that ships with onehealth: `v4` (the default), `v3` or `v2`. |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
 
 `classify` prints how many rows were classified and which lexicon version was used.
@@ -93,7 +93,7 @@ The input columns, followed by:
 | `host_source_conflict` | review | Host and source point to different classes |
 | `host_unrecognised` | review | A specimen from a host the lexicon cannot place |
 | `rule_conflict:<rules>` | review | Rules of equal priority disagree |
-| `animal-feed` | review | A rule that sends matches to review |
+| `animal-feed`, `fixture-no-setting` | review | A rule that sends matches to review: animal feed, or a fixture such as a drain or sink named without its setting |
 | `taxon_only_source` | review | `isolation_source` is only a scientific name, and nothing else decides |
 | `unknown_source` | review | `isolation_source` is a missing-value word, and nothing else decides |
 | `missing_source` | review | No isolation source and no host |
