@@ -38,6 +38,20 @@ def is_blank(value: str | None) -> bool:
     return normalize_text(value) == ""
 
 
+def known_part(value: str | None) -> str:
+    """What an "unknown ..." value still says: "unknown animal" gives "animal".
+
+    The species or kind is unknown, but "animal" or "food" still names a class.
+    "unknown" followed only by general words ("unknown source", "unknown
+    environment") says nothing and gives "", as does any value that does not
+    start with "unknown" or "unk".
+    """
+    tokens = tokenize(value)
+    if len(tokens) < 2 or tokens[0] not in {"unknown", "unk"} or set(tokens[1:]) <= UNKNOWN_GENERIC_TAILS:
+        return ""
+    return " ".join(tokens[1:])
+
+
 def is_unknown_value(value: str | None) -> bool:
     """True when a field is empty, an unknown marker, or 'unknown <generic>'."""
     normalized = normalize_text(value)

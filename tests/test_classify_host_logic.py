@@ -140,10 +140,17 @@ def test_taxon_or_unknown_in_source_does_not_shadow_sample_type(lexicon):
     assert (result.l1, result.classify_reason) == ("Human", "specimens+no_host")
 
 
-def test_an_unknown_animal_host_is_still_an_animal(lexicon):
-    # "unknown animal" leaves the species open, not the class. Only isolation_source
-    # treats "unknown ..." as no information.
+def test_an_unknown_animal_is_still_an_animal(lexicon):
+    # "unknown animal" leaves the species open, not the class, in every field.
     assert _cls(lexicon, host="unknown animal").l1 == "Animal"
+    assert _cls(lexicon, "unknown animal").l1 == "Animal"
+    assert _cls(lexicon, "Unknown animal faeces", host="Homo sapiens").classify_reason == "host_source_conflict"
+    assert (_cls(lexicon, "unknown food").l1, _cls(lexicon, "unk human").l1) == ("Food", "Human")
+    # "unknown" with only general words, or an INSDC "missing: ..." term, still says nothing.
+    for value in ("unknown", "unknown source", "Unknown environment", "unknown environmental sample", "missing: lab stock"):
+        result = _cls(lexicon, value)
+        assert (result.classify_status, result.classify_reason) == ("review", "unknown_source"), value
+    assert _cls(lexicon, "unknown environment", host="Homo sapiens").l1 == "Human"  # the host decides
     faeces = _cls(lexicon, "faeces", host="unknown animal")
     assert (faeces.l1, faeces.classify_reason) == ("Animal", "specimens+animal-hosts")
     assert _cls(lexicon, sample_type="unknown food").l1 == "Food"

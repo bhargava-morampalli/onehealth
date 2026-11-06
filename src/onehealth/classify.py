@@ -13,7 +13,7 @@ from onehealth.constants import (
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value
+from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value, known_part
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -68,16 +68,19 @@ def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
 
 def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classification:
     version = lexicon.version
-    hits = match_rules(view, lexicon)
+    # "unknown animal" leaves the species open, not the class: match on "animal".
+    # Other fields keep all their words anyway, so a host of "unknown animal" matches too.
+    source = view.get("isolation_source", "")
+    matched = {**view, "isolation_source": known_part(source) or source}
+    source = matched["isolation_source"]
+    hits = match_rules(matched, lexicon)
 
-    # An unknown marker ("unknown", "missing: lab stock") or a bare taxon name
+    # Any other unknown marker ("unknown", "missing: lab stock") or a bare taxon name
     # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
     # Match again as if the field were blank: a rule stops at the first of its fields
     # that matches, so its other fields (source_type, host) must get their turn.
-    # Other fields keep their words: a host of "unknown animal" is still an animal.
-    source = view.get("isolation_source", "")
     if any(hit.field == "isolation_source" for hit in hits) and (is_unknown_value(source) or _taxon_only(source, hits)):
-        hits = match_rules({**view, "isolation_source": ""}, lexicon)
+        hits = match_rules({**matched, "isolation_source": ""}, lexicon)
 
     winners = best_hits(hits)
     if not winners:

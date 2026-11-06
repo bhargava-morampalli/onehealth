@@ -63,7 +63,7 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 
 ### Values that are not evidence
 
-- **Missing-value words** in `isolation_source` (`unknown`, `missing`, `not collected`, `NaN`, ...) are ignored, and the host or `source_type` decides. The full list is in [Input files](../guides/input-files.md#missing-values). Other fields keep their words: a host of `unknown animal` still says the host is an animal.
+- **Missing-value words** in `isolation_source` (`unknown`, `missing`, `not collected`, `NaN`, ...) are ignored, and the host or `source_type` decides. The full list is in [Input files](../guides/input-files.md#missing-values). `unknown` followed by a word that names something still counts, in any field: `unknown animal` is Animal, while `unknown source` and `unknown environment` mean nothing.
 - **A bare scientific name** (`Escherichia coli`, `Bos taurus`) in `isolation_source` is ignored the same way: taxonomy belongs in `host`.
 
 With nothing else to go on, the row goes to review.
