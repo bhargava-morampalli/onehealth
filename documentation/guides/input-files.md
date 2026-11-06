@@ -66,4 +66,4 @@ Also missing:
 - any value that starts with `unknown`, `unk` or `missing`, such as `missing: control sample` (the INSDC form) or `unknown environment`;
 - `unknown` after only general words (`environment`, `environmental`, `source`, `origin`, `host`, `sample`, `isolate`, `type`, `location`, `site`), such as `source unknown` or `sample type unknown`.
 
-In `isolation_source`, a missing value is ignored and the host or `source_type` decides; with nothing else, the row goes to review as `unknown_source`. A bare scientific name (`Escherichia coli`, `Bos taurus`) is ignored the same way, as taxonomy belongs in `host`.
+In `isolation_source`, a missing value is ignored and the host or `source_type` decides; with nothing else, the row goes to review as `unknown_source`. Other fields keep their words, so a host of `unknown animal` still says the host is an animal. A bare scientific name (`Escherichia coli`, `Bos taurus`) is ignored the same way, as taxonomy belongs in `host`.

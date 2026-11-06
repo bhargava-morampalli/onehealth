@@ -690,8 +690,12 @@ def linkage(
     same_host = (host[pair_a] > 0) & (host[pair_a] == host[pair_b])
 
     def edges_at(t: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        keep = (pair_d <= t) & ~same_host
-        clusters = _components(len(isolates), pair_a[keep], pair_b[keep])
+        hit = pair_d <= t
+        # Clusters include pairs from one host individual, so a patient whose two
+        # isolates link to different sources stays one cluster (one sharing event per
+        # source pair); only the pair itself is not counted as sharing.
+        clusters = _components(len(isolates), pair_a[hit], pair_b[hit])
+        keep = hit & ~same_host
         return pair_a[keep], pair_b[keep], pair_d[keep], clusters
 
     def event_counts(labels: np.ndarray, a: np.ndarray, b: np.ndarray, clusters: np.ndarray) -> np.ndarray:

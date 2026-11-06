@@ -20,7 +20,7 @@ from onehealth.constants import (
 from onehealth.errors import InputError
 from onehealth.io_tsv import (
     ID_LIST_ALIASES,
-    _ISOLATE_NAME_ALIASES,
+    ISOLATE_NAME_ALIASES,
     first_present,
     read_id_list,
     read_tsv,
@@ -29,7 +29,7 @@ from onehealth.io_tsv import (
 )
 from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
-from onehealth.overrides import load_overrides
+from onehealth.overrides import load_overrides, unmatched_overrides
 from onehealth.plot import plot_counts
 from onehealth.resolve import load_local_metadata, resolve_ids
 from onehealth.summarize import summarize, summary_fieldnames
@@ -188,6 +188,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
     print(f"validate: {result.isolates} isolates; coverage {_percent(result.coverage)}, accuracy "
           f"{_percent(result.accuracy)}, agreement {_percent(result.agreement)}", file=sys.stderr)
+    if result.unmatched:
+        print(f"validate: {len(result.unmatched)} truth ID{'s' if len(result.unmatched) > 1 else ''} matched no row "
+              f"(e.g. {', '.join(result.unmatched[:3])})", file=sys.stderr)
     print("truth \\ onehealth  " + "  ".join(f"{p:>13}" for p in classes), file=sys.stderr)
     for row in confusion:
         print(f"{row['truth']:<19}" + "  ".join(f"{row[p]:>13}" for p in classes), file=sys.stderr)
@@ -264,6 +267,12 @@ def cmd_classify(args: argparse.Namespace) -> int:
     _write_review(args.review or _sidecar(args.out, "review"), classified, fieldnames, status_field="classify_status")
     _print_counts("classify", classified, "classify_status")
     print(f"lexicon v{lexicon.version} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
+    missed = unmatched_overrides(rows, overrides)
+    if missed:
+        # Never applied, and nothing in the output would show it.
+        print(f"warning: {len(missed)} override ID{'s' if len(missed) > 1 else ''} in {args.overrides} matched no row "
+              f"and {'were' if len(missed) > 1 else 'was'} not applied (e.g. {', '.join(missed[:3])}). A strain or "
+              "sample name only matches a table with no BioSample, assembly or ID column.", file=sys.stderr)
     return 0
 
 
@@ -301,7 +310,7 @@ def _check_classify_columns(rows: list[dict[str, str]], path: Path, has_override
         return
     found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
     problem = (f"{path}: no column classify can read (isolation_source, host, source_type, ...; found: {found})")
-    if has_overrides and first_present(rows[0], (*ID_LIST_ALIASES, *_ISOLATE_NAME_ALIASES)) is not None:
+    if has_overrides and first_present(rows[0], (*ID_LIST_ALIASES, *ISOLATE_NAME_ALIASES)) is not None:
         print(f"warning: {problem}, so only rows with an override can be classified", file=sys.stderr)
         return
     raise InputError(f"{problem}. For a list of IDs, run onehealth resolve first.")

@@ -139,3 +139,16 @@ This document records the bugs and edge cases identified during the technical au
 - **`README.md`:** Updated the seeded lexicon reference from `src/onehealth/data/lexicon/v3.yaml` to `src/onehealth/data/lexicon/v4.yaml` (and noted `--lexicon v3` or `v2` for historical reproduction).
 - **`CHANGELOG.md`:** Dated the merged PR #10 (`v4` lexicon) entry and recorded the 6 November 2026 bug fixes.
 - **`pyproject.toml`:** Widened the `uv_build` upper bound from `<0.10.0` to `<0.15.0` so builds do not warn or fail on newer `uv` versions (`0.10+`).
+
+---
+
+## Follow-up after review (6 November 2026)
+
+A review of this branch confirmed all eight bugs above, but four of the fixes had side effects. They were changed as follows, each with a test, and the branch was rechecked: no row of the IMP, NCBI Pathogen Detection, demo or example data, and no report table made from them, differs from `main`.
+
+- **Issue 2 reverted.** Blanking unknown markers in `host`, `sample_type` and `host_disease` also removed real information. A host of `unknown animal` is an animal of unknown species, so it lost its class, and `faeces` with that host became Human. As before, only `isolation_source` is treated as unknown; the re-matching from issue 1 is kept.
+- **Issue 3 narrowed.** The conflict check also fired on words in the specimen's own text: `Stool sample from food handler` and `urine, laboratory` (host *Homo sapiens*) and `faeces of food animal` (host *Sus scrofa*) went to review. Only a field other than the specimen's own now counts.
+- **Issue 4 completed.** An overrides file keyed by `strain` was now accepted, but on a table with a BioSample it matched nothing and was ignored without a word; before, the file had been rejected. `classify` now warns about override IDs that match no row, and `validate` reports truth IDs that match no row. Override files accept `strain` and `isolate`, but not `sample` or `name`, which in a curator's file can mean a sample type or a person.
+- **Issue 5 reverted** to the behaviour on `main`, at the maintainer's choice. Building clusters without same-host pairs split one patient's isolates, so a patient linked to two environmental isolates counted as two sharing events instead of one.
+- **Issue 7 reworked.** Sending every matrix with three or more columns to the square reader meant a square matrix with its rows in a different order was read without error, with distances on the wrong pairs. The reader now checks that the rows match the columns in order, and stops with an error that names the problem.
+

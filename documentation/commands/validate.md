@@ -17,7 +17,7 @@ onehealth validate work/classified.tsv --truth curated.tsv -o work/validation.ts
 
 ## The truth file
 
-- **ID column:** the first of `query_id`, `id`, `accession`, `isolate_id`, `sample_id`, `biosample`, `biosample_acc`, `assembly` or `target_acc`. Each ID is matched against every ID on a classified row, so a BioSample label finds a row that was resolved from an assembly. An assembly also matches its GCA/GCF twin and its unversioned form.
+- **ID column:** the first of `query_id`, `id`, `accession`, `isolate_id`, `sample_id`, `biosample`, `biosample_acc`, `assembly`, `target_acc`, `strain`, `isolate`, `sample`, `sample_name` or `name`. Each ID is matched against every ID on a classified row, so a BioSample label finds a row that was resolved from an assembly. An assembly also matches its GCA/GCF twin and its unversioned form. A strain or sample name matches only a table that has no BioSample, assembly or ID column, and `validate` says how many truth IDs matched no row.
 - **Labels** are class names of the chosen `--level`, in any case. `Environment` is read as `Environmental`. `Unclassified` is allowed, for isolates the curators could not place either.
 - Rows with an empty ID or label are skipped.
 

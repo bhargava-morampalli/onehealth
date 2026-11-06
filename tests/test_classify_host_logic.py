@@ -140,10 +140,15 @@ def test_taxon_or_unknown_in_source_does_not_shadow_sample_type(lexicon):
     assert (result.l1, result.classify_reason) == ("Human", "specimens+no_host")
 
 
-def test_unknown_markers_in_host_or_sample_type_stay_unclassified(lexicon):
-    assert _cls(lexicon, host="unknown animal").l1 == "Unclassified"
-    assert _cls(lexicon, sample_type="unknown food").l1 == "Unclassified"
-    assert _cls(lexicon, host="Homo sapiens", sample_type="unknown food").l1 == "Human"
+def test_an_unknown_animal_host_is_still_an_animal(lexicon):
+    # "unknown animal" leaves the species open, not the class. Only isolation_source
+    # treats "unknown ..." as no information.
+    assert _cls(lexicon, host="unknown animal").l1 == "Animal"
+    faeces = _cls(lexicon, "faeces", host="unknown animal")
+    assert (faeces.l1, faeces.classify_reason) == ("Animal", "specimens+animal-hosts")
+    assert _cls(lexicon, sample_type="unknown food").l1 == "Food"
+    no_host = _cls(lexicon, "faeces", host="missing")
+    assert (no_host.l1, no_host.classify_reason) == ("Human", "specimens+no_host")
 
 
 def test_specimen_with_conflicting_non_host_source_type_goes_to_review(lexicon):
@@ -159,3 +164,14 @@ def test_specimen_with_conflicting_non_host_source_type_goes_to_review(lexicon):
         "host_source_conflict",
         "Environmental|Human",
     )
+
+
+def test_words_in_the_specimen_text_do_not_conflict_with_it(lexicon):
+    # Only another field (source_type, host) naming food, environment or laboratory is a conflict.
+    cases = [("Stool sample from food handler", "Homo sapiens", "Human"), ("urine, laboratory", "Homo sapiens", "Human"),
+             ("faeces of food animal", "Sus scrofa", "Animal")]
+    for source, host, expected in cases:
+        result = _cls(lexicon, source, host=host)
+        assert (result.classify_status, result.l1) == ("ok", expected), source
+    assert _cls(lexicon, sample_type="blood", isolation_source="hospital food").classify_reason == "host_source_conflict"
+

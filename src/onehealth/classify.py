@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from onehealth.constants import CLASSIFY_EXTRA_FIELDS, HEALTHCARE_NO, HEALTHCARE_YES, derive_paper_rollup
+from onehealth.constants import (
+    CLASSIFY_EXTRA_FIELDS,
+    HEALTHCARE_NO,
+    HEALTHCARE_YES,
+    derive_paper_rollup,
+)
 from onehealth.io_tsv import metadata_view
-from onehealth.lexicon import RULE_FIELDS, Lexicon, LexiconRule, RuleHit, best_hits, match_rules
+from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import contains_phrase, is_blank, is_taxon_only_source, is_unknown_value, tokenize
+from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -63,17 +68,16 @@ def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
 
 def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classification:
     version = lexicon.version
-    # An unknown marker ("unknown", "missing: lab stock", "unknown animal") in any
-    # field, or a bare taxon name ("Escherichia coli", "Bos taurus") in
-    # isolation_source, is not source evidence. Blank it before matching so rules
-    # can still fall back to later fields in `rule.fields`.
-    cleaned = {
-        field: "" if is_unknown_value(view.get(field)) else view.get(field, "")
-        for field in RULE_FIELDS
-    }
-    hits = match_rules(cleaned, lexicon)
-    if _taxon_only(cleaned["isolation_source"], hits):
-        hits = match_rules({**cleaned, "isolation_source": ""}, lexicon)
+    hits = match_rules(view, lexicon)
+
+    # An unknown marker ("unknown", "missing: lab stock") or a bare taxon name
+    # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
+    # Match again as if the field were blank: a rule stops at the first of its fields
+    # that matches, so its other fields (source_type, host) must get their turn.
+    # Other fields keep their words: a host of "unknown animal" is still an animal.
+    source = view.get("isolation_source", "")
+    if any(hit.field == "isolation_source" for hit in hits) and (is_unknown_value(source) or _taxon_only(source, hits)):
+        hits = match_rules({**view, "isolation_source": ""}, lexicon)
 
     winners = best_hits(hits)
     if not winners:
@@ -115,22 +119,21 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     Anatomical entities are species-neutral (Uberon), so "pig faeces" or a
     Bos taurus host with "faeces" is Animal, not Human.
     """
-    specimen_hits = [hit for hit in hits if hit.rule.host_dependent]
-    other_hits = [
-        hit
+    deciders = [hit for hit in hits if not hit.rule.host_dependent and hit.rule.l1 in {"Human", "Animal"}]
+    candidates = {hit.rule.l1 for hit in deciders}
+    # Another field that names a class no host can have (source_type "food" or
+    # "environmental") contradicts the specimen. Words in the specimen's own text do
+    # not: "stool from a food handler" describes the person, not the sample.
+    specimen_fields = {hit.field for hit in hits if hit.rule.host_dependent}
+    non_host = {
+        hit.rule.l1
         for hit in hits
         if not hit.rule.host_dependent
-        and hit.rule.l1 != "Unclassified"
-        and not any(
-            s.field == hit.field and contains_phrase(tokenize(s.matched), tokenize(hit.matched))
-            for s in specimen_hits
-        )
-    ]
-    non_host_l1 = {hit.rule.l1 for hit in other_hits if hit.rule.l1 not in {"Human", "Animal"}}
-    deciders = [hit for hit in other_hits if hit.rule.l1 in {"Human", "Animal"}]
-    candidates = {hit.rule.l1 for hit in deciders}
-    if non_host_l1:
-        return _review("host_source_conflict", version, (candidates or {rule.l1}) | non_host_l1)
+        and hit.field not in specimen_fields
+        and hit.rule.l1 not in {"Human", "Animal", "Unclassified"}
+    }
+    if non_host:
+        return _review("host_source_conflict", version, (candidates or {rule.l1}) | non_host)
     if len(candidates) > 1:
         return _review("host_source_conflict", version, candidates)
     if deciders:

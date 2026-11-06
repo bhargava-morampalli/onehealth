@@ -2,16 +2,18 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: classification, ID-matching and linkage edge-case fixes (branch `bug-fixes-nov6`)
+## Unreleased: fixes from a bug review (branch `bug-fixes-nov6`)
 
-- **Unknown and taxon-only fields in `classify`:** an unknown marker (`unknown animal`, `unknown food`, `missing: ...`) in `host`, `sample_type` or `host_disease` is now blanked before matching, just like `isolation_source`. When `isolation_source` is blanked as unknown or taxon-only, rules that read multiple fields (such as `[isolation_source, sample_type]`) still evaluate their remaining fields instead of stopping at the discarded `isolation_source` hit.
-- **Specimen conflicts with non-host fields:** when a specimen rule (`blood`, `urine`, `faeces`) matches alongside a non-host class in another field (such as `source_type = food` or `environmental`), `classify` now sends the row to review as `host_source_conflict` instead of calling it Human.
-- **Tables keyed by `strain` or `sample`:** `classify --overrides` and `validate` now match rows identified by `strain`, `isolate`, `sample`, `sample_name` or `name` when no accession or `id` column is present.
-- **Duplicate BioSample rows in `validate`:** rows sharing a BioSample (for example two assemblies of one isolate) are deduplicated by `isolate_key` rather than Python row identity, so each isolate is counted once and conflicting truth labels across its assemblies are caught.
-- **Linkage and dereplication:** single-linkage clusters in `report` exclude same-host edges before connected-component construction, and `--dereplicate` no longer collapses `Unclassified` isolates together or counts them in `clusters_collapsed`.
-- **Distance and lineage readers:** a truncated 2×2 square `snp-dists` matrix now stops with `distance matrix is not square` instead of being misread as three-column long format; CSV lineage headers are trimmed of spaces; and `apply_lineages` stops when two external aliases for the same isolate carry different lineages.
+A review found the cases below; each fix has a test. None of them changes a single row of the IMP, NCBI Pathogen Detection, demo or example data under any lexicon version, or any report table made from them. They change how `classify` works rather than the lexicon, though, so rows like the ones described can classify differently under v2, v3 and v4 alike.
 
-All existing benchmarks (IMP v2/v3/v4 and NCBI Pathogen Detection *Klebsiella*) are unchanged; see `BUG_FIXES_NOV6.md` for the full audit log.
+- **An unknown or species-name `isolation_source` no longer hides other fields.** A rule reads its fields in order and stops at the first match. When `isolation_source` was `Bos taurus` or `unknown tissue`, that match was then thrown away, and the same rule never looked at `source_type`. `Bos taurus` with `source_type` animal is now Animal instead of going to review.
+- **A specimen that another field contradicts goes to review.** `urine` with host *Homo sapiens* and `source_type` food was called Human; it is now `host_source_conflict`. Words in the specimen's own text do not count: `stool sample from food handler` is still Human.
+- **Overrides and truth labels can be keyed by strain** in a table with no BioSample, assembly or ID column. An overrides file can use `strain` or `isolate`; a truth file can also use `sample`, `sample_name` or `name`. `classify` now warns about override IDs that match no row, and `validate` says how many truth IDs matched no row. An override that matched nothing used to be ignored without a word.
+- **`validate` counts an isolate once** when the truth file names two of its assemblies, and stops if their labels differ.
+- **`report --dereplicate` no longer merges unclassified isolates.** It had inflated the number of collapsed clusters given in Methods.
+- **SNP matrices:** a square matrix with rows missing, or in a different order from its columns, now stops with an error. A truncated one used to be read as a long table with a made-up isolate.
+- **Lineages:** an isolate given two different lineages under two of its IDs stops with an error; before, one of them silently won. Spaces around column names in a CSV lineage table are ignored.
+- The README points to lexicon v4, and the package builds without a warning on `uv` 0.10 and later.
 
 ## 5 November 2026: lexicon v4, fixtures without a setting go to review ([#10](https://github.com/bhargava-morampalli/onehealth/pull/10))
 

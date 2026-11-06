@@ -204,7 +204,7 @@ def row_match_ids(row: dict[str, str]) -> set[str]:
 
 # Columns that name an isolate in tables without accessions: Kleborate `strain`,
 # AMRFinderPlus `Name`, lab sheets `sample`.
-_ISOLATE_NAME_ALIASES = ("strain", "isolate", "sample", "sample_name", "name")
+ISOLATE_NAME_ALIASES = ("strain", "isolate", "sample", "sample_name", "name")
 
 
 def isolate_key(row: dict[str, str]) -> str:
@@ -217,7 +217,7 @@ def isolate_key(row: dict[str, str]) -> str:
     biosample = get_field(row, BIOSAMPLE_ALIASES)
     if biosample and "," not in biosample:
         return biosample.upper()
-    for aliases in (ID_COLUMN_ALIASES, ASSEMBLY_ALIASES, SRA_ALIASES, PDT_ALIASES, _ISOLATE_NAME_ALIASES):
+    for aliases in (ID_COLUMN_ALIASES, ASSEMBLY_ALIASES, SRA_ALIASES, PDT_ALIASES, ISOLATE_NAME_ALIASES):
         value = get_field(row, aliases)
         if value:
             return value.upper()
@@ -307,12 +307,17 @@ def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
     delimiter = "\t" if "\t" in header else ","
     names = [cell.strip() for cell in header.split(delimiter)[1:]]
     first = _first_cells(path, delimiter) if names else []
-    if names and (
-        first == names
-        or len(names) > 2
-        or (len(names) == 2 and first and first[0] == names[0] and not _is_float(names[1]))
-    ):
+    if names and first == names:
         return names, _read_square(path, delimiter, len(names))
+    # Every row is named in the header, but the rows are not the columns in order:
+    # a square matrix with rows missing, or rows sorted differently. Reading it
+    # would put distances on the wrong pairs. (A long-format file's first line ends
+    # in a distance, so its "header" is never a list of names; see _is_float.)
+    looks_long = len(names) == 2 and _is_float(names[1])
+    if first and set(first) <= set(names) and not looks_long:
+        if len(first) != len(names):
+            raise InputError(f"{path}: distance matrix is not square ({len(first)} rows for {len(names)} columns)")
+        raise InputError(f"{path}: the rows of the distance matrix are not in the same order as its columns")
     return _read_long(path, delimiter)
 
 

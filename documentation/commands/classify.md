@@ -56,13 +56,14 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 
 - With an animal host or an animal word (`pig faeces`, urine from *Canis lupus familiaris*), the row is **Animal**.
 - With a human host, it is **Human**.
+- If another field names food, an environment or a laboratory, such as `source_type` food, it goes to review as `host_source_conflict`. Words in the specimen's own text do not count: `stool from a food handler` is still Human.
 - With both, it goes to review as `host_source_conflict`.
 - With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`.
 - With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
 
 ### Values that are not evidence
 
-- **Missing-value words** in `isolation_source` (`unknown`, `missing`, `not collected`, `NaN`, ...) are ignored, and the host or `source_type` decides. The full list is in [Input files](../guides/input-files.md#missing-values).
+- **Missing-value words** in `isolation_source` (`unknown`, `missing`, `not collected`, `NaN`, ...) are ignored, and the host or `source_type` decides. The full list is in [Input files](../guides/input-files.md#missing-values). Other fields keep their words: a host of `unknown animal` still says the host is an animal.
 - **A bare scientific name** (`Escherichia coli`, `Bos taurus`) in `isolation_source` is ignored the same way: taxonomy belongs in `host`.
 
 With nothing else to go on, the row goes to review.
@@ -108,7 +109,7 @@ An overrides file records a curator's decisions. It is a TSV with these columns:
 
 | Column | Required | Contents |
 |---|---|---|
-| `id` (or `query_id`, `accession`, `biosample`, `assembly`, `sra`, `pdt`) | yes | The isolate |
+| `id` (or `query_id`, `accession`, `biosample`, `assembly`, `sra`, `pdt`, `strain`, `isolate`) | yes | The isolate |
 | `l1` (or `source_l1`, `classification`) | yes | The class |
 | `healthcare_environment` | no | `yes` or `no` (default `no`) |
 | `paper_rollup` | no | Defaults to the rollup of `l1` and `healthcare_environment` |
@@ -117,6 +118,7 @@ An overrides file records a curator's decisions. It is a TSV with these columns:
 - A complete override always wins over the lexicon, and the lexicon's answer is kept in `lexicon_suggestion`.
 - Class names are case-insensitive.
 - An override on an assembly also covers its GCA/GCF twin, and an unversioned accession covers every version.
+- A strain or isolate name matches only a table that has no BioSample, assembly or ID column. `classify` warns about every override ID that matches no row, since it is not applied.
 - A row with an empty or invalid `l1`, or two rows that disagree about the same isolate, sends that isolate to review rather than silently using the lexicon.
 - A file without an ID or `l1` column is an error.
 

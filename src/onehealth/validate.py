@@ -18,11 +18,17 @@ from pathlib import Path
 
 from onehealth.constants import ID_COLUMN_ALIASES, L1_VALUES, PAPER_ROLLUP_VALUES
 from onehealth.errors import InputError
-from onehealth.io_tsv import _ISOLATE_NAME_ALIASES, first_present, isolate_key, read_tsv, row_match_ids
+from onehealth.io_tsv import (
+    ISOLATE_NAME_ALIASES,
+    first_present,
+    isolate_key,
+    read_tsv,
+    row_match_ids,
+)
 
 LEVELS = {"l1": L1_VALUES, "paper_rollup": PAPER_ROLLUP_VALUES}
 UNCLASSIFIED = "Unclassified"
-_TRUTH_ID_COLUMNS = (*ID_COLUMN_ALIASES, "biosample", "biosample_acc", "assembly", "target_acc", *_ISOLATE_NAME_ALIASES)
+_TRUTH_ID_COLUMNS = (*ID_COLUMN_ALIASES, "biosample", "biosample_acc", "assembly", "target_acc", *ISOLATE_NAME_ALIASES)
 
 
 @dataclass

@@ -489,16 +489,19 @@ def test_zero_permutations_skip_the_tests_instead_of_crashing():
     assert features.rows  # prevalence and Wilson intervals are still reported
 
 
-def test_linkage_clusters_exclude_same_host_only_pairs():
-    rows = [
-        _row(0, "Human", host_id="P1"),
-        _row(1, "Human", host_id="P1"),
-        _row(2, "Animal", host_id="A1"),
-    ]
-    names = ["ISO0", "ISO1", "ISO2"]
-    d = np.array([[0.0, 1.0, 500.0], [1.0, 0.0, 500.0], [500.0, 500.0, 0.0]])
-    link = A.linkage(A.build_dataset(rows), names, d, threshold=5, permutations=0)
-    assert link.clusters == []
+def test_a_patient_linking_two_sources_is_one_cluster_and_one_event():
+    # One patient (P1) has two near-identical isolates, each close to a different
+    # environmental isolate. The patient joins them into one cluster, so Human-Environmental
+    # sharing counts once; the pair from the patient is not itself a sharing event.
+    rows = [_row(0, "Environmental"), _row(1, "Human", host_id="P1"), _row(2, "Human", host_id="P1"), _row(3, "Environmental")]
+    d = np.full((4, 4), 100.0)
+    np.fill_diagonal(d, 0)
+    for i, j, v in ((0, 1, 2), (1, 2, 1), (2, 3, 2)):
+        d[i, j] = d[j, i] = v
+    link = A.linkage(A.build_dataset(rows), [f"ISO{i}" for i in range(4)], d, threshold=5, permutations=0)
+    between = [(e["source_a"], e["source_b"], e["events"]) for e in link.events if e["kind"] == "between"]
+    assert between == [("Human", "Environmental", 1)]
+    assert [c["isolates"] for c in link.clusters] == [4]
 
 
 def test_dereplicate_does_not_collapse_unclassified_isolates():
@@ -525,3 +528,19 @@ def test_apply_lineages_rejects_conflicting_aliases_and_strips_csv_headers(tmp_p
     ds = A.build_dataset([{**_row(1), "assembly": "GCA_000000001.1"}])
     with pytest.raises(ValueError, match="two different lineages"):
         A.apply_lineages(ds, {"SAMN1": "ST258", "GCA_000000001.1": "ST11"})
+
+
+def test_read_distance_matrix_rejects_rows_out_of_order_but_reads_long_pairs(tmp_path: Path):
+    shuffled = tmp_path / "shuffled.tsv"  # read as given, A-C would come out as 9 instead of 2
+    shuffled.write_text("snp-dists\tA\tB\tC\nB\t5\t0\t9\nA\t0\t5\t2\nC\t2\t9\t0\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not in the same order"):
+        read_distance_matrix(shuffled)
+    swapped = tmp_path / "swapped.tsv"
+    swapped.write_text("snp-dists\tA\tB\nB\t7\t0\nA\t0\t7\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not in the same order"):
+        read_distance_matrix(swapped)
+    pairs = tmp_path / "pairs.tsv"  # long format without self-pairs: its first line ends in a distance
+    pairs.write_text("A\tB\t7\nB\tA\t7\n", encoding="utf-8")
+    names, matrix = read_distance_matrix(pairs)
+    assert names == ["A", "B"] and matrix[0, 1] == 7
+
