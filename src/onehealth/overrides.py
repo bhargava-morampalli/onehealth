@@ -12,7 +12,7 @@ from onehealth.errors import InputError
 from onehealth.io_tsv import first_present, get_field, read_tsv, row_match_ids
 from onehealth.text import normalize_text
 
-_OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt")
+_OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt", "strain", "isolate")
 _L1_COLUMNS = ("l1", "source_l1", "classification")
 
 

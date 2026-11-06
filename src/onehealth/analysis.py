@@ -139,7 +139,16 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
 def apply_lineages(dataset: Dataset, lineages: dict[str, str]) -> list[str]:
     """Set lineages from an external typing table (Kleborate, mlst, PopPUNK). Returns unmatched names."""
     mapping, unmatched = match_names(list(lineages), dataset)
-    by_key = {key: _clean(lineages[name]) for name, key in mapping.items()}
+    by_key: dict[str, str] = {}
+    for name, key in mapping.items():
+        value = _clean(lineages[name])
+        if not value:
+            continue
+        if by_key.get(key, value) != value:
+            raise InputError(
+                f"isolate {key} has two different lineages ({by_key[key]} and {value}); keep one lineage per isolate"
+            )
+        by_key[key] = value
     dataset.isolates = [replace(iso, lineage=by_key.get(iso.key, iso.lineage)) for iso in dataset.isolates]
     dataset.lineage_column = dataset.lineage_column or "external table"
     return unmatched
@@ -681,9 +690,8 @@ def linkage(
     same_host = (host[pair_a] > 0) & (host[pair_a] == host[pair_b])
 
     def edges_at(t: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        hit = pair_d <= t
-        clusters = _components(len(isolates), pair_a[hit], pair_b[hit])
-        keep = hit & ~same_host
+        keep = (pair_d <= t) & ~same_host
+        clusters = _components(len(isolates), pair_a[keep], pair_b[keep])
         return pair_a[keep], pair_b[keep], pair_d[keep], clusters
 
     def event_counts(labels: np.ndarray, a: np.ndarray, b: np.ndarray, clusters: np.ndarray) -> np.ndarray:
@@ -916,7 +924,7 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
     isolates, index, _ = _matched_isolates(dataset, names, matrix)
     a, b, _ = _close_pairs(matrix, index, threshold)
     sources = np.array([iso.source for iso in isolates], dtype=object)
-    link = sources[a] == sources[b]
+    link = (sources[a] != "") & (sources[a] == sources[b])
     clusters = _components(len(isolates), a[link], b[link])
     members: dict[int, list[str]] = {}
     for iso, cid in zip(isolates, clusters.tolist()):

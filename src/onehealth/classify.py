@@ -6,9 +6,9 @@ from dataclasses import asdict, dataclass
 
 from onehealth.constants import CLASSIFY_EXTRA_FIELDS, HEALTHCARE_NO, HEALTHCARE_YES, derive_paper_rollup
 from onehealth.io_tsv import metadata_view
-from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
+from onehealth.lexicon import RULE_FIELDS, Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value
+from onehealth.text import contains_phrase, is_blank, is_taxon_only_source, is_unknown_value, tokenize
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -63,14 +63,17 @@ def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
 
 def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classification:
     version = lexicon.version
-    hits = match_rules(view, lexicon)
-
-    # An unknown marker ("unknown", "missing: lab stock") or a bare taxon name
-    # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
-    # Drop it and let host / source_type decide, as if the field were blank.
-    source = view.get("isolation_source", "")
-    if is_unknown_value(source) or _taxon_only(source, hits):
-        hits = [hit for hit in hits if hit.field != "isolation_source"]
+    # An unknown marker ("unknown", "missing: lab stock", "unknown animal") in any
+    # field, or a bare taxon name ("Escherichia coli", "Bos taurus") in
+    # isolation_source, is not source evidence. Blank it before matching so rules
+    # can still fall back to later fields in `rule.fields`.
+    cleaned = {
+        field: "" if is_unknown_value(view.get(field)) else view.get(field, "")
+        for field in RULE_FIELDS
+    }
+    hits = match_rules(cleaned, lexicon)
+    if _taxon_only(cleaned["isolation_source"], hits):
+        hits = match_rules({**cleaned, "isolation_source": ""}, lexicon)
 
     winners = best_hits(hits)
     if not winners:
@@ -112,8 +115,22 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     Anatomical entities are species-neutral (Uberon), so "pig faeces" or a
     Bos taurus host with "faeces" is Animal, not Human.
     """
-    deciders = [hit for hit in hits if not hit.rule.host_dependent and hit.rule.l1 in {"Human", "Animal"}]
+    specimen_hits = [hit for hit in hits if hit.rule.host_dependent]
+    other_hits = [
+        hit
+        for hit in hits
+        if not hit.rule.host_dependent
+        and hit.rule.l1 != "Unclassified"
+        and not any(
+            s.field == hit.field and contains_phrase(tokenize(s.matched), tokenize(hit.matched))
+            for s in specimen_hits
+        )
+    ]
+    non_host_l1 = {hit.rule.l1 for hit in other_hits if hit.rule.l1 not in {"Human", "Animal"}}
+    deciders = [hit for hit in other_hits if hit.rule.l1 in {"Human", "Animal"}]
     candidates = {hit.rule.l1 for hit in deciders}
+    if non_host_l1:
+        return _review("host_source_conflict", version, (candidates or {rule.l1}) | non_host_l1)
     if len(candidates) > 1:
         return _review("host_source_conflict", version, candidates)
     if deciders:

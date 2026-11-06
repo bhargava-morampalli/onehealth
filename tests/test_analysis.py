@@ -487,3 +487,41 @@ def test_zero_permutations_skip_the_tests_instead_of_crashing():
     features = A.feature_prevalence(A.build_dataset(rows), presence, {}, permutations=0)
     assert all(math.isnan(t["p"]) and math.isnan(t["q"]) for t in features.tests)
     assert features.rows  # prevalence and Wilson intervals are still reported
+
+
+def test_linkage_clusters_exclude_same_host_only_pairs():
+    rows = [
+        _row(0, "Human", host_id="P1"),
+        _row(1, "Human", host_id="P1"),
+        _row(2, "Animal", host_id="A1"),
+    ]
+    names = ["ISO0", "ISO1", "ISO2"]
+    d = np.array([[0.0, 1.0, 500.0], [1.0, 0.0, 500.0], [500.0, 500.0, 0.0]])
+    link = A.linkage(A.build_dataset(rows), names, d, threshold=5, permutations=0)
+    assert link.clusters == []
+
+
+def test_dereplicate_does_not_collapse_unclassified_isolates():
+    rows = [_row(0, "Human"), _row(1, "Unclassified"), _row(2, "Unclassified")]
+    names = ["ISO0", "ISO1", "ISO2"]
+    d = np.zeros((3, 3))
+    derep, summary = A.dereplicate(A.build_dataset(rows), names, d, threshold=5)
+    assert (summary.isolates_before, summary.isolates_after, summary.clusters_collapsed) == (1, 1, 0)
+    assert derep.unclassified == 2 and len(derep.isolates) == 3
+
+
+def test_read_distance_matrix_rejects_truncated_2x2_square(tmp_path: Path):
+    trunc = tmp_path / "trunc.tsv"
+    trunc.write_text("snp-dists\tA\tB\nA\t0\t7\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not square"):
+        read_distance_matrix(trunc)
+
+
+def test_apply_lineages_rejects_conflicting_aliases_and_strips_csv_headers(tmp_path: Path):
+    poppunk = tmp_path / "clusters.csv"
+    poppunk.write_text("Taxon , Cluster \nISO1 , 4 \n", encoding="utf-8")
+    assert read_lineages(poppunk) == {"ISO1": "4"}
+
+    ds = A.build_dataset([{**_row(1), "assembly": "GCA_000000001.1"}])
+    with pytest.raises(ValueError, match="two different lineages"):
+        A.apply_lineages(ds, {"SAMN1": "ST258", "GCA_000000001.1": "ST11"})

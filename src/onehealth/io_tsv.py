@@ -179,7 +179,8 @@ def row_match_ids(row: dict[str, str]) -> set[str]:
     """All identifiers on a row that a local-metadata or override row may key on.
 
     Assemblies also yield the versionless stem and the GCA/GCF twin, which NCBI
-    gives the same numeric part for the same assembly.
+    gives the same numeric part for the same assembly. Rows without an accession or
+    ID column fall back to their isolate key (strain, isolate, sample or name).
     """
     values = [
         get_field(row, ID_COLUMN_ALIASES),
@@ -195,7 +196,10 @@ def row_match_ids(row: dict[str, str]) -> set[str]:
             ids.add(parsed.normalized.upper())
             ids.add(value.strip().upper())
             ids.update(assembly_join_keys(parsed.normalized))
-    return {item for item in ids if item}
+    matched = {item for item in ids if item}
+    if not matched and (key := isolate_key(row)):
+        return {key}
+    return matched
 
 
 # Columns that name an isolate in tables without accessions: Kleborate `strain`,
@@ -281,6 +285,14 @@ def read_features(path: Path) -> tuple[dict[str, set[str]], dict[str, str]]:
     return presence, classes
 
 
+def _is_float(text: str) -> bool:
+    try:
+        float(text)
+        return True
+    except ValueError:
+        return False
+
+
 def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
     """Pairwise distances from snp-dists: square (default) or long (-m) format, TSV or CSV.
 
@@ -294,7 +306,12 @@ def read_distance_matrix(path: Path) -> tuple[list[str], "np.ndarray"]:
         return [], np.zeros((0, 0))
     delimiter = "\t" if "\t" in header else ","
     names = [cell.strip() for cell in header.split(delimiter)[1:]]
-    if names and _first_cells(path, delimiter) == names:
+    first = _first_cells(path, delimiter) if names else []
+    if names and (
+        first == names
+        or len(names) > 2
+        or (len(names) == 2 and first and first[0] == names[0] and not _is_float(names[1]))
+    ):
         return names, _read_square(path, delimiter, len(names))
     return _read_long(path, delimiter)
 
@@ -397,7 +414,13 @@ def read_lineages(path: Path) -> dict[str, str]:
 
 
 def _table_pairs(path: Path, lines: list[str], delimiter: str) -> list[tuple[str, str]]:
-    rows = read_tsv(path) if delimiter == "\t" else list(csv.DictReader(lines, delimiter=delimiter))
+    if delimiter == "\t":
+        rows = read_tsv(path)
+    else:
+        rows = [
+            {(k or "").strip(): (v or "").strip() for k, v in row.items() if k}
+            for row in csv.DictReader(lines, delimiter=delimiter)
+        ]
     if not rows:
         return []
     header = [key for key in rows[0] if key]

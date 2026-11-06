@@ -147,3 +147,19 @@ def test_lexicon_v3_classifies_more_of_the_ncbi_data_without_new_errors():
         labelled = [r for r in classified if r["epi_type"] in expected]
         wrong = [r for r in labelled if r["paper_rollup"] not in expected[r["epi_type"]]]
         assert len(classified) >= classified_floor and len(wrong) <= 2, version
+
+
+def test_validate_matches_strain_tables_and_deduplicates_shared_biosamples(tmp_path: Path):
+    truth_path = tmp_path / "truth.tsv"
+    truth_path.write_text("strain\ttruth\nKP1\tHuman\n", encoding="utf-8")
+    truth = read_truth(truth_path, "truth", "paper_rollup")
+    res = validate([{"strain": "KP1", "paper_rollup": "Human"}], truth)
+    assert res.isolates == 1 and res.agreement == 1.0
+
+    rows = [
+        {"biosample": "SAMN1", "assembly": "GCA_000000001.1", "paper_rollup": "Human"},
+        {"biosample": "SAMN1", "assembly": "GCA_000000002.1", "paper_rollup": "Human"},
+    ]
+    assert validate(rows, {"GCA_000000001.1": "Human", "GCA_000000002.1": "Human"}).isolates == 1
+    with pytest.raises(ValueError, match="listed under two IDs"):
+        validate(rows, {"GCA_000000001.1": "Human", "GCA_000000002.1": "Animal"})

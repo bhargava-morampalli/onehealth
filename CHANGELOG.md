@@ -2,7 +2,18 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: lexicon v4, fixtures without a setting go to review (branch `bare-fixtures-to-review`)
+## Unreleased: classification, ID-matching and linkage edge-case fixes (branch `bug-fixes-nov6`)
+
+- **Unknown and taxon-only fields in `classify`:** an unknown marker (`unknown animal`, `unknown food`, `missing: ...`) in `host`, `sample_type` or `host_disease` is now blanked before matching, just like `isolation_source`. When `isolation_source` is blanked as unknown or taxon-only, rules that read multiple fields (such as `[isolation_source, sample_type]`) still evaluate their remaining fields instead of stopping at the discarded `isolation_source` hit.
+- **Specimen conflicts with non-host fields:** when a specimen rule (`blood`, `urine`, `faeces`) matches alongside a non-host class in another field (such as `source_type = food` or `environmental`), `classify` now sends the row to review as `host_source_conflict` instead of calling it Human.
+- **Tables keyed by `strain` or `sample`:** `classify --overrides` and `validate` now match rows identified by `strain`, `isolate`, `sample`, `sample_name` or `name` when no accession or `id` column is present.
+- **Duplicate BioSample rows in `validate`:** rows sharing a BioSample (for example two assemblies of one isolate) are deduplicated by `isolate_key` rather than Python row identity, so each isolate is counted once and conflicting truth labels across its assemblies are caught.
+- **Linkage and dereplication:** single-linkage clusters in `report` exclude same-host edges before connected-component construction, and `--dereplicate` no longer collapses `Unclassified` isolates together or counts them in `clusters_collapsed`.
+- **Distance and lineage readers:** a truncated 2×2 square `snp-dists` matrix now stops with `distance matrix is not square` instead of being misread as three-column long format; CSV lineage headers are trimmed of spaces; and `apply_lineages` stops when two external aliases for the same isolate carry different lineages.
+
+All existing benchmarks (IMP v2/v3/v4 and NCBI Pathogen Detection *Klebsiella*) are unchanged; see `BUG_FIXES_NOV6.md` for the full audit log.
+
+## 5 November 2026: lexicon v4, fixtures without a setting go to review ([#10](https://github.com/bhargava-morampalli/onehealth/pull/10))
 
 The seed lexicon is now v4, and classified tables record `lexicon_version` 4. v3 still ships, and `classify --lexicon v3` reproduces earlier results exactly.
 

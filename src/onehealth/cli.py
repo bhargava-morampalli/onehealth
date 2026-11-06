@@ -20,6 +20,7 @@ from onehealth.constants import (
 from onehealth.errors import InputError
 from onehealth.io_tsv import (
     ID_LIST_ALIASES,
+    _ISOLATE_NAME_ALIASES,
     first_present,
     read_id_list,
     read_tsv,
@@ -300,7 +301,7 @@ def _check_classify_columns(rows: list[dict[str, str]], path: Path, has_override
         return
     found = ", ".join(list(rows[0])[:8]) + (", ..." if len(rows[0]) > 8 else "")
     problem = (f"{path}: no column classify can read (isolation_source, host, source_type, ...; found: {found})")
-    if has_overrides and first_present(rows[0], ID_LIST_ALIASES) is not None:
+    if has_overrides and first_present(rows[0], (*ID_LIST_ALIASES, *_ISOLATE_NAME_ALIASES)) is not None:
         print(f"warning: {problem}, so only rows with an override can be classified", file=sys.stderr)
         return
     raise InputError(f"{problem}. For a list of IDs, run onehealth resolve first.")

@@ -132,3 +132,30 @@ def test_review_rows_make_no_healthcare_claim(lexicon):
 def test_hospital_sink_with_human_host_stays_healthcare_environment(lexicon):
     result = _cls(lexicon, "hospital sink", host="Homo sapiens")
     assert (result.l1, result.healthcare_environment) == ("Environmental", "yes")
+
+
+def test_taxon_or_unknown_in_source_does_not_shadow_sample_type(lexicon):
+    assert _cls(lexicon, "Bos taurus", source_type="animal").l1 == "Animal"
+    result = _cls(lexicon, "unknown tissue", sample_type="blood")
+    assert (result.l1, result.classify_reason) == ("Human", "specimens+no_host")
+
+
+def test_unknown_markers_in_host_or_sample_type_stay_unclassified(lexicon):
+    assert _cls(lexicon, host="unknown animal").l1 == "Unclassified"
+    assert _cls(lexicon, sample_type="unknown food").l1 == "Unclassified"
+    assert _cls(lexicon, host="Homo sapiens", sample_type="unknown food").l1 == "Human"
+
+
+def test_specimen_with_conflicting_non_host_source_type_goes_to_review(lexicon):
+    food = _cls(lexicon, "urine", host="Homo sapiens", source_type="food")
+    assert (food.classify_status, food.classify_reason, food.lexicon_suggestion) == (
+        "review",
+        "host_source_conflict",
+        "Food|Human",
+    )
+    env = _cls(lexicon, "blood", source_type="environmental")
+    assert (env.classify_status, env.classify_reason, env.lexicon_suggestion) == (
+        "review",
+        "host_source_conflict",
+        "Environmental|Human",
+    )
