@@ -116,7 +116,7 @@ Shared clusters are candidates for follow-up, not proof of the direction or rout
 
 - **Permutation tests** shuffle source labels and keep everything else fixed, including the genomes, so sampling effort is the same in every permutation. P-values are two-sided, computed as (b+1)/(m+1) so they are never zero, and corrected for multiple testing with Benjamini–Hochberg. Results are called significant at q < 0.05.
 - **`--stratify-by year,country`** shuffles labels only among isolates from the same collection year and country. Without it, sources sampled in different years or places also look less linked than chance; the caption of section 10 says so. If most isolates are in strata with a single source, the tests have little power, and Data quality says so.
-- **`--dereplicate`** joins isolates of the same source that are within `--threshold` SNPs and keeps the one with the lowest identifier. Isolates from different sources are never merged. Lineage and feature analyses use the representatives; sampling and linkage use every isolate.
+- **`--dereplicate`** joins isolates of the same source that are within `--threshold` SNPs and keeps the one with the lowest identifier. Isolates from different sources, and unclassified isolates, are never merged. Lineage and feature analyses use the representatives; sampling and linkage use every isolate.
 - **`--permutations 0`** skips every test. The report then gives no p- or q-values, calls nothing significant and leaves out section 10; the sharing events are written to `08_sharing_events.tsv` instead.
 
 The Methods section of the report describes what was run in the words of a methods paragraph, and cites each method.
@@ -143,7 +143,7 @@ Every isolate named in the file counts as genotyped. To record a genotyped isola
 
 ### Distances
 
-Pairwise SNP distances from snp-dists, in its default square format or its long `-m` format (name, name, distance), tab- or comma-separated. A pair missing from a long table has no distance: it is not counted and never links.
+Pairwise SNP distances from snp-dists, in its default square format or its long `-m` format (name, name, distance), tab- or comma-separated. A pair missing from a long table has no distance: it is not counted and never links. A square matrix must list its rows in the same order as its columns; one with rows missing or reordered stops with an error rather than putting distances on the wrong pairs.
 
 ### Lineages
 
@@ -154,7 +154,7 @@ Or pass a typing table with `--lineages`: Kleborate output, a PopPUNK `clusters.
 - **mlst** output is read with or without its header row. The isolate is the file name in its first column, and the lineage is the ST; `-` (no ST assigned) gives no lineage.
 - **Any other table** needs a header row. Its lineage column is the first of `st`, `mlst_st`, `sequence_type`, `lineage`, `sublineage`, `sl`, `poppunk_cluster`, `cluster` or a Kleborate `…__ST` column; its isolate column is the first of `id`, `strain`, `name`, `taxon`, `sample`, `sample_id`, `isolate`, `genome`, `assembly`, `biosample`, or else its first column.
 
-A name listed twice in the table with two different lineages stops with an error.
+An isolate given two different lineages, under one name or under two of its IDs, stops with an error.
 
 ### Other columns
 

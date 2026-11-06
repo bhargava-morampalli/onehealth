@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from onehealth.constants import CLASSIFY_EXTRA_FIELDS, HEALTHCARE_NO, HEALTHCARE_YES, derive_paper_rollup
+from onehealth.constants import (
+    CLASSIFY_EXTRA_FIELDS,
+    HEALTHCARE_NO,
+    HEALTHCARE_YES,
+    derive_paper_rollup,
+)
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value
+from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value, known_part
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -63,14 +68,19 @@ def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
 
 def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classification:
     version = lexicon.version
-    hits = match_rules(view, lexicon)
-
-    # An unknown marker ("unknown", "missing: lab stock") or a bare taxon name
-    # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
-    # Drop it and let host / source_type decide, as if the field were blank.
+    # "unknown animal" leaves the species open, not the class: match on "animal".
+    # Other fields keep all their words anyway, so a host of "unknown animal" matches too.
     source = view.get("isolation_source", "")
-    if is_unknown_value(source) or _taxon_only(source, hits):
-        hits = [hit for hit in hits if hit.field != "isolation_source"]
+    matched = {**view, "isolation_source": known_part(source) or source}
+    source = matched["isolation_source"]
+    hits = match_rules(matched, lexicon)
+
+    # Any other unknown marker ("unknown", "missing: lab stock") or a bare taxon name
+    # ("Escherichia coli", "Bos taurus") in isolation_source is not source evidence.
+    # Match again as if the field were blank: a rule stops at the first of its fields
+    # that matches, so its other fields (source_type, host) must get their turn.
+    if any(hit.field == "isolation_source" for hit in hits) and (is_unknown_value(source) or _taxon_only(source, hits)):
+        hits = match_rules({**matched, "isolation_source": ""}, lexicon)
 
     winners = best_hits(hits)
     if not winners:
@@ -114,6 +124,19 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     """
     deciders = [hit for hit in hits if not hit.rule.host_dependent and hit.rule.l1 in {"Human", "Animal"}]
     candidates = {hit.rule.l1 for hit in deciders}
+    # Another field that names a class no host can have (source_type "food" or
+    # "environmental") contradicts the specimen. Words in the specimen's own text do
+    # not: "stool from a food handler" describes the person, not the sample.
+    specimen_fields = {hit.field for hit in hits if hit.rule.host_dependent}
+    non_host = {
+        hit.rule.l1
+        for hit in hits
+        if not hit.rule.host_dependent
+        and hit.field not in specimen_fields
+        and hit.rule.l1 not in {"Human", "Animal", "Unclassified"}
+    }
+    if non_host:
+        return _review("host_source_conflict", version, (candidates or {rule.l1}) | non_host)
     if len(candidates) > 1:
         return _review("host_source_conflict", version, candidates)
     if deciders:

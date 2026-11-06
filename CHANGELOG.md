@@ -2,7 +2,21 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: lexicon v4, fixtures without a setting go to review (branch `bare-fixtures-to-review`)
+## Unreleased: fixes from a bug review (branch `bug-fixes-nov6`)
+
+A review found the cases below; each fix has a test. None of them changes a single row of the IMP, NCBI Pathogen Detection, demo or example data under any lexicon version, or any report table made from them. They change how `classify` works rather than the lexicon, though, so rows like the ones described can classify differently under v2, v3 and v4 alike.
+
+- **An unknown or species-name `isolation_source` no longer hides other fields.** A rule reads its fields in order and stops at the first match. When `isolation_source` was `Bos taurus` or `unknown tissue`, that match was then thrown away, and the same rule never looked at `source_type`. `Bos taurus` with `source_type` animal is now Animal instead of going to review.
+- **`unknown animal` is Animal.** In `isolation_source` it was read as a missing value and sent to review. The species is unknown, but the class is not; the same goes for `unknown food`. `unknown` with only general words (`unknown source`, `unknown environment`) still means nothing, so unknown never becomes Environmental.
+- **A specimen that another field contradicts goes to review.** `urine` with host *Homo sapiens* and `source_type` food was called Human; it is now `host_source_conflict`. Words in the specimen's own text do not count: `stool sample from food handler` is still Human.
+- **Overrides and truth labels can be keyed by strain** in a table with no BioSample, assembly or ID column. An overrides file can use `strain` or `isolate`; a truth file can also use `sample`, `sample_name` or `name`. `classify` now warns about override IDs that match no row, and `validate` says how many truth IDs matched no row. An override that matched nothing used to be ignored without a word.
+- **`validate` counts an isolate once** when the truth file names two of its assemblies, and stops if their labels differ.
+- **`report --dereplicate` no longer merges unclassified isolates.** It had inflated the number of collapsed clusters given in Methods.
+- **SNP matrices:** a square matrix with rows missing, or in a different order from its columns, now stops with an error. A truncated one used to be read as a long table with a made-up isolate.
+- **Lineages:** an isolate given two different lineages under two of its IDs stops with an error; before, one of them silently won. Spaces around column names in a CSV lineage table are ignored.
+- The README points to lexicon v4, and the package builds without a warning on `uv` 0.10 and later.
+
+## 5 November 2026: lexicon v4, fixtures without a setting go to review ([#10](https://github.com/bhargava-morampalli/onehealth/pull/10))
 
 The seed lexicon is now v4, and classified tables record `lexicon_version` 4. v3 still ships, and `classify --lexicon v3` reproduces earlier results exactly.
 

@@ -132,3 +132,53 @@ def test_review_rows_make_no_healthcare_claim(lexicon):
 def test_hospital_sink_with_human_host_stays_healthcare_environment(lexicon):
     result = _cls(lexicon, "hospital sink", host="Homo sapiens")
     assert (result.l1, result.healthcare_environment) == ("Environmental", "yes")
+
+
+def test_taxon_or_unknown_in_source_does_not_shadow_sample_type(lexicon):
+    assert _cls(lexicon, "Bos taurus", source_type="animal").l1 == "Animal"
+    result = _cls(lexicon, "unknown tissue", sample_type="blood")
+    assert (result.l1, result.classify_reason) == ("Human", "specimens+no_host")
+
+
+def test_an_unknown_animal_is_still_an_animal(lexicon):
+    # "unknown animal" leaves the species open, not the class, in every field.
+    assert _cls(lexicon, host="unknown animal").l1 == "Animal"
+    assert _cls(lexicon, "unknown animal").l1 == "Animal"
+    assert _cls(lexicon, "Unknown animal faeces", host="Homo sapiens").classify_reason == "host_source_conflict"
+    assert (_cls(lexicon, "unknown food").l1, _cls(lexicon, "unk human").l1) == ("Food", "Human")
+    # "unknown" with only general words, or an INSDC "missing: ..." term, still says nothing.
+    for value in ("unknown", "unknown source", "Unknown environment", "unknown environmental sample", "missing: lab stock"):
+        result = _cls(lexicon, value)
+        assert (result.classify_status, result.classify_reason) == ("review", "unknown_source"), value
+    assert _cls(lexicon, "unknown environment", host="Homo sapiens").l1 == "Human"  # the host decides
+    faeces = _cls(lexicon, "faeces", host="unknown animal")
+    assert (faeces.l1, faeces.classify_reason) == ("Animal", "specimens+animal-hosts")
+    assert _cls(lexicon, sample_type="unknown food").l1 == "Food"
+    no_host = _cls(lexicon, "faeces", host="missing")
+    assert (no_host.l1, no_host.classify_reason) == ("Human", "specimens+no_host")
+
+
+def test_specimen_with_conflicting_non_host_source_type_goes_to_review(lexicon):
+    food = _cls(lexicon, "urine", host="Homo sapiens", source_type="food")
+    assert (food.classify_status, food.classify_reason, food.lexicon_suggestion) == (
+        "review",
+        "host_source_conflict",
+        "Food|Human",
+    )
+    env = _cls(lexicon, "blood", source_type="environmental")
+    assert (env.classify_status, env.classify_reason, env.lexicon_suggestion) == (
+        "review",
+        "host_source_conflict",
+        "Environmental|Human",
+    )
+
+
+def test_words_in_the_specimen_text_do_not_conflict_with_it(lexicon):
+    # Only another field (source_type, host) naming food, environment or laboratory is a conflict.
+    cases = [("Stool sample from food handler", "Homo sapiens", "Human"), ("urine, laboratory", "Homo sapiens", "Human"),
+             ("faeces of food animal", "Sus scrofa", "Animal")]
+    for source, host, expected in cases:
+        result = _cls(lexicon, source, host=host)
+        assert (result.classify_status, result.l1) == ("ok", expected), source
+    assert _cls(lexicon, sample_type="blood", isolation_source="hospital food").classify_reason == "host_source_conflict"
+

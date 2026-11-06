@@ -6,13 +6,20 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, PAPER_ROLLUP_VALUES
-from onehealth.ids import parse_id
+from onehealth.constants import (
+    HEALTHCARE_NO,
+    HEALTHCARE_YES,
+    L1_VALUES,
+    PAPER_ROLLUP_VALUES,
+)
 from onehealth.errors import InputError
+from onehealth.ids import parse_id
 from onehealth.io_tsv import first_present, get_field, read_tsv, row_match_ids
 from onehealth.text import normalize_text
 
-_OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt")
+# strain and isolate name an isolate in a table without accessions. "sample" and "name"
+# are left out: in a curator's file they can as easily mean a sample type or a person.
+_OVERRIDE_ID_COLUMNS = ("id", "query_id", "accession", "biosample", "assembly", "sra", "pdt", "strain", "isolate")
 _L1_COLUMNS = ("l1", "source_l1", "classification")
 
 
@@ -100,3 +107,17 @@ def _override_key(row: dict[str, str]) -> str:
         return ""
     parsed = parse_id(raw)
     return (parsed.normalized or raw).strip().upper()
+
+
+def unmatched_overrides(rows: list[dict[str, str]], overrides: dict[str, list[OverrideRow]]) -> list[str]:
+    """Override IDs that no row carries, so they were never applied.
+
+    A strain or sample name only identifies a row that has no accession or ID column
+    (row_match_ids), so an override keyed by strain does nothing on a resolved table.
+    """
+    if not overrides:
+        return []
+    used: set[str] = set()
+    for row in rows:
+        used.update(row_match_ids(row) & overrides.keys())
+    return sorted(set(overrides) - used)

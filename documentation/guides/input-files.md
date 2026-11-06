@@ -63,7 +63,8 @@ These words mean "no information", in any case and with underscores read as spac
 
 Also missing:
 
-- any value that starts with `unknown`, `unk` or `missing`, such as `missing: control sample` (the INSDC form) or `unknown environment`;
+- any value that starts with `missing`, such as `missing: control sample` (the INSDC form);
+- `unknown` or `unk` followed only by general words (the same list as below), such as `unknown environment` or `unknown source`;
 - `unknown` after only general words (`environment`, `environmental`, `source`, `origin`, `host`, `sample`, `isolate`, `type`, `location`, `site`), such as `source unknown` or `sample type unknown`.
 
-In `isolation_source`, a missing value is ignored and the host or `source_type` decides; with nothing else, the row goes to review as `unknown_source`. A bare scientific name (`Escherichia coli`, `Bos taurus`) is ignored the same way, as taxonomy belongs in `host`.
+In `isolation_source`, a missing value is ignored and the host or `source_type` decides; with nothing else, the row goes to review as `unknown_source`. `unknown` followed by a word that names something, such as `unknown animal` or `unknown food`, is not missing: the species or kind is unknown, but the class is not, so it is read as `animal` or `food`. Other fields keep all their words, so a host of `unknown animal` is an animal too. A bare scientific name (`Escherichia coli`, `Bos taurus`) is ignored the same way, as taxonomy belongs in `host`.

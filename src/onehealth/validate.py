@@ -18,11 +18,17 @@ from pathlib import Path
 
 from onehealth.constants import ID_COLUMN_ALIASES, L1_VALUES, PAPER_ROLLUP_VALUES
 from onehealth.errors import InputError
-from onehealth.io_tsv import first_present, read_tsv, row_match_ids
+from onehealth.io_tsv import (
+    ISOLATE_NAME_ALIASES,
+    first_present,
+    isolate_key,
+    read_tsv,
+    row_match_ids,
+)
 
 LEVELS = {"l1": L1_VALUES, "paper_rollup": PAPER_ROLLUP_VALUES}
 UNCLASSIFIED = "Unclassified"
-_TRUTH_ID_COLUMNS = (*ID_COLUMN_ALIASES, "biosample", "biosample_acc", "assembly", "target_acc")
+_TRUTH_ID_COLUMNS = (*ID_COLUMN_ALIASES, "biosample", "biosample_acc", "assembly", "target_acc", *ISOLATE_NAME_ALIASES)
 
 
 @dataclass
@@ -131,20 +137,21 @@ def validate(classified: list[dict[str, str]], truth: dict[str, str], level: str
             by_id.setdefault(identifier, row)
 
     result = Validation(level=level, isolates=0, unmatched=[])
-    seen: dict[int, tuple[str, str]] = {}  # isolate -> first truth ID and label for it
+    seen: dict[str, tuple[str, str]] = {}  # isolate key -> first truth ID and label for it
     conflicts: list[str] = []
     for identifier, expected in truth.items():
         row = by_id.get(identifier)
         if row is None:
             result.unmatched.append(identifier)
             continue
-        if id(row) in seen:
+        key = isolate_key(row) or str(id(row))
+        if key in seen:
             # Two truth IDs for one isolate (say BioSample and assembly): count it once, if they agree.
-            first_id, first_label = seen[id(row)]
+            first_id, first_label = seen[key]
             if first_label != expected:
                 conflicts.append(f"{first_id} and {identifier}")
             continue
-        seen[id(row)] = (identifier, expected)
+        seen[key] = (identifier, expected)
         predicted = (row.get(level) or UNCLASSIFIED).strip() or UNCLASSIFIED
         result.isolates += 1
         result.confusion[(expected, predicted)] += 1

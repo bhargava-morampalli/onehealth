@@ -116,3 +116,11 @@ def test_an_overrides_file_without_id_or_l1_columns_is_an_error(tmp_path):
         load_overrides(no_id)
     with pytest.raises(ValueError, match="no l1 column"):
         load_overrides(no_l1)
+
+
+def test_overrides_apply_to_tables_keyed_by_strain_or_sample(tmp_path: Path, lexicon):
+    path = tmp_path / "overrides.tsv"
+    path.write_text("strain\tl1\nKP1\tAnimal\n", encoding="utf-8")
+    overrides = load_overrides(path)
+    assert classify_record({"strain": "KP1", "isolation_source": "blood"}, lexicon, overrides).l1 == "Animal"
+    assert classify_record({"sample": "KP1", "isolation_source": "blood"}, lexicon, overrides).l1 == "Animal"

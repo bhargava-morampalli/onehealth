@@ -227,3 +227,27 @@ def test_truth_and_override_files_in_csv_say_so(tmp_path: Path, capsys, fixtures
     overrides.write_text("id,l1\nSAMN1,Animal\n", encoding="utf-8")
     code, line = _error(capsys, ["classify", str(fixtures / "metadata.tsv"), "-o", str(tmp_path / "o.tsv"), "--overrides", str(overrides)])
     assert code == 1 and "looks comma-separated" in line
+
+
+def test_overrides_and_truth_ids_that_match_no_row_are_reported(tmp_path: Path, capsys):
+    resolved = tmp_path / "resolved.tsv"  # has a BioSample, so a strain name does not identify its rows
+    resolved.write_text("query_id\tbiosample\tstrain\tisolation_source\thost\nSAMN9\tSAMN9\tKP1\tblood\tHomo sapiens\n",
+                        encoding="utf-8")
+    overrides = tmp_path / "overrides.tsv"
+    overrides.write_text("strain\tl1\nKP1\tAnimal\n", encoding="utf-8")
+    out = tmp_path / "c.tsv"
+    assert main(["classify", str(resolved), "-o", str(out), "--overrides", str(overrides)]) == 0
+    err = capsys.readouterr().err
+    assert "1 override ID in" in err and "matched no row and was not applied (e.g. KP1)" in err
+    assert read_tsv(out)[0]["override_applied"] == "no"
+
+    strains = tmp_path / "strains.tsv"  # no accession or ID column: the strain identifies the row
+    strains.write_text("sample\tisolation_source\nKP1\tblood\n", encoding="utf-8")
+    assert main(["classify", str(strains), "-o", str(out), "--overrides", str(overrides)]) == 0
+    assert "warning" not in capsys.readouterr().err and read_tsv(out)[0]["l1"] == "Animal"
+
+    truth = tmp_path / "truth.tsv"
+    truth.write_text("sample\ttruth\nKP1\tAnimal\nKP2\tHuman\n", encoding="utf-8")
+    assert main(["validate", str(out), "--truth", str(truth), "-o", str(tmp_path / "v.tsv")]) == 0
+    assert "validate: 1 truth ID matched no row (e.g. KP2)" in capsys.readouterr().err
+

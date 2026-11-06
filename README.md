@@ -143,7 +143,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-The seeded lexicon is versioned at `src/onehealth/data/lexicon/v3.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML, or `--lexicon v2` to reproduce results made with the previous seed, which still ships. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+The seeded lexicon is versioned at `src/onehealth/data/lexicon/v4.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML, or `--lexicon v3` (or `v2`) to reproduce results made with a previous seed, which still ships. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 
