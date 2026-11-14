@@ -613,6 +613,11 @@ def build_report(
     kpis.append(("Source groups", str(len(groups_present))))
 
     names, matrix = read_distance_matrix(distances_path) if distances_path else ([], None)
+    if matrix is not None and A.fractional_distances(matrix):
+        quality.append(f"The distances in {distances_path.name} are fractions between 0 and 1, as Mash or ANI "
+                       f"distances are, not SNP counts. At the {threshold:g}-SNP threshold every pair of isolates "
+                       "counts as closely related, so the genomic linkage sections"
+                       + (" and the dereplication" if dereplicate else "") + " mean nothing for this file.")
     # Lineage and feature analyses can run on one representative per genomic cluster per source.
     population, derep = dataset, None
     if dereplicate:
@@ -678,7 +683,7 @@ def build_report(
         held = 100 * summary["isolates_in_shared"] / max(1, summary["typed_isolates"])
         kpis.append(("Lineages", f"{summary['lineages']:,}"))
         kpis.append(("Lineages in ≥2 sources", f"{summary['shared_lineages']} ({share:.0f}%)"))
-        r_hg, r_gr, r_hu = (refs.cite(k) for k in ("hunter", "grundmann", "hurlbert"))
+        r_hg, r_gr, r_si, r_hu = (refs.cite(k) for k in ("hunter", "grundmann", "simpson", "hurlbert"))
         r_th = refs.cite("thorpe") if tested else ""  # cited here only for the enrichment test
         r_he = refs.cite("hetland")
         r_ps = refs.cite("phipson") if tested else ""
@@ -688,7 +693,7 @@ def build_report(
             _diversity_finding(div),
             _render(fig_diversity(div), stem, figures_dir),
             f"Simpson's index D is the chance that two isolates drawn from a source belong to different lineages "
-            f"{r_hg}; lines are 95% confidence intervals {r_gr}.{derep_note}",
+            f"{r_hg}; lines are approximate 95% confidence intervals, D ± 2 standard errors {r_gr}{r_si}.{derep_note}",
             _table_html(div, [("source", "Source"), ("isolates", "Isolates"), ("lineages", "Lineages"),
                               ("simpson", "Simpson D"), ("ci_low", "95% CI low"), ("ci_high", "95% CI high")]),
             _write_table(tables_dir, stem, div)))
@@ -735,7 +740,8 @@ def build_report(
             _table_html(inter, [("sources", "Sources"), ("lineages", "Lineages")]),
             _write_table(tables_dir, stem, inter)))
         methods.append(
-            f"Lineage diversity per source was measured with Simpson's index {r_hg} and 95% confidence intervals {r_gr}, "
+            f"Lineage diversity per source was measured with Simpson's index {r_hg} and approximate 95% confidence "
+            f"intervals (D ± 2 standard errors {r_gr}, from the exact sampling variance of the index {r_si}), "
             f"and compared with rarefaction curves {r_hu}. "
             + (f"Lineage–source associations were tested by permuting source labels ({permutations:,} permutations, "
                f"seed {seed}), with two-sided p-values computed as (b+1)/(m+1) {r_ps} and Benjamini–Hochberg "
@@ -923,6 +929,13 @@ def build_report(
     if dataset.unnamed:
         quality.append(f"{dataset.unnamed} rows have no identifier (BioSample, ID, strain or sample name). Each is "
                        "counted as its own isolate, but cannot be matched to lineages, features or distances.")
+    if dataset.untyped_placeholders:
+        quality.append(f"{dataset.untyped_placeholders} isolates have a lineage that means no type was assigned "
+                       "(such as 0 in an ST column, NF, ND or Novel). They count as untyped, not as one shared lineage.")
+    if dataset.unread_dates:
+        quality.append(f"{dataset.unread_dates} isolates have a collection date in a format that could not be read. "
+                       "They are missing from the counts by year and from the year strata; use YYYY-MM-DD, YYYY-MM "
+                       "or YYYY.")
 
     page = _page(title, note, kpis, sections, quality, methods, refs,
                  dict(threshold=threshold, by=by, permutations=permutations, seed=seed, dereplicate=bool(derep),
@@ -969,6 +982,7 @@ class References:
         "david": "David S et al. (2019) Epidemic of carbapenem-resistant Klebsiella pneumoniae in Europe is driven by nosocomial spread. Nat Microbiol 4:1919–1929. https://doi.org/10.1038/s41564-019-0492-8",
         "hunter": "Hunter PR, Gaston MA (1988) Numerical index of the discriminatory ability of typing systems: an application of Simpson's index of diversity. J Clin Microbiol 26:2465–2466. https://doi.org/10.1128/jcm.26.11.2465-2466.1988",
         "grundmann": "Grundmann H, Hori S, Tanner G (2001) Determining confidence intervals when measuring genetic diversity and the discriminatory abilities of typing methods for microorganisms. J Clin Microbiol 39:4190–4192. https://doi.org/10.1128/JCM.39.11.4190-4192.2001",
+        "simpson": "Simpson EH (1949) Measurement of diversity. Nature 163:688. https://doi.org/10.1038/163688a0",
         "hurlbert": "Hurlbert SH (1971) The nonconcept of species diversity: a critique and alternative parameters. Ecology 52:577–586. https://doi.org/10.2307/1934145",
         "phipson": "Phipson B, Smyth GK (2010) Permutation p-values should never be zero. Stat Appl Genet Mol Biol 9:Article39. https://doi.org/10.2202/1544-6115.1585",
         "wilson": "Wilson EB (1927) Probable inference, the law of succession, and statistical inference. J Am Stat Assoc 22:209–212. https://doi.org/10.1080/01621459.1927.10502953",

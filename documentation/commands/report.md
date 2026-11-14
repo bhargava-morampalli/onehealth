@@ -85,7 +85,7 @@ Isolates per collection year, by source. Uneven sampling between sources limits 
 
 ### Lineages
 
-- **Diversity:** Simpson's index of diversity per source, the chance that two isolates from it belong to different lineages, with 95% confidence intervals.
+- **Diversity:** Simpson's index of diversity per source, the chance that two isolates from it belong to different lineages, with approximate 95% confidence intervals: D ± 2 standard errors, from the exact sampling variance of the index (Simpson 1949). The large-sample variance usually quoted (Grundmann et al. 2001) is exactly zero when lineages are equally common, so a source of ten isolates in ten lineages had the interval 1.00–1.00; the two agree for large samples.
 - **Accumulation:** rarefaction curves, the expected number of lineages in random subsamples of each source. Compare sources at the same number of isolates, because raw lineage counts favour the larger sample. A curve that is still rising means more sampling would find more lineages.
 - **Common lineages:** the 20 most common lineages split by source, and which lineages are enriched in or depleted from a source compared with chance.
 - **Overlap:** an UpSet-style chart of how many lineages each combination of sources shares.
@@ -143,7 +143,9 @@ Every isolate named in the file counts as genotyped. To record a genotyped isola
 
 ### Distances
 
-Pairwise SNP distances from snp-dists, in its default square format or its long `-m` format (name, name, distance), tab- or comma-separated. A pair missing from a long table has no distance: it is not counted and never links. A square matrix must list its rows in the same order as its columns; one with rows missing or reordered stops with an error rather than putting distances on the wrong pairs.
+Pairwise SNP distances from snp-dists, in its default square format or its long `-m` format (name, name, distance), tab- or comma-separated. A pair missing from a long table has no distance: it is not counted and never links. A square matrix must list its rows in the same order as its columns; one with rows missing or reordered stops with an error rather than putting distances on the wrong pairs. It must also be the full, symmetric matrix: one that holds a single triangle, or a negative distance, stops with an error, because the other triangle would be read as every pair being 0 SNPs apart.
+
+The distances must be SNP counts. If they are all fractions between 0 and 1, as Mash or ANI distances are, every pair is within any SNP threshold; the report still runs, and Data quality says that the linkage sections mean nothing for that file.
 
 ### Lineages
 
@@ -152,6 +154,7 @@ A lineage column in the input table is found by name: the first of `st`, `mlst_s
 Or pass a typing table with `--lineages`: Kleborate output, a PopPUNK `clusters.csv`, mlst output, or any table with an isolate column and a lineage column, tab- or comma-separated.
 
 - **mlst** output is read with or without its header row. The isolate is the file name in its first column, and the lineage is the ST; `-` (no ST assigned) gives no lineage.
+- **No type assigned.** A value that says so is not a lineage: `NF` and `ND` (SRST2), `Novel` (ARIBA), `untypeable`, `not typed` and the like, in any case and with a trailing `*` or `?`. In a sequence-type column (`st`, `mlst_st`, `sequence_type`, `mlst`, or Kleborate's `…__ST`), so is `0`, which Kleborate writes when the alleles match no ST. A cluster column keeps its cluster `0`. These isolates count as untyped, and Data quality says how many there are. Left as lineages, every untyped isolate would belong to one lineage found in every source.
 - **Any other table** needs a header row. Its lineage column is the first of `st`, `mlst_st`, `sequence_type`, `lineage`, `sublineage`, `sl`, `poppunk_cluster`, `cluster` or a Kleborate `…__ST` column; its isolate column is the first of `id`, `strain`, `name`, `taxon`, `sample`, `sample_id`, `isolate`, `genome`, `assembly`, `biosample`, or else its first column.
 
 An isolate given two different lineages, under one name or under two of its IDs, stops with an error.
@@ -160,7 +163,7 @@ An isolate given two different lineages, under one name or under two of its IDs,
 
 | Column | Used for |
 |---|---|
-| `collection_date` | Sampling by year, years between linked isolates, and `--stratify-by year`. `2019`, `2019-05` and `2019-05-14` all work. |
+| `collection_date` | Sampling by year, years between linked isolates, and `--stratify-by year`. `2019`, `2019-05` and `2019-05-14` all work, and so do the INSDC forms with a month name, `14-May-2019` and `May-2019`. A numeric date that ends in the year, such as `14/05/2019`, counts as the middle of that year, because its day and month cannot be told apart. Data quality says how many dates could not be read at all. |
 | `geo_loc_name`, `country` or `geo_loc` | `--stratify-by country`. The country is the part before the colon (`Norway: Oslo`), and historical names are mapped to current ones, so `Czech Republic` and `Czechia` are one country. |
 | `host_id`, `patient_id`, ... | Leaving out pairs from the same host individual (above). |
 
@@ -170,6 +173,7 @@ The report cites these where they are used:
 
 - Hunter PR, Gaston MA (1988) Numerical index of the discriminatory ability of typing systems: an application of Simpson's index of diversity. *J Clin Microbiol* 26:2465–2466. <https://doi.org/10.1128/jcm.26.11.2465-2466.1988>
 - Grundmann H, Hori S, Tanner G (2001) Determining confidence intervals when measuring genetic diversity and the discriminatory abilities of typing methods for microorganisms. *J Clin Microbiol* 39:4190–4192. <https://doi.org/10.1128/JCM.39.11.4190-4192.2001>
+- Simpson EH (1949) Measurement of diversity. *Nature* 163:688. <https://doi.org/10.1038/163688a0>
 - Hurlbert SH (1971) The nonconcept of species diversity: a critique and alternative parameters. *Ecology* 52:577–586. <https://doi.org/10.2307/1934145>
 - Wilson EB (1927) Probable inference, the law of succession, and statistical inference. *J Am Stat Assoc* 22:209–212. <https://doi.org/10.1080/01621459.1927.10502953>
 - Phipson B, Smyth GK (2010) Permutation p-values should never be zero. *Stat Appl Genet Mol Biol* 9:Article39. <https://doi.org/10.2202/1544-6115.1585>

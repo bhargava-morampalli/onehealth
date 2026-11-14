@@ -85,6 +85,13 @@ class Dataset:
     duplicates: int
     unclassified: int
     unnamed: int = 0  # rows with no identifier; counted, but never matched to other files
+    untyped_keys: set[str] = field(default_factory=set)  # isolates whose only lineage is a "not typed" word
+    unread_dates: int = 0  # isolates whose collection_date is in a format decimal_year cannot read
+
+    @property
+    def untyped_placeholders(self) -> int:
+        """Isolates left untyped because their lineage was NF, Novel, ST 0 or the like."""
+        return len(self.untyped_keys)
 
     @property
     def classified(self) -> list[Isolate]:
@@ -103,7 +110,9 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
     if lineage_column and rows and lineage_column not in rows[0]:
         raise InputError(f"lineage column {lineage_column!r} is not in the table")
     isolates: dict[str, Isolate] = {}
-    unnamed = 0
+    unnamed = unread_dates = 0
+    untyped: set[str] = set()
+    sequence_types = is_sequence_type_column(lineage_col)
     for number, row in enumerate(rows, start=1):
         key = isolate_key(row)
         if not key:
@@ -115,11 +124,18 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
             # identifier, so distances or genes keyed by either assembly still match.
             isolates[key] = replace(isolates[key], ids=isolates[key].ids | frozenset(_row_names(row)))
             continue
+        lineage = _clean(row.get(lineage_col, "")) if lineage_col else ""
+        if lineage and is_untyped(lineage, sequence_types):
+            untyped.add(key)
+            lineage = ""
+        year = decimal_year(row.get("collection_date", ""))
+        if year is None and _clean(row.get("collection_date", "")):
+            unread_dates += 1
         isolates[key] = Isolate(
             key=key,
             source=_source_group(row, by),
-            lineage=_clean(row.get(lineage_col, "")) if lineage_col else "",
-            year=decimal_year(row.get("collection_date", "")),
+            lineage=lineage,
+            year=year,
             host_id=_clean(get_field(row, HOST_ID_ALIASES)),
             ids=frozenset(_row_names(row)),
             country=_country(get_field(row, COUNTRY_ALIASES)),
@@ -133,16 +149,51 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
         duplicates=len(rows) - len(records),
         unclassified=sum(1 for iso in records if not iso.source),
         unnamed=unnamed,
+        untyped_keys=untyped,
+        unread_dates=unread_dates,
     )
+
+
+# What typing tools write when they could not assign a type: SRST2 "NF" (not found) and
+# "ND" (not determined), ARIBA "Novel" and "ND", and words people type by hand. Left as
+# they are, every untyped isolate would join one lineage called "NF", and that lineage
+# would be reported as shared between sources.
+UNTYPED_WORDS = frozenset(
+    {"nf", "nd", "nt", "novel", "novel st", "untyped", "untypeable", "untypable", "nontypeable", "nontypable",
+     "non typeable", "non typable", "not typed", "not typeable", "not typable", "failed"}
+)
+# Sequence type 0 is not a sequence type: Kleborate writes 0 when the alleles match no ST.
+# Only in an ST column, though; a cluster numbered from zero has a real cluster 0.
+UNTYPED_SEQUENCE_TYPES = frozenset({"0"})
+SEQUENCE_TYPE_COLUMNS = frozenset({"st", "mlst_st", "sequence_type", "mlst"})
+
+
+def is_sequence_type_column(name: str | None) -> bool:
+    """A column of MLST sequence types, by its name ("ST", "mlst", Kleborate's "..__mlst__ST")."""
+    lower = (name or "").strip().lower()
+    return lower in SEQUENCE_TYPE_COLUMNS or lower.endswith("__st")
+
+
+def is_untyped(value: str, sequence_type: bool = False) -> bool:
+    """True for a lineage value that says "no type was assigned" rather than naming one.
+
+    SRST2 marks uncertain calls with a trailing * or ?; "NF*" is still not found.
+    """
+    word = " ".join((value or "").strip().lower().replace("_", " ").replace("-", " ").split()).rstrip("*?").strip()
+    return word in UNTYPED_WORDS or (sequence_type and word in UNTYPED_SEQUENCE_TYPES)
 
 
 def apply_lineages(dataset: Dataset, lineages: dict[str, str]) -> list[str]:
     """Set lineages from an external typing table (Kleborate, mlst, PopPUNK). Returns unmatched names."""
     mapping, unmatched = match_names(list(lineages), dataset)
     by_key: dict[str, str] = {}
+    untyped: set[str] = set()
     for name, key in mapping.items():
         value = _clean(lineages[name])
         if not value:
+            continue
+        if is_untyped(value):
+            untyped.add(key)
             continue
         if by_key.get(key, value) != value:
             raise InputError(
@@ -151,6 +202,9 @@ def apply_lineages(dataset: Dataset, lineages: dict[str, str]) -> list[str]:
         by_key[key] = value
     dataset.isolates = [replace(iso, lineage=by_key.get(iso.key, iso.lineage)) for iso in dataset.isolates]
     dataset.lineage_column = dataset.lineage_column or "external table"
+    # Counted once, and only while the isolate has no lineage from either the table or this file.
+    typed = {iso.key for iso in dataset.isolates if iso.lineage}
+    dataset.untyped_keys = (dataset.untyped_keys | untyped) - typed
     return unmatched
 
 
@@ -191,17 +245,38 @@ def _row_names(row: dict[str, str]) -> set[str]:
 
 
 _DATE = re.compile(r"^\s*(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?")
+# The other INSDC collection_date formats, "15-Mar-2019" and "Mar-2019", and how people
+# write the same by hand ("15 March 2019", "March 2019").
+_DAY_MONTH_YEAR = re.compile(r"^\s*(?:(\d{1,2})[-\s/.]+)?([A-Za-z]{3,9})\.?[-\s/.,]+(\d{4})\b")
+# 15/03/2019 or 03/15/2019: the year is certain, the order of day and month is not.
+_NUMERIC_DATE = re.compile(r"^\s*\d{1,2}[/.-]\d{1,2}[/.-](\d{4})\s*$")
+_MONTHS = {name: number for number, name in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), start=1)}
 
 
 def decimal_year(text: str) -> float | None:
-    """'2019-03-15' -> 2019.20; '2019-03' -> 2019.21; '2019' -> 2019.5; else None."""
-    match = _DATE.match(text or "")
-    if not match:
-        return None
-    year = int(match.group(1))
+    """A collection date as a year with a fraction, or None when it has no readable year.
+
+    '2019-03-15' -> 2019.20; '2019-03' -> 2019.21; '2019' -> 2019.5. The INSDC formats
+    with a month name read the same way: '15-Mar-2019' -> 2019.20, 'Mar-2019' -> 2019.21.
+    A numeric date that ends in the year ('15/03/2019', '03/15/2019') gives 2019.5, the
+    middle of the year, because its day and month cannot be told apart.
+    """
+    text = text or ""
+    match = _DATE.match(text)
+    if match:
+        year, month, day = int(match.group(1)), match.group(2), match.group(3)
+    else:
+        named = _DAY_MONTH_YEAR.match(text)
+        numeric = None if named else _NUMERIC_DATE.match(text)
+        if named and named.group(2)[:3].lower() in _MONTHS:
+            year, month, day = int(named.group(3)), str(_MONTHS[named.group(2)[:3].lower()]), named.group(1)
+        elif numeric:
+            year, month, day = int(numeric.group(1)), None, None
+        else:
+            return None
     if not 1900 <= year <= 2100:
         return None
-    month, day = match.group(2), match.group(3)
     try:
         if month and day:
             start = date(year, 1, 1).toordinal()
@@ -339,13 +414,21 @@ def strata_summary(isolates: list[Isolate], by: tuple[str, ...]) -> dict:
 
 
 def simpson(counts: list[int]) -> tuple[float, float, float]:
-    """Simpson's index of diversity (Hunter & Gaston 1988) with Grundmann et al. (2001) 95% CI."""
+    """Simpson's index of diversity (Hunter & Gaston 1988) with an approximate 95% CI.
+
+    The interval is D +/- 2 standard errors, as in Grundmann et al. (2001), but with the
+    exact sampling variance of the index (Simpson 1949) and not its large-sample form
+    4/n (sum p^3 - (sum p^2)^2). The two agree for large samples. The large-sample form
+    is exactly zero whenever the lineages are equally common, so ten isolates of ten
+    lineages had D = 1.00 with the interval 1.00-1.00.
+    """
     n = sum(counts)
     if n < 2:
         return math.nan, math.nan, math.nan
     d = 1 - sum(c * (c - 1) for c in counts) / (n * (n - 1))
     p = [c / n for c in counts]
-    variance = 4 / n * (sum(x**3 for x in p) - sum(x**2 for x in p) ** 2)
+    s2, s3 = sum(x**2 for x in p), sum(x**3 for x in p)
+    variance = (4 * (n - 2) * s3 + 2 * s2 - 2 * (2 * n - 3) * s2**2) / (n * (n - 1))
     half = 2 * math.sqrt(max(variance, 0.0))
     return d, max(0.0, d - half), min(1.0, d + half)
 
@@ -846,6 +929,22 @@ def linkage(
     )
 
 
+def fractional_distances(matrix: np.ndarray, block: int = 512) -> bool:
+    """True when the distances are fractions no larger than 1, as Mash or ANI distances are.
+
+    SNP counts are whole numbers. A SNP threshold applied to such a matrix links every
+    pair of isolates. Read a block of rows at a time, so the matrix is not copied.
+    """
+    fractional = False
+    for start in range(0, len(matrix), block):
+        rows = matrix[start : start + block]
+        finite = rows[np.isfinite(rows)]
+        if finite.size and finite.max() > 1:
+            return False
+        fractional = fractional or bool((finite != np.round(finite)).any())
+    return fractional
+
+
 def _matched_isolates(
     dataset: Dataset, names: list[str], matrix: np.ndarray
 ) -> tuple[list[Isolate], np.ndarray, list[str]]:
@@ -944,6 +1043,8 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
         duplicates=dataset.duplicates,
         unclassified=sum(1 for iso in kept if not iso.source),
         unnamed=dataset.unnamed,
+        untyped_keys=set(dataset.untyped_keys),
+        unread_dates=dataset.unread_dates,
     )
     summary = Dereplication(
         threshold=threshold,
