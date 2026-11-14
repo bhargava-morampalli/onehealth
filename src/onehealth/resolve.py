@@ -100,20 +100,41 @@ def _pathogen_detection(online: list[tuple[dict[str, str], ParsedId]], client: N
         return {}
 
 
+# What a lookup can raise for one ID without anything being wrong with onehealth: a failed
+# request, or a reply that is valid JSON or XML but not shaped as documented (a list where
+# an object should be, a missing key).
+_REPLY_ERRORS = (HttpError, ValueError, AttributeError, TypeError, KeyError, IndexError)
+
+INTERRUPTED = "interrupted"
+
+
 def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, pd_groups: list[str]) -> None:
     """Look rows up at NCBI, filling each row in place.
 
     Assembly and BioSample reports are fetched many per request. Whatever a batch does
     not answer cleanly is looked up on its own, exactly as a single ID always was, so
     batching changes the number of requests, not the result.
+
+    Ctrl-C stops the lookups but not the run: rows already answered keep their result, the
+    rest are marked `interrupted`, and the caller still gets every row to write out.
     """
+    try:
+        _lookup(online, client, pd_groups)
+    except KeyboardInterrupt:
+        for row, _ in online:
+            if not row["resolve_reason"]:
+                row["resolve_status"] = "review"
+                row["resolve_reason"] = INTERRUPTED
+
+
+def _lookup(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, pd_groups: list[str]) -> None:
     targets = _pathogen_detection(online, client, pd_groups)
     genomes = client.genome_reports(parsed.normalized for _, parsed in online if parsed.id_type == "assembly")
     found: list[tuple[dict[str, str], dict[str, str], str]] = []
     for row, parsed in online:
         try:
             fetched, biosample = _find_biosample(parsed, client, genomes, targets)
-        except (HttpError, ValueError) as exc:
+        except _REPLY_ERRORS as exc:
             _ncbi_error(row, exc, client)
             continue
         if biosample:
@@ -124,15 +145,15 @@ def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIC
     for row, fetched, biosample in found:
         try:
             _finish(row, _add_biosample(fetched, biosample, reports.get(biosample.upper()), client))
-        except (HttpError, ValueError) as exc:
+        except _REPLY_ERRORS as exc:
             _ncbi_error(row, exc, client)
 
 
 def _ncbi_error(row: dict[str, str], exc: Exception, client: NCBIClient) -> None:
-    # One bad answer must not end a run of thousands of IDs (ValueError: JSON from a
-    # custom fetcher). NCBI echoes a rejected API key in its error body, and this text
-    # lands in the table, so the key is masked.
-    message = str(exc).replace(client.api_key, "***") if client.api_key else str(exc)
+    # One bad answer must not end a run of thousands of IDs. NCBI echoes a rejected API
+    # key in its error body, and this text lands in the table, so the key is masked.
+    text = str(exc) if isinstance(exc, (HttpError, ValueError)) else f"unexpected reply ({type(exc).__name__}: {exc})"
+    message = text.replace(client.api_key, "***") if client.api_key else text
     row["resolve_status"] = "review"
     row["resolve_reason"] = f"ncbi_error:{message}"
 
@@ -193,6 +214,7 @@ def _local_view(row: dict[str, str]) -> dict[str, str]:
         "isolation_source": view["isolation_source"],
         "host_disease": view["host_disease"],
         "sample_type": view["sample_type"],
+        "package": view["package"],
         "geo_loc_name": get_field(row, ("geo_loc_name", "geo_loc", "country")),
         "collection_date": get_field(row, ("collection_date", "collection date")),
         "strain": get_field(row, ("strain",)),

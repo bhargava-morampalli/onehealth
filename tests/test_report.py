@@ -194,3 +194,39 @@ def test_unclassified_isolates_with_lineages_get_the_right_reason(tmp_path: Path
     notes = " ".join(_quality((tmp_path / "r" / "report.html").read_text(encoding="utf-8")))
     assert "No isolate with a source class has a lineage in 'st'" in notes
     assert "No lineage column was found" not in notes
+
+
+def test_report_flags_mash_distances_unreadable_dates_and_untyped_lineages(tmp_path: Path):
+    """Each of these used to pass without a word and change the results."""
+    classified = tmp_path / "classified.tsv"
+    lines = ["query_id\tl1\thealthcare_environment\tpaper_rollup\tst\tcollection_date"]
+    for i in range(12):
+        l1 = "Human" if i < 7 else "Animal"
+        st = "NF" if i in (0, 8) else f"ST{i % 3}"
+        date = "week 14" if i == 1 else "15-Mar-2019" if i == 2 else "2019-06-01"
+        lines.append(f"ISO{i}\t{l1}\tno\t{l1}\t{st}\t{date}")
+    classified.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    names = [f"ISO{i}" for i in range(12)]
+    mash = np.full((12, 12), 0.0123)
+    np.fill_diagonal(mash, 0)
+    distances = tmp_path / "mash.tsv"
+    distances.write_text("\n".join(["\t" + "\t".join(names)] + [names[i] + "\t" + "\t".join(f"{v:g}" for v in mash[i])
+                                                                 for i in range(12)]) + "\n", encoding="utf-8")
+    out = tmp_path / "report"
+    assert main(["report", str(classified), "-o", str(out), "--distances", str(distances), "--permutations", "19"]) == 0
+    page = (out / "report.html").read_text(encoding="utf-8")
+    assert "The distances in mash.tsv are fractions between 0 and 1" in page
+    assert "2 isolates have a lineage that means no type was assigned" in page
+    assert "1 isolates have a collection date in a format that could not be read" in page
+    assert "Simpson EH (1949) Measurement of diversity" in page
+    # The two NF isolates are untyped, not a lineage shared by Human and Animal.
+    lineages = (out / "tables" / "04_lineage_sources.tsv").read_text(encoding="utf-8")
+    assert "NF" not in lineages
+
+    # The same table with SNP counts: none of the three notes about the distances.
+    snps = np.full((12, 12), 300)
+    np.fill_diagonal(snps, 0)
+    distances.write_text("\n".join(["\t" + "\t".join(names)] + [names[i] + "\t" + "\t".join(map(str, snps[i]))
+                                                                 for i in range(12)]) + "\n", encoding="utf-8")
+    assert main(["report", str(classified), "-o", str(out), "--distances", str(distances), "--permutations", "19"]) == 0
+    assert "fractions between 0 and 1" not in (out / "report.html").read_text(encoding="utf-8")

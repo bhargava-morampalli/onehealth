@@ -1,10 +1,18 @@
-version: "3"
+version: "5"
 description: >
   Seed lexicon for One Health L1 classification of isolation-source metadata.
   Unknown values are handled in code and never map to Environmental.
   v3 (November 2026) adds terms found in the review queues of the IMP benchmark
-  and the NCBI Pathogen Detection test data; additions are marked "v3". See
-  CHANGELOG.md.
+  and the NCBI Pathogen Detection test data; additions are marked "v3".
+  v4 (November 2026) sends a fixture named without its setting ("Rm 14 Drain",
+  "Sink swab") to review even when the host is Homo sapiens; changes are marked
+  "v4".
+  v5 (November 2026) stops calling retail meat Animal ("ground turkey", "chicken breast")
+  and food-plant swabs Food ("non-food-contact surface"); changes are marked "v5". The
+  terms come from NCBI Pathogen Detection records whose submitters also filled in NCBI's
+  own source_type (tests/data/ncbi_pd_source_types). See CHANGELOG.md.
+  This is the only lexicon that ships. Earlier versions are in the repository history;
+  when this file changes, raise `version` here and SEED_LEXICON_VERSION in constants.py.
 
 # How rules are applied (classify.py):
 #   * Matching is on lower-case word tokens, so "drain" does not match "drainage".
@@ -113,6 +121,9 @@ rules:
       - food producing animals
       - food-producing animal
       - food-producing animals
+      # v5: "food animal" is livestock too.
+      - food animal
+      - food animals
     l1: Animal
     healthcare_environment: "no"
     priority: 88
@@ -200,6 +211,10 @@ rules:
       - stool
       - feces
       - faeces
+      # v5: other spellings of the same specimens.
+      - fecal
+      - faecal
+      - stools
       - csf
       - cerebrospinal
       - bal
@@ -228,11 +243,60 @@ rules:
       - rectal carriage
       - gut carriage
       - asymptomatic carriage
+      # v4: a surgical drain's tip is a patient specimen, like a catheter tip. Listed here
+      # so that the fixture-no-setting rule below does not send it to review.
+      - drain tip
+      - drain tips
     l1: Human
     healthcare_environment: "no"
     priority: 80
     host_dependent: true
     note: Anatomical sites are species-neutral (Uberon); the host decides Human vs Animal.
+
+  # --- v5: swabs of surfaces and food premises; people who handle food ---
+  - id: environmental-sampling
+    fields: [isolation_source, sample_type]
+    phrases:
+      - environmental swab
+      - environmental swabs
+      - environmental sponge
+      - environmental sponges
+      - swab sponge
+      - food contact
+      - contact surface
+      - contact surfaces
+      - food processing
+      - food production
+      - food establishment
+      - processing environment
+      - production environment
+      - processing plant
+      - processing facility
+      - processing establishment
+    l1: Environmental
+    healthcare_environment: "no"
+    priority: 78
+    note: >
+      v5. A swab or sponge of a surface, or a sample of the premises where food is made,
+      is an environmental sample even when its text names the food or the animal
+      ("environmental swab sponge non food contact", "meat processing plant"). Above the
+      food rules (75) and below specimens (80). In the development split of
+      tests/data/ncbi_pd_source_types, "environmental swab" is environmental by NCBI's
+      source_type 3,139 times in 3,144, and "food contact" 204 times in 215.
+
+  - id: food-handler
+    fields: [isolation_source, sample_type]
+    phrases:
+      - food handler
+      - food handlers
+      - food worker
+      - food workers
+    l1: Human
+    healthcare_environment: "no"
+    priority: 78
+    note: >
+      v5. A person, not a food. "food handler stool" is a specimen as before; an animal
+      host makes this a host_source_conflict.
 
   # --- food ---
   - id: food-products
@@ -263,6 +327,127 @@ rules:
     note: >
       Bare "dairy" is not used because "dairy farm" and "dairy cattle" are animal
       settings, not food products.
+
+  - id: food-items
+    fields: [isolation_source, sample_type]
+    phrases:
+      # How meat and poultry are sold or processed. These words win over the species
+      # ("comminuted chicken", "ground turkey"), which on its own still means the animal.
+      - comminuted
+      - nonintact
+      - raw intact
+      - product raw
+      - raw ground
+      - ground turkey
+      - ground chicken
+      - ground pork
+      - ground lamb
+      - ground veal
+      - ground component
+      - boneless
+      - skinless
+      - tenderloin
+      - giblets
+      - fillet
+      - fillets
+      - smoked
+      - rte
+      - ready to eat
+      - fully cooked
+      - raw chicken
+      - raw turkey
+      - raw pork
+      - raw beef
+      - raw fish
+      - raw salmon
+      - raw shrimp
+      - whole chicken
+      - whole turkey
+      - chicken breast
+      - chicken breasts
+      - chicken thigh
+      - chicken thighs
+      - chicken wing
+      - chicken wings
+      - chicken leg
+      - chicken legs
+      - chicken drumstick
+      - chicken drumsticks
+      - turkey breast
+      - pork
+      - sausage
+      - sausages
+      - ham
+      - bacon
+      - salami
+      - steak
+      - hamburger
+      - sandwich
+      - fish product
+      - fish products
+      - poultry product
+      - poultry products
+      - pet treat
+      - pet treats
+      - dog treat
+      - dog treats
+      # Foods named in at least a dozen NCBI Pathogen Detection records (the development
+      # split of tests/data/ncbi_pd_source_types), 93% or more of them labelled food by
+      # their submitters.
+      - shrimp
+      - tuna
+      - herring
+      - tilapia
+      - mussels
+      - crabmeat
+      - ice cream
+      - butter
+      - cheddar
+      - curd
+      - peanut
+      - pistachio
+      - nut
+      - nuts
+      - sesame
+      - coconut
+      - chocolate
+      - avocado
+      - papaya
+      - cantaloupe
+      - peach
+      - nectarine
+      - apple
+      - tomato
+      - cucumber
+      - spinach
+      - romaine
+      - broccoli
+      - celery
+      - onion
+      - garlic
+      - cilantro
+      - coriander
+      - parsley
+      - basil
+      - chili
+      - jalapeno
+      - pepper
+      - sprout
+      - sprouts
+      - mushroom
+      - mushrooms
+      - enoki
+      - kratom
+    l1: Food
+    healthcare_environment: "no"
+    priority: 75
+    note: >
+      v5. Reads source text only, so two-word foods ("peanut butter", "ice cream") are
+      not taken for species names. Cuts are listed only with their animal ("chicken
+      breast", not "breast"): a bare body part is as often a patient's. Organs are not
+      listed at all: "chicken liver" is retail giblets or a necropsy sample.
+      Not listed because NCBI records with them are too mixed: bare "beef" (a quarter
+      are beef cattle), "egg", "seafood", "fish", "frozen", "raw".
 
   # --- laboratory ---
   - id: laboratory
@@ -400,6 +585,39 @@ rules:
     l1: Animal
     healthcare_environment: "no"
     priority: 40
+
+  # --- v4: a fixture with no setting ---
+  - id: fixture-no-setting
+    fields: [isolation_source, sample_type]
+    phrases:
+      - drain
+      - drains
+      - sink
+      - sinks
+      - trap
+      - traps
+      - shower
+      - showers
+      - faucet
+      - faucets
+      - toilet
+      - toilets
+      - basin
+      - basins
+      - washbasin
+      - plughole
+      - bathroom
+      - bathrooms
+    l1: Unclassified
+    healthcare_environment: "no"
+    priority: 30
+    note: >
+      A fixture on its own ("Rm 14 Drain", "Sink swab", "Shower 3") says neither whose sample
+      it is nor where the fixture is. Submitters often record host Homo sapiens for hospital
+      fixture swabs, so without this rule the human-host rule below would call them Human.
+      Review instead. Any higher rule still decides: "sink drain" and "hospital sink" are
+      healthcare environment, "drain tip" is a specimen, and an animal host still makes it
+      Animal, as other farm settings do.
 
   # --- human host ---
   - id: human-host

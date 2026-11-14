@@ -16,7 +16,7 @@ PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal", "Unclassified")
 HEALTHCARE_YES = "yes"
 HEALTHCARE_NO = "no"
 
-SEED_LEXICON_VERSION = "4"
+SEED_LEXICON_VERSION = "5"
 
 UNKNOWN_EXACT = frozenset(
     {
@@ -96,6 +96,10 @@ HOST_DISEASE_ALIASES = ("host_disease", "host disease")
 # environmental, other). NCBI `sample_type` is the material ("whole organism",
 # "pure culture"), so it is read last.
 SAMPLE_TYPE_ALIASES = ("source_type", "tissue", "sample_type")
+# The BioSample package a record was submitted under ("Pathogen.env.1.0"), or what NCBI
+# Pathogen Detection derives from it: attribute_package ("Pathogen: environmental/food/other")
+# and epi_type ("environmental/other").
+PACKAGE_ALIASES = ("package", "attribute_package", "biosample_package", "epi_type")
 
 CLUSTER_ALIASES = ("cluster_id", "cluster", "poppunk_cluster")
 PLASMID_ALIASES = ("plasmid_id", "plasmid", "plasmid_replicon")
@@ -112,6 +116,7 @@ RESOLVE_FIELDS = (
     "isolation_source",
     "host_disease",
     "sample_type",
+    "package",
     "geo_loc_name",
     "collection_date",
     "strain",

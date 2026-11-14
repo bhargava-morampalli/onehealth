@@ -544,3 +544,111 @@ def test_read_distance_matrix_rejects_rows_out_of_order_but_reads_long_pairs(tmp
     names, matrix = read_distance_matrix(pairs)
     assert names == ["A", "B"] and matrix[0, 1] == 7
 
+
+
+# --- November 2026 review: intervals, untyped lineages, dates, distance units --------------------
+
+
+def test_simpson_interval_does_not_collapse_when_lineages_are_equally_common():
+    """The large-sample variance is exactly zero for equally common lineages, so ten isolates of
+    ten lineages had D = 1.00 with the interval 1.00-1.00. The exact variance (Simpson 1949) is not."""
+    d, low, high = A.simpson([1] * 10)
+    assert d == 1.0 and high == 1.0
+    assert low == pytest.approx(1 - 2 * math.sqrt(0.002))  # variance 2(S-1) / (S^2 N (N-1)) with S = N = 10
+    d, low, high = A.simpson([5, 5])
+    assert d == pytest.approx(5 / 9)
+    assert (low, high) == pytest.approx((5 / 9 - 2 * math.sqrt(0.5 / 90), 5 / 9 + 2 * math.sqrt(0.5 / 90)))
+    # One lineage only: no diversity was seen, and the plug-in variance is zero.
+    assert A.simpson([10]) == (0.0, 0.0, 0.0)
+
+
+def test_simpson_variance_is_the_sampling_variance_of_the_index():
+    """Checked by simulation, and against the large-sample form it replaces for a large sample."""
+    rng = np.random.default_rng(3)
+    p, n = np.array([0.6, 0.2, 0.1, 0.05, 0.05]), 25
+    draws = rng.multinomial(n, p, size=200_000)
+    simulated = (1 - (draws * (draws - 1)).sum(axis=1) / (n * (n - 1))).var()
+    s2, s3 = (p**2).sum(), (p**3).sum()
+    exact = (4 * (n - 2) * s3 + 2 * s2 - 2 * (2 * n - 3) * s2**2) / (n * (n - 1))
+    assert simulated == pytest.approx(exact, rel=0.02)
+    counts = [600, 200, 100, 50, 50]
+    d, low, high = A.simpson(counts)
+    large_sample = 4 / 1000 * (s3 - s2**2)
+    assert (high - low) / 4 == pytest.approx(math.sqrt(large_sample), rel=0.01)
+
+
+@pytest.mark.parametrize("value", ["NF", "nf", "ND", "Novel", "novel", "NF*", "ND?", "untypeable", "Not typed", "non-typeable", "NT"])
+def test_words_for_no_type_assigned_are_not_a_lineage(value):
+    """SRST2 writes NF and ND, ARIBA Novel. Kept, every untyped isolate shares a lineage called "NF"."""
+    rows = [_row(0, l1="Human", st="ST1"), _row(1, l1="Human", st=value), _row(2, l1="Animal", st=value)]
+    dataset = A.build_dataset(rows)
+    assert [iso.lineage for iso in dataset.isolates] == ["ST1", "", ""]
+    assert dataset.untyped_placeholders == 2
+    assert A.lineage_sharing_summary(dataset) == {"lineages": 1, "shared_lineages": 0, "typed_isolates": 1, "isolates_in_shared": 0}
+
+
+def test_zero_is_untyped_in_a_sequence_type_column_but_a_real_cluster_elsewhere():
+    rows = [_row(0, st="0"), _row(1, l1="Animal", st="0"), _row(2, st="ST258"), _row(3, st="ST0")]
+    typed = A.build_dataset(rows)
+    assert [iso.lineage for iso in typed.isolates] == ["", "", "ST258", "ST0"] and typed.untyped_placeholders == 2
+    clusters = [{**{k: v for k, v in row.items() if k != "st"}, "cluster_id": row["st"]} for row in rows]
+    assert [iso.lineage for iso in A.build_dataset(clusters).isolates] == ["0", "0", "ST258", "ST0"]
+    assert A.is_sequence_type_column("klebsiella_pneumo_complex__mlst__ST") and not A.is_sequence_type_column("poppunk_cluster")
+
+
+def test_untyped_words_in_a_typing_table_leave_the_isolate_untyped():
+    dataset = A.build_dataset([{k: v for k, v in _row(i).items() if k != "st"} for i in range(3)])
+    assert A.apply_lineages(dataset, {"ISO0": "ST11", "ISO1": "NF", "ISO2": "Novel"}) == []
+    assert [iso.lineage for iso in dataset.isolates] == ["ST11", "", ""]
+    assert dataset.untyped_placeholders == 2
+
+    # Counted once per isolate, and not at all once it has a lineage from either place.
+    rows = [_row(0, st="NF"), _row(1, st="NF"), _row(2, st="ST5")]
+    both = A.build_dataset(rows)
+    assert both.untyped_placeholders == 2
+    A.apply_lineages(both, {"ISO0": "NF", "ISO1": "ST9", "ISO2": "Novel"})
+    assert [iso.lineage for iso in both.isolates] == ["", "ST9", "ST5"]
+    assert both.untyped_placeholders == 1  # ISO0 only: ISO1 is typed by the file, ISO2 by the table
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("2019-03-15", 2019 + (73 + 0.5) / 365),
+        ("15-Mar-2019", 2019 + (73 + 0.5) / 365),  # INSDC DD-Mmm-YYYY
+        ("15 March 2019", 2019 + (73 + 0.5) / 365),
+        ("Mar-2019", 2019 + 2.5 / 12),  # INSDC Mmm-YYYY
+        ("March 2019", 2019 + 2.5 / 12),
+        ("Jan-2012", 2012 + 0.5 / 12),
+        ("2019-03", 2019 + 2.5 / 12),
+        ("2019", 2019.5),
+        ("15/03/2019", 2019.5),  # day and month cannot be told apart: the middle of the year
+        ("03/15/2019", 2019.5),
+        ("31-Feb-2019", 2019.5),  # not a real day: the year is still known
+        ("Xyz-2019", None),
+        ("12-Jun-1815", None),
+        ("missing", None),
+        ("", None),
+    ],
+)
+def test_decimal_year_reads_the_insdc_date_formats(text, expected):
+    assert A.decimal_year(text) == (pytest.approx(expected) if expected is not None else None)
+
+
+def test_dates_that_cannot_be_read_are_counted_not_dropped_silently():
+    rows = [_row(0, date="2019-05-01"), _row(1, date="Jan-2012"), _row(2, date="week 14"), _row(3, date="not collected"),
+            _row(4, date="")]
+    dataset = A.build_dataset(rows)
+    assert [iso.year is not None for iso in dataset.isolates] == [True, True, False, False, False]
+    assert dataset.unread_dates == 1  # "week 14"; a missing value is not an unreadable one
+
+
+def test_fractional_distances_are_recognised():
+    snps = np.array([[0.0, 3.0, 40.0], [3.0, 0.0, 12.0], [40.0, 12.0, 0.0]])
+    assert not A.fractional_distances(snps)
+    assert A.fractional_distances(snps / 50_000)  # Mash scale
+    assert not A.fractional_distances(np.array([[0.0, 1.0], [1.0, 0.0]]))  # two isolates one SNP apart
+    assert not A.fractional_distances(np.array([[0.0, 0.5], [0.5, 0.0]]) * 3)  # fractions above 1: not flagged
+    assert not A.fractional_distances(np.zeros((0, 0)))
+    with_missing = np.array([[0.0, np.nan], [np.nan, 0.0]])
+    assert not A.fractional_distances(with_missing)

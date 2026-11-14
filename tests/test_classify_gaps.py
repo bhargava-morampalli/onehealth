@@ -298,10 +298,3 @@ def test_human_as_a_source_with_an_animal_host_is_a_conflict(lexicon):
 def test_lexicon_v4_fixture_without_a_setting(lexicon, source, host, expected):
     result = _cls(lexicon, source, host=host)
     assert (result.classify_status, result.classify_reason, result.l1) == expected
-
-
-def test_lexicon_v3_still_calls_a_bare_fixture_human_from_its_host():
-    """Results made with v3 must reproduce, so v4's change lives in v4 only."""
-    v3 = load_lexicon(Path("v3"))
-    assert _cls(v3, "Rm 14 Drain", host="Homo sapiens").classify_reason == "human-host"
-    assert _cls(v3, "drain tip", host="Homo sapiens").classify_reason == "human-host"

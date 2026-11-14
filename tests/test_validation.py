@@ -55,7 +55,7 @@ def imp_validation(lexicon):
 
 
 def test_imp_benchmark_baseline(imp_validation):
-    """Floors just under the lexicon v4 baseline (84.5% coverage, 99.75% accuracy): changes must not make these worse."""
+    """Floors just under the lexicon v5 baseline (84.5% coverage, 99.75% accuracy): changes must not make these worse."""
     result = imp_validation
     assert result.isolates == 4351 and not result.unmatched
     assert result.coverage >= 0.845
@@ -117,36 +117,20 @@ def test_validate_with_no_overlap_says_n_a(tmp_path: Path, capsys):
     assert "coverage n/a, accuracy n/a, agreement n/a" in capsys.readouterr().err
 
 
-def test_lexicon_v2_still_ships_and_reproduces_its_benchmark():
-    from onehealth.lexicon import load_lexicon
+def test_ncbi_klebsiella_data_classifies_without_contradicting_epi_type(lexicon):
+    """262 of the 307 NCBI Pathogen Detection rows are classified, and one disagrees with NCBI's epi_type:
+    a pig's fecal swab, Animal here and environmental/other at NCBI.
 
-    v2 = load_lexicon(Path("v2"))
-    result = validate(classify_rows(read_tsv(IMP), v2), read_truth(IMP, "truth", "paper_rollup"))
-    assert v2.version == "2"
-    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8448, 0.9918)  # 84.5% and 99.2%
-
-
-def test_lexicon_v3_still_ships_and_reproduces_its_benchmark():
-    from onehealth.lexicon import load_lexicon
-
-    v3 = load_lexicon(Path("v3"))
-    result = validate(classify_rows(read_tsv(IMP), v3), read_truth(IMP, "truth", "paper_rollup"))
-    assert v3.version == "3"
-    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8478, 0.9951)  # 84.8% and 99.5%
-    assert result.count("Environmental", "Human") == 12
-
-
-def test_lexicon_v3_classifies_more_of_the_ncbi_data_without_new_errors():
-    """v3 classifies 10 more NCBI Pathogen Detection rows (waste water spellings) and gets none of them wrong."""
-    from onehealth.lexicon import load_lexicon
-
-    rows = read_tsv(KLEBSIELLA)
+    "feces" with no host, filed by its submitter as environmental/other, used to be called Human
+    and now goes to review (no_host_env_package).
+    """
+    rows = classify_rows(read_tsv(KLEBSIELLA), lexicon)
     expected = {"clinical": {"Human", "Animal"}, "environmental/other": {"Environmental"}}
-    for version, classified_floor in (("v2", 253), ("v3", 263), ("v4", 263)):
-        classified = [r for r in classify_rows(rows, load_lexicon(Path(version))) if r["classify_status"] == "ok"]
-        labelled = [r for r in classified if r["epi_type"] in expected]
-        wrong = [r for r in labelled if r["paper_rollup"] not in expected[r["epi_type"]]]
-        assert len(classified) >= classified_floor and len(wrong) <= 2, version
+    classified = [r for r in rows if r["classify_status"] == "ok"]
+    wrong = [r for r in classified if r["epi_type"] in expected and r["paper_rollup"] not in expected[r["epi_type"]]]
+    assert len(classified) >= 262
+    assert [(r["isolation_source"], r["host"], r["paper_rollup"]) for r in wrong] == [("fecal swab", "pig", "Animal")]
+    assert [r["isolation_source"] for r in rows if r["classify_reason"] == "no_host_env_package"] == ["feces"]
 
 
 def test_validate_matches_strain_tables_and_deduplicates_shared_biosamples(tmp_path: Path):

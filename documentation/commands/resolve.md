@@ -29,7 +29,7 @@ Anything else, such as a BioProject (`PRJNA…`), goes to review as `unknown_id`
 | `--metadata` | A local metadata TSV to join first. IDs found there are not looked up at NCBI. It needs an ID column; see [Input files](../guides/input-files.md#identifier-columns). |
 | `--no-network` | Use only `--metadata`; IDs not found there go to review as `missing_metadata`. |
 | `--email` | Your contact address, sent to NCBI E-utilities as NCBI asks. |
-| `--api-key` | An [NCBI API key](https://account.ncbi.nlm.nih.gov/settings/). Raises the request rate from 3 to 10 per second. |
+| `--api-key` | An [NCBI API key](https://account.ncbi.nlm.nih.gov/settings/). Raises the request rate from 3 to 10 per second. Without the option, the key is taken from the `NCBI_API_KEY` environment variable, which keeps it out of your shell history. |
 | `--pd-organism` | Pathogen Detection organism group(s) of your PDT IDs, comma-separated, for example `Klebsiella` or `Escherichia_coli_Shigella`. |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
 
@@ -42,7 +42,11 @@ Anything else, such as a BioProject (`PRJNA…`), goes to review as `unknown_id`
     - **PDTs** are looked up in NCBI Pathogen Detection's metadata table when you pass `--pd-organism`; see below.
     - **BioSample reports** for all IDs are fetched from NCBI Datasets, 100 per request. A record Datasets returns empty is read from E-utilities instead.
 
-Anything a batch does not answer cleanly is looked up on its own. If NCBI sends an error or a garbled reply for one ID, after a few retries that ID goes to review as `ncbi_error:<message>` and the run continues. Your API key is never written into the table.
+Anything a batch does not answer cleanly is looked up on its own. If NCBI sends an error or a garbled reply for one ID, after a few retries that ID goes to review as `ncbi_error:<message>` and the run continues. The same goes for a reply that is well-formed but not shaped as NCBI documents it (`ncbi_error:unexpected reply ...`). Your API key is never written into the table.
+
+A BioSample read from E-utilities is searched for by its accession, and the record that comes back is used only if it carries that accession. A search of all fields can land on another sample that merely mentions it.
+
+**Stopping a run.** Ctrl-C stops the lookups, not the run: what NCBI has already answered is written to the output, the IDs not yet looked up are marked `interrupted` and listed in the review queue, and `resolve` exits with status 130. Before, a run stopped part-way wrote nothing.
 
 Standard missing-value words in NCBI's fields (`missing`, `not collected`, `not provided`, ...) are left blank in the output.
 
@@ -63,7 +67,9 @@ This streams the group's current metadata table from NCBI's FTP site, which list
 
 `resolve` writes one row per input ID, in the input order:
 
-`query_id`, `id_type`, `biosample`, `assembly`, `sra`, `pdt`, `organism`, `host`, `isolation_source`, `host_disease`, `sample_type`, `geo_loc_name`, `collection_date`, `strain`, `isolate`, `resolve_status`, `resolve_reason`, then any extra columns from `--metadata`.
+`query_id`, `id_type`, `biosample`, `assembly`, `sra`, `pdt`, `organism`, `host`, `isolation_source`, `host_disease`, `sample_type`, `package`, `geo_loc_name`, `collection_date`, `strain`, `isolate`, `resolve_status`, `resolve_reason`, then any extra columns from `--metadata`.
+
+`package` is the BioSample package the record was submitted under, such as `Pathogen.cl.1.0` (clinical or host-associated) or `Pathogen.env.1.0` (environmental, food or other). [`classify`](classify.md#specimens-follow-the-host) uses it for specimens that have no host.
 
 Rows with `resolve_status` = `review` are also written to the review queue. Duplicate IDs are kept as separate rows.
 
@@ -88,6 +94,7 @@ Rows with `resolve_status` = `review` are also written to the review queue. Dupl
 | review | `biosample_not_found` | NCBI has no record for the BioSample |
 | review | `ncbi_incomplete` | NCBI's answer had no single BioSample |
 | review | `ncbi_error:<message>` | NCBI failed for this ID; the message says how |
+| review | `interrupted` | The run was stopped (Ctrl-C) before this ID was looked up |
 
 ## Rate limits
 

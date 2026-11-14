@@ -17,6 +17,7 @@ from onehealth.constants import (
     HOST_DISEASE_ALIASES,
     ID_COLUMN_ALIASES,
     ISOLATION_SOURCE_ALIASES,
+    PACKAGE_ALIASES,
     PDT_ALIASES,
     PLASMID_ALIASES,
     SAMPLE_TYPE_ALIASES,
@@ -44,20 +45,29 @@ def read_text(path: Path) -> str:
 def read_tsv(path: Path) -> list[dict[str, str]]:
     """Read a TSV with a header row. Lines starting with '#' are comments, even above the header.
 
+    The one exception is a header that itself starts with '#', as in the tables NCBI
+    publishes ("#label" in Pathogen Detection metadata, "#assembly_accession" in
+    assembly_summary.txt): see _hash_header.
+
     One line is one row. A cell wrapped in double quotes (how Excel and pandas write a
     cell that contains a quote) is unwrapped; any other quote is kept as typed. csv's
     quoting rules let a stray quote, as in `"wound swab`, swallow the lines after it.
     """
     # Split lines exactly as a file opened with newline="" does (\n, \r\n or \r only).
-    lines = [
+    numbered = [
         (number, line)
         for number, line in enumerate(io.StringIO(read_text(path), newline=""), start=1)
-        if line.strip() and not line.startswith("#")
+        if line.strip()
     ]
+    lines = [(number, line) for number, line in numbered if not line.startswith("#")]
     if not lines:
         return []
+    hash_header = _hash_header(numbered, lines[0][0])
+    if hash_header is not None:
+        lines.insert(0, hash_header)
     _reject_other_delimiters(path, lines[0][1])
     header = [cell.strip() for cell in _cells(lines[0][1])]
+    _reject_repeated_columns(path, header)
     rows = []
     for number, line in lines[1:]:
         cells = _cells(line)
@@ -66,6 +76,54 @@ def read_tsv(path: Path) -> list[dict[str, str]]:
         cells += [""] * (len(header) - len(cells))
         rows.append({key: value.strip() for key, value in zip(header, cells)})
     return rows
+
+
+# Column names that mark a '#' line as a table's header and not a comment.
+_KNOWN_COLUMNS = frozenset(
+    name.lower()
+    for name in (
+        *ID_COLUMN_ALIASES, *BIOSAMPLE_ALIASES, *ASSEMBLY_ALIASES, *SRA_ALIASES, *PDT_ALIASES,
+        *HOST_ALIASES, *ISOLATION_SOURCE_ALIASES, *HOST_DISEASE_ALIASES, *SAMPLE_TYPE_ALIASES,
+        "collection_date", "geo_loc_name", "organism", "organism_name",
+    )
+)
+
+
+def _hash_header(numbered: list[tuple[int, str]], first_row: int) -> tuple[int, str] | None:
+    """The header of a table whose header line starts with '#', or None.
+
+    Only the last '#' line before the first row is considered, and only when it is
+    tab-separated and names more columns onehealth reads ("host", "biosample_acc", ...)
+    than the line below it does. A commented-out data row has values in its cells, not
+    column names, and a commented-out copy of the header names no more columns than
+    the real one below it, so both stay comments, as before.
+    """
+    above = [(number, line) for number, line in numbered if number < first_row]
+    if not above or "\t" not in above[-1][1]:
+        return None
+    number, line = above[-1]
+    stripped = line.lstrip("#").lstrip(" ")
+    below = next(text for row, text in numbered if row == first_row)
+    if _known_columns(stripped) <= _known_columns(below):
+        return None
+    return number, stripped
+
+
+def _known_columns(line: str) -> int:
+    return sum(1 for cell in _cells(line) if cell.strip().lower() in _KNOWN_COLUMNS)
+
+
+def _reject_repeated_columns(path: Path, header: list[str]) -> None:
+    """Two columns with one name cannot both be kept: a row is read as name -> value, so the
+    second would silently replace the first (a second `host` column changes the class)."""
+    seen: dict[str, int] = {}
+    for position, name in enumerate(header, start=1):
+        if not name:
+            continue
+        if name in seen:
+            raise InputError(f"{path}: column {name!r} appears twice (columns {seen[name]} and {position}); "
+                             "rename or remove one")
+        seen[name] = position
 
 
 _OTHER_DELIMITERS = ((",", "comma"), (";", "semicolon"))
@@ -110,10 +168,25 @@ def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str])
 
 
 def _one_line(value: object) -> object:
-    """A TSV cell cannot hold a tab or a line break, so they become spaces."""
-    if isinstance(value, str) and ("\t" in value or "\n" in value or "\r" in value):
-        return value.replace("\r\n", " ").replace("\t", " ").replace("\n", " ").replace("\r", " ")
-    return value
+    """A TSV cell cannot hold a tab or a line break, so they become spaces.
+
+    A cell that a spreadsheet would run as a formula gets a leading apostrophe, which
+    Excel and LibreOffice show as text. The values come from public BioSample records,
+    which anyone can submit.
+    """
+    if not isinstance(value, str):
+        return value
+    if "\t" in value or "\n" in value or "\r" in value:
+        value = value.replace("\r\n", " ").replace("\t", " ").replace("\n", " ").replace("\r", " ")
+    return f"'{value}" if _is_formula(value) else value
+
+
+def _is_formula(value: str) -> bool:
+    """'=' starts a formula in every spreadsheet. '+', '-' and '@' do too, but they also start
+    ordinary values ("-", "-5", "+ve", "@home"), so those count only with a call or a DDE pipe."""
+    if value.startswith("="):
+        return True
+    return value[:1] in ("+", "-", "@") and ("(" in value or "|" in value)
 
 
 def require_columns(rows: list[dict[str, str]], path: Path, columns: Iterable[str], hint: str = "") -> None:
@@ -236,6 +309,7 @@ def metadata_view(row: dict[str, str]) -> dict[str, str]:
         "isolation_source": get_field(row, ISOLATION_SOURCE_ALIASES),
         "host_disease": get_field(row, HOST_DISEASE_ALIASES),
         "sample_type": get_field(row, SAMPLE_TYPE_ALIASES),
+        "package": get_field(row, PACKAGE_ALIASES),
         "biosample": get_field(row, BIOSAMPLE_ALIASES),
         "assembly": get_field(row, ASSEMBLY_ALIASES),
         "sra": get_field(row, SRA_ALIASES),
@@ -359,7 +433,33 @@ def _read_square(path: Path, delimiter: str, n: int) -> "np.ndarray":
         raise InputError(f"{path}: non-numeric distance ({exc})") from exc
     if matrix.shape != (n, n):
         raise InputError(f"{path}: distance matrix is not square")
+    _check_square(path, matrix)
     return matrix
+
+
+def _check_square(path: Path, matrix: "np.ndarray", block: int = 512) -> None:
+    """A distance cannot be negative, and A to B is the same as B to A.
+
+    Only the upper triangle is used later, so a file holding just the lower triangle (zeros
+    above the diagonal) would read as every pair being 0 apart. Checked a block of rows at a
+    time, so nothing the size of the matrix is copied.
+    """
+    import numpy as np
+
+    n = len(matrix)
+    for start in range(0, n, block):
+        rows = matrix[start : start + block]
+        if (rows < 0).any():
+            raise InputError(f"{path}: the distance matrix has a negative distance (row {start + int(np.argmax((rows < 0).any(axis=1))) + 1})")
+        mirror = matrix[:, start : start + block].T
+        differ = ~np.isclose(rows, mirror, rtol=1e-9, atol=1e-9, equal_nan=True)
+        if differ.any():
+            i, j = (int(k) for k in np.argwhere(differ)[0])
+            raise InputError(
+                f"{path}: the distance matrix is not symmetric (row {start + i + 1}, column {j + 1}: "
+                f"{rows[i, j]:g}, but {mirror[i, j]:g} the other way round); onehealth needs the full square "
+                "matrix, as snp-dists writes it, not one triangle"
+            )
 
 
 def _read_long(path: Path, delimiter: str) -> tuple[list[str], "np.ndarray"]:
@@ -377,6 +477,8 @@ def _read_long(path: Path, delimiter: str) -> tuple[list[str], "np.ndarray"]:
             distance = float(value)
         except ValueError:
             continue  # a header line in long format
+        if distance < 0:
+            raise InputError(f"{path}: negative distance between {a} and {b}")
         first.append(order.setdefault(a, len(order)))
         second.append(order.setdefault(b, len(order)))
         distances.append(distance)
@@ -435,7 +537,11 @@ def _table_pairs(path: Path, lines: list[str], delimiter: str) -> list[tuple[str
     )
     if value_col is None:
         raise InputError(f"{path}: no lineage column ({', '.join(_LINEAGE_VALUE_ALIASES)}, or a Kleborate *__ST column)")
-    return [((row.get(id_col) or "").strip(), (row.get(value_col) or "").strip()) for row in rows]
+    # Sequence type 0 means "no ST" (Kleborate writes it when the alleles match none), like
+    # mlst's "-". Kept, every untyped isolate would share a lineage called 0.
+    sequence_types = value_col.lower() in ("st", "mlst_st", "sequence_type") or value_col.lower().endswith("__st")
+    pairs = [((row.get(id_col) or "").strip(), (row.get(value_col) or "").strip()) for row in rows]
+    return [(name, "" if sequence_types and value == "0" else value) for name, value in pairs]
 
 
 # mlst's default output has no header: FILE, SCHEME, ST, then one allele per locus as

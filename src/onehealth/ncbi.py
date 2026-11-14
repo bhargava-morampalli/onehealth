@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Iterator, Protocol
 
+from onehealth import __version__
 from onehealth.constants import UNKNOWN_EXACT
 from onehealth.errors import InputError
 from onehealth.ids import parse_id, pdt_stem
@@ -29,6 +30,8 @@ DATASETS_BATCH = 100
 # The genome endpoint returns 20 reports per page unless asked for more.
 _DATASETS_PAGE_SIZE = 1000
 _DATASETS_MAX_PAGES = 20
+# NCBI asks automated clients to say who they are; Python's default name is sometimes blocked.
+USER_AGENT = f"onehealth/{__version__}"
 
 _TEXT_FIELDS = (
     "organism",
@@ -36,6 +39,7 @@ _TEXT_FIELDS = (
     "isolation_source",
     "host_disease",
     "sample_type",
+    "package",
     "geo_loc_name",
     "collection_date",
     "strain",
@@ -114,7 +118,8 @@ class UrllibFetcher:
             try:
                 with _network_errors(url):
                     self._pause()
-                    response = urllib.request.urlopen(urllib.request.Request(url), timeout=60)
+                    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+                    response = urllib.request.urlopen(request, timeout=60)
                 break
             except _Retryable as exc:
                 if attempt == self.retries:
@@ -132,7 +137,9 @@ class UrllibFetcher:
     def _get_once(self, url: str, headers: dict[str, str] | None) -> str:
         with _network_errors(url):
             self._pause()
-            request = urllib.request.Request(url, headers=headers or {"Accept": "application/json"})
+            request = urllib.request.Request(
+                url, headers={"User-Agent": USER_AGENT, **(headers or {"Accept": "application/json"})}
+            )
             with urllib.request.urlopen(request, timeout=30) as response:
                 return response.read().decode("utf-8")
 
@@ -272,17 +279,27 @@ class NCBIClient:
         return _usable_datasets_report(payload, require_accession=False)
 
     def biosample_xml_report(self, accession: str) -> dict[str, Any] | None:
-        uid = self._esearch_id("biosample", accession)
+        uid = self._accession_uid("biosample", accession)
         if not uid:
             return None
         params = {"db": "biosample", "id": uid, "retmode": "xml"}
         self._add_eutils(params)
         url = f"{EUTILS_BASE}/efetch.fcgi?{urllib.parse.urlencode(params)}"
         text = self.fetcher.get_text(url, headers={"Accept": "application/xml"})
-        return parse_biosample_xml(text)
+        report = parse_biosample_xml(text)
+        # A search of all fields can land on another sample whose text mentions this
+        # accession. Its metadata must not be attached to this one.
+        if report is not None and accession.strip().upper() not in report["ids"]:
+            return None
+        return report
+
+    def _accession_uid(self, db: str, accession: str) -> str:
+        """The record with this accession: the accession field first, then all fields (a
+        replaced accession is found only there)."""
+        return self._esearch_id(db, f"{accession}[accn]") or self._esearch_id(db, accession)
 
     def sra_to_biosample(self, accession: str) -> list[str]:
-        uid = self._esearch_id("sra", accession)
+        uid = self._accession_uid("sra", accession)
         if not uid:
             return []
         links = self._elink(dbfrom="sra", db="biosample", uid=uid)
@@ -515,6 +532,9 @@ def attributes_from_biosample(report: dict[str, Any]) -> dict[str, str]:
             or attrs.get("sample_type")
             or ""
         ),
+        # The BioSample package ("Pathogen.cl.1.0", "Pathogen.env.1.0"): what kind of
+        # sample the submitter said this was.
+        "package": str(report.get("package") or ""),
         "geo_loc_name": str(report.get("geo_loc_name") or attrs.get("geo_loc_name") or ""),
         "collection_date": str(report.get("collection_date") or attrs.get("collection_date") or ""),
         "strain": str(report.get("strain") or attrs.get("strain") or ""),
@@ -534,6 +554,7 @@ def parse_biosample_xml(text: str) -> dict[str, Any] | None:
     if sample is None:
         return None
     accession = (sample.get("accession") or "").strip()
+    ids = {accession.upper()} | {(el.text or "").strip().upper() for el in sample.findall("./Ids/Id")}
     organism_el = sample.find("./Description/Organism/OrganismName")
     if organism_el is None:
         organism_el = sample.find("./Description/Organism")
@@ -551,6 +572,8 @@ def parse_biosample_xml(text: str) -> dict[str, Any] | None:
     top = {item["name"].lower(): item["value"] for item in attributes}
     return {
         "accession": accession,
+        "ids": sorted(ids - {""}),
+        "package": (sample.findtext("./Package") or "").strip(),
         "description": {"organism": {"organism_name": organism}},
         "attributes": attributes,
         "host": top.get("host", ""),

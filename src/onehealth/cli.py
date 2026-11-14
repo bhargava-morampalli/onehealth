@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -31,7 +32,7 @@ from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides, unmatched_overrides
 from onehealth.plot import plot_counts
-from onehealth.resolve import load_local_metadata, resolve_ids
+from onehealth.resolve import INTERRUPTED, load_local_metadata, resolve_ids
 from onehealth.summarize import summarize, summary_fieldnames
 
 
@@ -73,7 +74,9 @@ def _build_parser() -> argparse.ArgumentParser:
     resolve_p.add_argument("--metadata", type=Path, help="Local metadata TSV to join (no download)")
     resolve_p.add_argument("--no-network", action="store_true", help="Do not call NCBI")
     resolve_p.add_argument("--email", default="", help="Contact email for NCBI E-utilities")
-    resolve_p.add_argument("--api-key", default="", help="Optional NCBI API key")
+    resolve_p.add_argument("--api-key", default="",
+                           help="Optional NCBI API key (default: the NCBI_API_KEY environment variable, which keeps "
+                           "the key out of your shell history)")
     resolve_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
     resolve_p.add_argument(
         "--pd-organism",
@@ -90,7 +93,7 @@ def _build_parser() -> argparse.ArgumentParser:
     classify_p.add_argument("-o", "--out", type=Path, required=True, help="Classified TSV")
     classify_p.add_argument("--overrides", type=Path, help="Curator override TSV; complete rows always win")
     classify_p.add_argument("--lexicon", type=Path,
-                            help=f"Lexicon YAML, or a version that ships with onehealth such as v2 (default: seeded v{SEED_LEXICON_VERSION})")
+                            help=f"A lexicon YAML of your own (default: the lexicon that ships with onehealth, seeded v{SEED_LEXICON_VERSION})")
     classify_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
     classify_p.set_defaults(handler=cmd_classify)
 
@@ -238,7 +241,8 @@ def cmd_resolve(args: argparse.Namespace) -> int:
                 "contact you before blocking an IP",
                 file=sys.stderr,
             )
-        client = NCBIClient(email=args.email, api_key=args.api_key, log=lambda note: print(f"resolve: {note}", file=sys.stderr))
+        api_key = args.api_key or os.environ.get("NCBI_API_KEY", "").strip()
+        client = NCBIClient(email=args.email, api_key=api_key, log=lambda note: print(f"resolve: {note}", file=sys.stderr))
     elif args.pd_organism:
         print("warning: --pd-organism needs NCBI, so it has no effect with --no-network", file=sys.stderr)
     rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network, pd_groups=list(args.pd_organism))
@@ -253,6 +257,12 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     if unresolved and allow_network and not args.pd_organism:
         print(f"resolve: {unresolved} PDT IDs were not found by assembly name; pass --pd-organism (for example "
               "Klebsiella) to look them up in NCBI Pathogen Detection's own table", file=sys.stderr)
+    interrupted = sum(1 for row in rows if row.get("resolve_reason") == INTERRUPTED)
+    if interrupted:
+        # What NCBI had already answered is in the output; the rest is in the review file.
+        print(f"resolve: stopped before {interrupted} of {len(rows)} IDs were looked up; they are marked "
+              f"'{INTERRUPTED}' in {args.out} and listed in the review file", file=sys.stderr)
+        return 130
     return 0
 
 
@@ -266,7 +276,8 @@ def cmd_classify(args: argparse.Namespace) -> int:
     write_tsv(args.out, classified, fieldnames)
     _write_review(args.review or _sidecar(args.out, "review"), classified, fieldnames, status_field="classify_status")
     _print_counts("classify", classified, "classify_status")
-    print(f"lexicon v{lexicon.version} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
+    name = f"v{lexicon.version}" if lexicon.version.isdigit() else lexicon.version
+    print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
     missed = unmatched_overrides(rows, overrides)
     if missed:
         # Never applied, and nothing in the output would show it.

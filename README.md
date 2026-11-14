@@ -48,7 +48,7 @@ Live NCBI lookup (metadata only; no FASTA/SRA download):
 onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com
 ```
 
-NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists. BioSample and assembly reports are fetched 100 per request, so a list of thousands of BioSamples or assemblies takes a few dozen requests. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues.
+NCBI allows 3 requests a second, or 10 with a free API key (create one in your [NCBI account settings](https://account.ncbi.nlm.nih.gov/settings/)); pass it with `--api-key` for large ID lists, or set the `NCBI_API_KEY` environment variable to keep it out of your shell history. BioSample and assembly reports are fetched 100 per request, so a list of thousands of BioSamples or assemblies takes a few dozen requests. If NCBI sends back an error or a garbled reply for an ID, that ID goes to review as `ncbi_error` and the run continues. Ctrl-C stops the lookups but still writes what NCBI had answered; the IDs not reached are marked `interrupted`.
 
 PDT IDs need the Pathogen Detection organism group:
 
@@ -62,7 +62,7 @@ Rows that cannot be resolved or classified are written next to the output as `<s
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
-Input tables are tab-separated UTF-8 text with a header row; a byte-order mark is fine, and cells may contain quote characters. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error rather than being misread. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
+Input tables are tab-separated UTF-8 text with a header row; a byte-order mark is fine, and cells may contain quote characters. NCBI Pathogen Detection metadata tables work as downloaded, although their header starts with `#`. A column name that appears twice stops with an error rather than letting the second column replace the first. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error rather than being misread. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Validate
 
@@ -74,7 +74,9 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v4 classifies 84.5% of isolates, and 99.8% of those agree with the curation (v3: 84.8% and 99.5%; v2: 84.5% and 99.2%). Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.5% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+
+That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 39,722 records held out while the current lexicon (v5) was written, it classifies 88.7% and 93.9% of those match NCBI's label (the previous version: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
 
 ## Report
 
@@ -125,7 +127,9 @@ Default **L1**: `Human | Animal | Environmental | Food | Laboratory | Unclassifi
 
 Unknown, empty, or conflicting evidence stays `Unclassified` and goes to the review queue. `unknown` is never mapped to Environmental.
 
-**Specimens follow the host.** Body sites and specimens (`blood`, `urine`, `faeces`, `wound`, `tissue`) occur in any host. A recognised animal host or animal word makes them Animal (`pig faeces`, `urine` + `Canis lupus familiaris`). A human host makes them Human. Both at once is a `host_source_conflict`. A host the lexicon does not recognise, such as a plant, goes to review as `host_unrecognised`. With no host at all they default to Human. The reason then ends in `+no_host`, so you can count those calls.
+**Specimens follow the host.** Body sites and specimens (`blood`, `urine`, `faeces`, `wound`, `tissue`) occur in any host. A recognised animal host or animal word makes them Animal (`pig faeces`, `urine` + `Canis lupus familiaris`). A human host makes them Human. Both at once is a `host_source_conflict`. A host the lexicon does not recognise, such as a plant, goes to review as `host_unrecognised`. With no host at all they default to Human. The reason then ends in `+no_host`, so you can count those calls. The default does not apply to a record its submitter filed as environmental, food or other (BioSample package `Pathogen.env`, or `epi_type` `environmental/other`): there `feces` or `wound` is often an animal's, so it goes to review as `no_host_env_package`. `resolve` writes the package to the `package` column.
+
+**Meat is food, the animal is not.** A species on its own (`chicken`, `turkey`) means the animal. How meat is sold or processed means Food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. An organ (`chicken liver`) stays Animal, since it can be a necropsy sample. A swab of a surface or of food premises is Environmental even when its text names the food (`environmental swab sponge non food contact surface`, `poultry processing plant`), and a `food handler` is Human.
 
 Bare `clinical` / `clinical isolate` is a patient sample, as in the NCBI `Pathogen.cl` package ("clinical or host-associated"). It is not an environmental swab, and it follows the host like any specimen.
 
@@ -143,7 +147,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-The seeded lexicon is versioned at `src/onehealth/data/lexicon/v4.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML, or `--lexicon v3` (or `v2`) to reproduce results made with a previous seed, which still ships. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 5, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `5-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 
@@ -152,4 +156,6 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results. Provenance and the rebuild script are in `tests/data/ncbi_pd_klebsiella/`.
+Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results, and 73,094 Pathogen Detection records from ten organism groups that carry NCBI's `source_type`. Provenance and the rebuild scripts are in `tests/data/ncbi_pd_klebsiella/` and `tests/data/ncbi_pd_source_types/`.
+
+GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull request (`.github/workflows/tests.yml`).
