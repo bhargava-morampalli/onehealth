@@ -137,16 +137,21 @@ def test_lexicon_v3_still_ships_and_reproduces_its_benchmark():
 
 
 def test_lexicon_v3_classifies_more_of_the_ncbi_data_without_new_errors():
-    """v3 classifies 10 more NCBI Pathogen Detection rows (waste water spellings) and gets none of them wrong."""
+    """v3 classifies 10 more NCBI Pathogen Detection rows (waste water spellings) and gets none of them wrong.
+
+    One row fewer than before under every version: "feces" with no host, filed by its submitter
+    as environmental/other, used to be called Human and now goes to review (no_host_env_package).
+    The one disagreement left is a pig's fecal swab, Animal here and environmental/other at NCBI.
+    """
     from onehealth.lexicon import load_lexicon
 
     rows = read_tsv(KLEBSIELLA)
     expected = {"clinical": {"Human", "Animal"}, "environmental/other": {"Environmental"}}
-    for version, classified_floor in (("v2", 253), ("v3", 263), ("v4", 263)):
+    for version, classified_floor in (("v2", 252), ("v3", 262), ("v4", 262), ("v5", 262)):
         classified = [r for r in classify_rows(rows, load_lexicon(Path(version))) if r["classify_status"] == "ok"]
         labelled = [r for r in classified if r["epi_type"] in expected]
         wrong = [r for r in labelled if r["paper_rollup"] not in expected[r["epi_type"]]]
-        assert len(classified) >= classified_floor and len(wrong) <= 2, version
+        assert len(classified) >= classified_floor and len(wrong) <= 1, version
 
 
 def test_validate_matches_strain_tables_and_deduplicates_shared_biosamples(tmp_path: Path):

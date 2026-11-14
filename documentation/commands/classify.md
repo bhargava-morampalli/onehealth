@@ -14,7 +14,7 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 |---|---|
 | `-o`, `--out` | Output TSV (required). |
 | `--overrides` | A curator overrides file. A complete override always wins; see [Overrides](#overrides). |
-| `--lexicon` | A lexicon YAML, or a version that ships with onehealth: `v4` (the default), `v3` or `v2`. |
+| `--lexicon` | A lexicon YAML, or a version that ships with onehealth: `v5` (the default), `v4`, `v3` or `v2`. |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
 
 `classify` prints how many rows were classified and which lexicon version was used.
@@ -48,6 +48,8 @@ The lexicon reads four fields of each row:
 
 NCBI's `source_type` (`human`, `animal`, `food`, `environmental`) is a One Health category, so it is read before `tissue` and `sample_type`. NCBI's material type (`whole organism`, `pure culture`) is never treated as evidence.
 
+One more column is read, but never by the lexicon: the BioSample package the record was submitted under, from the first non-empty of `package`, `attribute_package`, `biosample_package` and `epi_type`. [`resolve`](resolve.md) writes it as `package`, and NCBI Pathogen Detection tables have `attribute_package` and `epi_type`. It is used in one place only, for a specimen with no host (below).
+
 A table with none of these columns stops with an error, because every row would go to review. The usual cause is an ID list given to `classify` instead of [`resolve`](resolve.md). With `--overrides` and an ID column, it is a warning instead, and only the rows the overrides name are classified.
 
 ### Specimens follow the host
@@ -60,6 +62,7 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 - With both, it goes to review as `host_source_conflict`.
 - With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`.
 - With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
+- With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
 
 ### Values that are not evidence
 
@@ -79,7 +82,7 @@ The input columns, followed by:
 | `paper_rollup` | The three-class rollup |
 | `classify_status` | `ok` or `review` |
 | `classify_reason` | Why (below) |
-| `lexicon_version` | The lexicon version that made the call |
+| `lexicon_version` | The lexicon version that made the call. For a lexicon of your own: its `version`, or `custom-<digest>` if it has none, or `<number>-modified-<digest>` for an edited copy of a shipped one; see [The lexicon](../guides/lexicon.md#versions). |
 | `override_applied` | `yes` when an override decided |
 | `lexicon_suggestion` | For an override, the lexicon's own answer; for a review row, the competing classes, if any |
 
@@ -93,6 +96,7 @@ The input columns, followed by:
 | `override` | ok | An override decided |
 | `host_source_conflict` | review | Host and source point to different classes |
 | `host_unrecognised` | review | A specimen from a host the lexicon cannot place |
+| `no_host_env_package` | review | A specimen with no host, in a record filed as environmental, food or other |
 | `rule_conflict:<rules>` | review | Rules of equal priority disagree |
 | `animal-feed`, `fixture-no-setting` | review | A rule that sends matches to review: animal feed, or a fixture such as a drain or sink named without its setting |
 | `taxon_only_source` | review | `isolation_source` is only a scientific name, and nothing else decides |

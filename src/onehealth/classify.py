@@ -13,7 +13,7 @@ from onehealth.constants import (
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value, known_part
+from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value, known_part, tokenize
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -145,7 +145,21 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     if not is_unknown_value(view.get("host")):
         # A host the lexicon cannot place (plant, unlisted species): do not assume Human.
         return _review("host_unrecognised", version, {rule.l1})
+    if _environmental_package(view.get("package")):
+        # No host, and the submitter filed the sample as environmental, food or other, not
+        # as clinical or host-associated: "feces" or "wound" here is often an animal's.
+        return _review("no_host_env_package", version, {rule.l1})
     return _ok(rule.l1, rule.healthcare_environment, f"{rule.rule_id}+no_host", version)
+
+
+def _environmental_package(value: str | None) -> bool:
+    """The record was submitted under NCBI's package for non-clinical pathogen samples.
+
+    True for the BioSample package "Pathogen.env.1.0", its display name "Pathogen:
+    environmental/food/other", and NCBI Pathogen Detection's epi_type "environmental/other".
+    """
+    tokens = tokenize(value)
+    return tokens[:2] in (["pathogen", "env"], ["pathogen", "environmental"]) or tokens == ["environmental", "other"]
 
 
 def _host_source_conflict(hits: list[RuleHit]) -> set[str]:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from importlib.resources import files
@@ -72,18 +73,40 @@ def _lexicon_file(path: Path | None) -> Path:
 
 def load_lexicon(path: Path | None = None) -> Lexicon:
     lexicon_path = _lexicon_file(path)
+    text = read_text(lexicon_path)
     try:
-        payload = yaml.safe_load(read_text(lexicon_path))
+        payload = yaml.safe_load(text)
     except yaml.YAMLError as exc:
         raise InputError(f"{lexicon_path}: not valid YAML ({' '.join(str(exc).split())})") from None
     if not isinstance(payload, dict):
         raise InputError(f"Lexicon is not a mapping: {lexicon_path}")
-    version = str(payload.get("version") or SEED_LEXICON_VERSION)
+    version = _recorded_version(payload.get("version"), text)
     items = payload.get("rules") or []
     if not isinstance(items, list):
         raise InputError(f"{lexicon_path}: 'rules' must be a list of rules")
     rules = tuple(_parse_rule(item, number, lexicon_path) for number, item in enumerate(items, start=1))
     return Lexicon(version=version, rules=rules)
+
+
+def _recorded_version(declared: Any, text: str) -> str:
+    """What goes in the lexicon_version column, so a table always says which rules made it.
+
+    A file's own `version` is used as written, with two exceptions. A file with no
+    version is `custom-<digest>`; it used to be recorded as the seed version. A file
+    that carries the number of a lexicon that ships with onehealth but has different
+    contents (an edited copy) is `<number>-modified-<digest>`. The digest is the first
+    8 hex digits of the file's SHA-256, with line endings normalised.
+    """
+    content = text.replace("\r\n", "\n").replace("\r", "\n")
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:8]
+    version = "" if declared is None else str(declared).strip()
+    if not version:
+        return f"custom-{digest}"
+    if re.fullmatch(r"\d+", version):
+        shipped = shipped_lexicon_path(version)
+        if shipped.exists() and read_text(shipped).replace("\r\n", "\n").replace("\r", "\n") != content:
+            return f"{version}-modified-{digest}"
+    return version
 
 
 def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:

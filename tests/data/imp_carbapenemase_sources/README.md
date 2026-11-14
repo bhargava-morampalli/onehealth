@@ -35,7 +35,7 @@ The 69 genomes in Table S1 without a public BioSample are excluded. One BioSampl
 
 ## Baseline
 
-Measured with `onehealth classify` then `onehealth validate`. v4 is the current seed lexicon; `--lexicon v3` and `--lexicon v2` give the earlier columns.
+Measured with `onehealth classify` then `onehealth validate`. v5 is the current seed lexicon and gives the same figures as v4, with one more row classified (680 sent to review, Environmental recall 17.8%); `--lexicon v4`, `--lexicon v3` and `--lexicon v2` give the columns below.
 
 | Metric | Lexicon v2 | Lexicon v3 | Lexicon v4 |
 |---|---|---|---|

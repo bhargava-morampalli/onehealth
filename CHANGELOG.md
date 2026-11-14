@@ -2,7 +2,77 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: fixes from a bug review (branch `bug-fixes-nov6`)
+## Unreleased: lexicon v5, and fixes from a review of the whole tool (branch `lexicon-v5-food-fixes-and-hardening`)
+
+A review ran `classify` on 159,045 NCBI Pathogen Detection records from six organism groups and compared it with NCBI's own `source_type`, read every source file, and tried the commands on awkward input. Everything it found that has one right answer is fixed here, each with a test. What it found that is a decision is listed at the end.
+
+### Lexicon v5: meat is food, a swab of the premises is not
+
+The seed lexicon is now v5, and classified tables record `lexicon_version` 5. v4 still ships, and `classify --lexicon v4` reproduces earlier results.
+
+- **Retail meat was called Animal.** `raw intact chicken`, `ground turkey`, `chicken breast`, `comminuted chicken` and `smoked salmon` matched the animal word and no food rule. They are Food in v5. A species on its own (`chicken`) is still the animal, and so is an organ (`chicken liver`), which can be a necropsy sample; `chicken liver (giblets)` is Food. A cut of meat with an animal host goes to review as `host_source_conflict`, as `chicken meat` with a chicken host always did.
+- **Foods that no rule knew** are Food: `pork`, `sausage`, `ham`, `shrimp`, `peanut butter`, `ice cream`, `avocado`, `enoki mushroom` and others. They are the foods NCBI records name most often. Two-word foods used to go to review as `taxon_only_source`, taken for species names.
+- **Swabs of food premises were called Food**, because their text contains the word: `environmental swab sponge non food contact surface`, `food processing environment`. So were `poultry processing plant` and `salmon processing plant` called Animal. They are Environmental in v5.
+- **`food handler` was Food.** It is Human. **`food animal` was Food.** It is Animal.
+- **`fecal`, `faecal` and `stools`** are specimens, like `feces`, `faeces` and `stool`.
+
+Effect on NCBI records whose submitters filled in `source_type`, with that field hidden from the classifier (the new benchmark in `tests/data/ncbi_pd_source_types/`). The held-out records were not looked at until v5 was finished, and v5 was not changed afterwards:
+
+| Held out, 39,722 records | v4 | v5 |
+|---|---|---|
+| Coverage | 76.9% | 88.7% |
+| Accuracy | 80.9% | 93.9% |
+| Animal precision | 45.4% | 73.7% |
+| Food recall | 30.0% | 70.6% |
+| Environmental recall | 43.8% | 77.6% |
+| Human precision | 98.0% | 98.0% |
+
+On the IMP benchmark v5 changes one row, a pork product that no v4 rule matched: 84.5% coverage and 99.8% accuracy, as v4. No row of the NCBI *Klebsiella*, demo or example data changes class between v4 and v5.
+
+Animal is still the weakest class: a bare `chicken` or `turkey` is read as the animal and is often meat. The Benchmarks page (`documentation/benchmarks.md`) has the confusion matrix and what the label does and does not mean.
+
+### `classify`
+
+- **A specimen with no host is no longer called Human when its record was filed as not clinical.** `feces` or `wound` with no host defaulted to Human whatever else the record said. If the record carries the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table, the row now goes to review as `no_host_env_package`. In the NCBI sample, 199 of the 586 host-less specimens with a known package were filed this way. Any other package, or no package column, keeps the default and its `+no_host` reason. This applies to every lexicon version; it moves one row of the NCBI *Klebsiella* data (`feces`, Brazil) from Human to review.
+- **`lexicon_version` tells an edited lexicon from the shipped one.** A copy of the seed with a rule changed was recorded as the seed's version, and a file with no `version` was too. An edited copy that keeps a shipped number is now `5-modified-<digest>`, and a file with no version is `custom-<digest>` (the first 8 hex digits of its SHA-256). A file with its own version name is recorded under that name, as before.
+
+### `resolve`
+
+- **New column `package`**, the BioSample package of each record (`Pathogen.cl.1.0`, `Pathogen.env.1.0`, ...), after `sample_type`. `classify` uses it for the rule above. A `--metadata` table's `attribute_package` or `epi_type` fills it too.
+- **Ctrl-C no longer loses the run.** Output was written only at the end, so stopping a long lookup wrote nothing. What NCBI has already answered is now written, the IDs not reached are marked `interrupted`, and `resolve` exits with status 130.
+- **A reply of the wrong shape sends one ID to review.** A reply that was valid JSON but not shaped as NCBI documents it (text where a list of attributes should be) stopped the whole run with a traceback. It is now `ncbi_error:unexpected reply ...` for that ID.
+- **A BioSample read from E-utilities is the one asked for.** The search covered all fields and took the first hit, which can be another sample that mentions the accession. It now searches the accession field first, and uses a record only if it carries the accession.
+- **`NCBI_API_KEY`** is read when `--api-key` is not given, which keeps the key out of the shell history. Requests name `onehealth` and its version as the client.
+
+### Input files
+
+- **NCBI Pathogen Detection metadata is read as downloaded.** Its header starts with `#`, so it was dropped as a comment and the first isolate became the header; `classify` then stopped with an error that showed that isolate's values as column names. The same goes for NCBI's `assembly_summary.txt`. A `#` line is the header when it is the last one above the first row, is tab-separated, and names more columns `onehealth` reads than the line below it; a commented-out row or a commented-out copy of the header is still a comment.
+- **A column name that appears twice is an error.** The second column silently replaced the first, so with two `host` columns, blood from a patient was classified by the second host.
+- **Output cells that a spreadsheet would run** (starting with `=`, or with `+`, `-` or `@` and containing `(` or `|`) are written with a leading apostrophe. The text comes from public BioSample records. `-`, `-5` and `+ve` are not touched.
+
+### `report`
+
+- **Simpson confidence intervals no longer collapse to a point.** The large-sample variance behind the interval is exactly zero when lineages are equally common, so a source of ten isolates in ten lineages had D = 1.00 with the interval 1.00–1.00, and the report reads intervals that do not overlap as a difference. The interval now uses the exact sampling variance of the index (Simpson 1949): 0.91–1.00 for that source. For large samples the two agree. D itself is unchanged; `ci_low` and `ci_high` in `02_diversity.tsv` are a little wider for small sources.
+- **"Not typed" is not a lineage.** `NF` and `ND` (SRST2), `Novel` (ARIBA), `untypeable` and the like were kept as lineage names, and so was the `0` that Kleborate writes in an ST column. Every untyped isolate then belonged to one lineage, which was reported as shared between sources. These isolates now count as untyped, and Data quality says how many. A cluster column keeps its cluster `0`.
+- **A distance matrix that is one triangle, or has a negative distance, stops with an error.** Only the upper triangle is used, so a lower-triangle file was read as every pair being 0 SNPs apart.
+- **Mash or ANI distances are flagged.** If every distance is a fraction between 0 and 1, every pair is within any SNP threshold. The report still runs, and Data quality says the linkage sections mean nothing for that file.
+- **More date formats.** The INSDC forms with a month name (`15-Mar-2019`, `Mar-2019`) are read; they used to be dropped from the counts by year and the year strata without a word. A numeric date that ends in the year (`15/03/2019`) counts as the middle of that year. Data quality reports dates that still cannot be read.
+
+### Tests
+
+- GitHub Actions now runs the whole suite on Python 3.10 to 3.13 for every pull request. Until now only `tests/test_docs.py` ran there.
+- `tests/data/ncbi_pd_source_types/` is the new benchmark: 73,094 real NCBI records in a development and a held-out split, with the script that rebuilds it.
+
+### Found, and left for a decision
+
+- **No licence.** The repository has no `LICENSE` file, so nobody else may legally reuse the code. Which licence is the author's choice. A `CITATION.cff` would tell users how to cite it.
+- **A species on its own.** `chicken` or `turkey` with no host is Animal, and in NCBI food-safety records it is usually meat. Calling it Food would be wrong for veterinary data.
+- **Farm settings.** Manure, barns and poultry houses are Animal here and `environmental` in NCBI's `source_type`.
+- **Hosts are a word list.** A gull, macaque or water buffalo host goes to review as unrecognised. Classifying hosts by NCBI taxonomy would fix that for every species at once.
+- **A specimen with no host and no package** is still Human by default (`+no_host`).
+- **`resolve` cannot resume.** An interrupted run keeps its answers but a rerun looks every ID up again.
+
+## 7 November 2026: fixes from a bug review ([#11](https://github.com/bhargava-morampalli/onehealth/pull/11))
 
 A review found the cases below; each fix has a test. None of them changes a single row of the IMP, NCBI Pathogen Detection, demo or example data under any lexicon version, or any report table made from them. They change how `classify` works rather than the lexicon, though, so rows like the ones described can classify differently under v2, v3 and v4 alike.
 
