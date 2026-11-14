@@ -7,7 +7,7 @@ import pytest
 
 from onehealth import __version__, cli, ncbi
 from onehealth.io_tsv import read_distance_matrix, read_id_list, read_lineages, read_tsv, write_tsv
-from onehealth.lexicon import load_lexicon, shipped_lexicon_path
+from onehealth.lexicon import default_lexicon_path, load_lexicon
 from onehealth.ncbi import NCBIClient, attributes_from_biosample, parse_biosample_xml
 from onehealth.resolve import resolve_ids
 
@@ -289,7 +289,7 @@ RULES = "rules:\n  - id: r\n    l1: Human\n    phrases: [blood]\n"
 
 def test_lexicon_version_tells_an_edited_or_unversioned_file_from_the_seed(tmp_path: Path):
     """A copy of the seed with a rule changed was recorded as the seed's version; so was a file with no version."""
-    seed_text = shipped_lexicon_path("5").read_text(encoding="utf-8")
+    seed_text = default_lexicon_path().read_text(encoding="utf-8")
     seed = load_lexicon()
 
     copy = tmp_path / "copy.yaml"
@@ -313,18 +313,15 @@ def test_lexicon_version_tells_an_edited_or_unversioned_file_from_the_seed(tmp_p
     named = tmp_path / "named.yaml"
     named.write_text('version: "mylab-2"\n' + RULES, encoding="utf-8")
     assert load_lexicon(named).version == "mylab-2"
-    named.write_text('version: "99"\n' + RULES, encoding="utf-8")  # a number onehealth does not ship
-    assert load_lexicon(named).version == "99"
-
-    for shipped in ("v2", "v3", "v4", "v5"):
-        assert load_lexicon(Path(shipped)).version == shipped[1:]
+    named.write_text('version: "4"\n' + RULES, encoding="utf-8")  # not the shipped version: taken at its word
+    assert load_lexicon(named).version == "4"
 
 
 def test_classify_reports_and_records_a_modified_lexicon(tmp_path: Path, capsys):
     table = tmp_path / "m.tsv"
     table.write_text("id\thost\nA\tmartian\n", encoding="utf-8")
     edited = tmp_path / "edited.yaml"
-    edited.write_text(shipped_lexicon_path("5").read_text(encoding="utf-8").replace("      - homo sapien\n", "      - martian\n"),
+    edited.write_text(default_lexicon_path().read_text(encoding="utf-8").replace("      - homo sapien\n", "      - martian\n"),
                       encoding="utf-8")
     out = tmp_path / "out.tsv"
     assert cli.main(["classify", str(table), "-o", str(out), "--lexicon", str(edited)]) == 0

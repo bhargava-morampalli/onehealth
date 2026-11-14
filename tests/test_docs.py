@@ -18,7 +18,7 @@ from onehealth.constants import (
     SEED_LEXICON_VERSION,
     UNKNOWN_EXACT,
 )
-from onehealth.lexicon import shipped_lexicon_path
+from onehealth.lexicon import default_lexicon_path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "documentation"
@@ -98,15 +98,15 @@ def test_every_missing_value_word_is_listed():
 
 def test_every_rule_of_the_seed_lexicon_is_in_the_guide():
     text = _section(_page("guides/lexicon.md"), f"The rules in v{SEED_LEXICON_VERSION}")
-    rules = yaml.safe_load(shipped_lexicon_path(SEED_LEXICON_VERSION).read_text(encoding="utf-8"))["rules"]
+    rules = yaml.safe_load(default_lexicon_path().read_text(encoding="utf-8"))["rules"]
     rows = {m.group(2): int(m.group(1)) for m in re.finditer(r"^\| (\d+) \| `([^`]+)` \|", text, re.MULTILINE)}
     assert rows == {rule["id"]: int(rule.get("priority") or 0) for rule in rules}
 
 
-def test_every_shipped_lexicon_version_is_listed():
-    text = _section(_page("guides/lexicon.md"), "Versions")
-    shipped = sorted(p.stem for p in shipped_lexicon_path(SEED_LEXICON_VERSION).parent.glob("v*.yaml"))
-    assert not [v for v in shipped if f"| {v} |" not in text]
+def test_the_guide_names_the_shipped_lexicon_version():
+    text = _section(_page("guides/lexicon.md"), "Version")
+    assert f"version **{SEED_LEXICON_VERSION}**" in text
+    assert yaml.safe_load(default_lexicon_path().read_text(encoding="utf-8"))["version"] == SEED_LEXICON_VERSION
 
 
 def test_every_page_is_in_the_navigation():

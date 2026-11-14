@@ -1,4 +1,5 @@
-"""Lexicon v5: retail meat is Food, a swab of food premises is Environmental, and a person who handles food is Human."""
+"""Food, food premises and food handlers (lexicon v5): retail meat is Food, a swab of food premises is Environmental,
+and a person who handles food is Human. v4 called the first Animal and the other two Food."""
 
 from pathlib import Path
 
@@ -107,19 +108,12 @@ def test_other_spellings_of_faeces_follow_the_host(lexicon, source):
     assert _classify(lexicon, source, "Sus scrofa").classify_reason == "specimens+animal-hosts"
 
 
-def test_v4_results_still_reproduce():
-    """v5's changes live in v5 only: `--lexicon v4` gives what v4 always gave."""
-    v4 = load_lexicon(Path("v4"))
-    assert v4.version == "4"
-    for source, l1, reason in [
-        ("ground turkey", "Animal", "animal-hosts"),
-        ("food processing environment", "Food", "food-products"),
-        ("food handler", "Food", "food-products"),
-        ("peanut butter", "Unclassified", "taxon_only_source"),
-        ("fecal swab", "Unclassified", "unmatched"),
-    ]:
-        result = _classify(v4, source)
-        assert (result.l1, result.classify_reason) == (l1, reason), source
+def test_one_lexicon_ships_and_an_older_version_number_says_where_to_find_it():
+    """`--lexicon v3` used to select an older lexicon shipped next to the current one."""
+    assert load_lexicon(Path("v5")).version == load_lexicon(Path("5")).version == load_lexicon().version == "5"
+    for old in ("v4", "v3", "2"):
+        with pytest.raises(ValueError, match="onehealth ships one lexicon, version 5, which is the default"):
+            load_lexicon(Path(old))
 
 
 # --- a specimen with no host, filed by its submitter as not clinical ---------------------------------

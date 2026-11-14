@@ -39,7 +39,7 @@ The held-out records are different records, but many use the same wording as the
 
 ## Baseline
 
-Coverage is the share of records classified and not sent to review. Accuracy is the share of classified records whose L1 class matches the label.
+Coverage is the share of records classified and not sent to review. Accuracy is the share of classified records whose L1 class matches the label. v5 is the lexicon that ships, and the tests hold it to its columns. The v4 columns are what the lexicon scored before this benchmark existed, measured before v4 was replaced.
 
 | | v4 development | v5 development | v4 held-out | v5 held-out |
 |---|---|---|---|---|

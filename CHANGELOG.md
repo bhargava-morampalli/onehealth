@@ -6,9 +6,13 @@ What changed in `onehealth`, newest first, in terms of what you see as a user. I
 
 A review ran `classify` on 159,045 NCBI Pathogen Detection records from six organism groups and compared it with NCBI's own `source_type`, read every source file, and tried the commands on awkward input. Everything it found that has one right answer is fixed here, each with a test. What it found that is a decision is listed at the end.
 
+### One lexicon
+
+`onehealth` now ships one lexicon, `src/onehealth/data/lexicon.yaml`, in place of a file per version. v2, v3 and v4 shipped next to the current one so that `--lexicon v3` could reproduce earlier results; each one added tests, benchmark columns and lookup code, and nobody outside the project had results to reproduce. They are in the repository history. `--lexicon v4` now stops with an error that says so, and `--lexicon` takes a YAML of your own, which can be an old version's file. Every table still records the `lexicon_version` that made it.
+
 ### Lexicon v5: meat is food, a swab of the premises is not
 
-The seed lexicon is now v5, and classified tables record `lexicon_version` 5. v4 still ships, and `classify --lexicon v4` reproduces earlier results.
+The lexicon is now version 5, and classified tables record `lexicon_version` 5.
 
 - **Retail meat was called Animal.** `raw intact chicken`, `ground turkey`, `chicken breast`, `comminuted chicken` and `smoked salmon` matched the animal word and no food rule. They are Food in v5. A species on its own (`chicken`) is still the animal, and so is an organ (`chicken liver`), which can be a necropsy sample; `chicken liver (giblets)` is Food. A cut of meat with an animal host goes to review as `host_source_conflict`, as `chicken meat` with a chicken host always did.
 - **Foods that no rule knew** are Food: `pork`, `sausage`, `ham`, `shrimp`, `peanut butter`, `ice cream`, `avocado`, `enoki mushroom` and others. They are the foods NCBI records name most often. Two-word foods used to go to review as `taxon_only_source`, taken for species names.
@@ -27,14 +31,14 @@ Effect on NCBI records whose submitters filled in `source_type`, with that field
 | Environmental recall | 43.8% | 77.6% |
 | Human precision | 98.0% | 98.0% |
 
-On the IMP benchmark v5 changes one row, a pork product that no v4 rule matched: 84.5% coverage and 99.8% accuracy, as v4. No row of the NCBI *Klebsiella*, demo or example data changes class between v4 and v5.
+On the IMP benchmark v5 changes one row, a pork product that no v4 rule matched: 84.5% coverage and 99.8% accuracy, as v4. No row of the NCBI *Klebsiella*, demo or example data changes class between v4 and v5. The v4 figures were measured before v4 was removed.
 
 Animal is still the weakest class: a bare `chicken` or `turkey` is read as the animal and is often meat. The Benchmarks page (`documentation/benchmarks.md`) has the confusion matrix and what the label does and does not mean.
 
 ### `classify`
 
-- **A specimen with no host is no longer called Human when its record was filed as not clinical.** `feces` or `wound` with no host defaulted to Human whatever else the record said. If the record carries the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table, the row now goes to review as `no_host_env_package`. In the NCBI sample, 199 of the 586 host-less specimens with a known package were filed this way. Any other package, or no package column, keeps the default and its `+no_host` reason. This applies to every lexicon version; it moves one row of the NCBI *Klebsiella* data (`feces`, Brazil) from Human to review.
-- **`lexicon_version` tells an edited lexicon from the shipped one.** A copy of the seed with a rule changed was recorded as the seed's version, and a file with no `version` was too. An edited copy that keeps a shipped number is now `5-modified-<digest>`, and a file with no version is `custom-<digest>` (the first 8 hex digits of its SHA-256). A file with its own version name is recorded under that name, as before.
+- **A specimen with no host is no longer called Human when its record was filed as not clinical.** `feces` or `wound` with no host defaulted to Human whatever else the record said. If the record carries the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table, the row now goes to review as `no_host_env_package`. In the NCBI sample, 199 of the 586 host-less specimens with a known package were filed this way. Any other package, or no package column, keeps the default and its `+no_host` reason. It is a change in `classify`, not in the lexicon; it moves one row of the NCBI *Klebsiella* data (`feces`, Brazil) from Human to review.
+- **`lexicon_version` tells an edited lexicon from the shipped one.** A copy of the shipped lexicon with a rule changed was recorded as the shipped version, and a file with no `version` was too. An edited copy that keeps the shipped version is now `5-modified-<digest>`, and a file with no version is `custom-<digest>` (the first 8 hex digits of its SHA-256). A file with its own version name is recorded under that name, as before.
 
 ### `resolve`
 

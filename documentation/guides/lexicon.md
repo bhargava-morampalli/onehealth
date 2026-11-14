@@ -2,18 +2,13 @@
 
 `classify` decides each class with a lexicon: a YAML file of rules that map words and phrases in the metadata to a One Health class. The rules are data, not code, so you can read every one, and change them without touching `onehealth`.
 
-## Versions
+## Version
 
-| Version | Shipped | Use |
-|---|---|---|
-| v5 | November 2026 | The default |
-| v4 | November 2026 | `--lexicon v4`, to reproduce earlier results exactly |
-| v3 | November 2026 | `--lexicon v3`, the same for older results |
-| v2 | October 2026 | `--lexicon v2`, the same for older results |
+`onehealth` ships one lexicon, [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). It is version **5**, and every classified row records the version that made the call in `lexicon_version`, so a table always says which rules it came from.
 
-Every classified row records the version that made the call in `lexicon_version`. What changed between versions is in the [changelog](../changelog.md).
+When the lexicon changes, its version goes up, and the [changelog](../changelog.md) says what changed and what it did to the [benchmarks](../benchmarks.md). Earlier versions are not shipped. They are in the repository history, so results made with one can be reproduced by running the `onehealth` commit that made them, or by passing that version's YAML file to `--lexicon`.
 
-A lexicon of your own is recorded under the `version` it carries. A file with no `version` is recorded as `custom-` and the first 8 hex digits of the file's SHA-256, and an edited copy that still carries a shipped number is recorded as, say, `5-modified-1a2b3c4d`. So a table never claims a shipped lexicon that did not make it.
+A lexicon of your own is recorded under the `version` it carries. A file with no `version` is recorded as `custom-` and the first 8 hex digits of the file's SHA-256, and an edited copy that still says version 5 is recorded as, say, `5-modified-1a2b3c4d`. So a table never claims the shipped lexicon when something else made it.
 
 ## A rule
 
@@ -29,7 +24,7 @@ A lexicon of your own is recorded under the `version` it carries. A file with no
   priority: 95
 ```
 
-This is part of a rule in v5, shortened.
+This is part of a rule, shortened.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -88,9 +83,9 @@ The paper rollup is not part of the lexicon. It follows from `l1` and `healthcar
 | 20 | `human-host` | Human | host, sample type |
 | 20 | `human-source` | Human | isolation source |
 
-The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon/v5.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon/v5.yaml). Changes in v3, v4 and v5 are marked `v3`, `v4` and `v5`.
+The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). What each version added is marked `v3`, `v4` or `v5` there.
 
-**Meat is food, the animal is not.** A species word on its own (`chicken`, `turkey`, `pig`) means the animal. How meat is sold or processed means food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. v4 called all of these Animal. `food-items` lists such words and the foods that NCBI records name most often; because it reads source text only, two-word foods such as `peanut butter` are not taken for species names. Three kinds of word are left out on purpose:
+**Meat is food, the animal is not.** A species word on its own (`chicken`, `turkey`, `pig`) means the animal. How meat is sold or processed means food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. Before v5 all of these were Animal. `food-items` lists such words and the foods that NCBI records name most often; because it reads source text only, two-word foods such as `peanut butter` are not taken for species names. Three kinds of word are left out on purpose:
 
 - **A bare body part** (`breast`, `liver`, `thigh`) is as often a patient's, so cuts are listed with their animal (`chicken breast`).
 - **An organ** (`chicken liver`) is retail giblets or a necropsy sample, so it stays Animal unless the text says `giblets`.
@@ -98,7 +93,7 @@ The phrases of each rule, and a note on why it is there, are in [`src/onehealth/
 
 A cut of meat with an animal host (`ground chicken`, host *Gallus gallus*) goes to review as `host_source_conflict`, as `chicken meat` with that host always did.
 
-**A swab of the premises is not the food.** `environmental-sampling` makes a swab or sponge of a surface, and a sample of the place where food is made, Environmental even when the text names the food or the animal: `environmental swab sponge non food contact surface`, `food processing environment`, `poultry processing plant`. v4 called these Food or Animal. It sits above the food rules and below the specimen rules. `food-handler` is a person, so `food handler` is Human, not Food.
+**A swab of the premises is not the food.** `environmental-sampling` makes a swab or sponge of a surface, and a sample of the place where food is made, Environmental even when the text names the food or the animal: `environmental swab sponge non food contact surface`, `food processing environment`, `poultry processing plant`. Before v5 these were Food or Animal. It sits above the food rules and below the specimen rules. `food-handler` is a person, so `food handler` is Human, not Food.
 
 A fixture on its own, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says neither whose sample it is nor where the fixture is. Calling it a hospital fixture could be wrong, and a wrong healthcare flag would quietly move isolates into the report's healthcare-environment group. Calling it Human because the host is *Homo sapiens* is often wrong too, since submitters record that host for hospital fixture swabs. So `fixture-no-setting` sends it to review. Any rule above it still decides: `sink drain` and `hospital sink` are healthcare environment, `drain tip` is a specimen, and an animal host makes it Animal, as other farm settings do.
 
@@ -106,8 +101,8 @@ A fixture on its own, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says nei
 
 Add words to a copy, not to the shipped file:
 
-1. Copy the shipped lexicon. In a clone of the repository it is `src/onehealth/data/lexicon/v5.yaml`.
-2. Give the copy its own `version`, such as `"5-mylab"`, so its results are easy to tell apart. If you forget, they are still not mistaken for the shipped v5: an edited copy that keeps the number `5` is recorded as `5-modified-<digest>`, and a file without a `version` as `custom-<digest>`.
+1. Copy the shipped lexicon. In a clone of the repository it is `src/onehealth/data/lexicon.yaml`.
+2. Give the copy its own `version`, such as `"5-mylab"`, so its results are easy to tell apart. If you forget, they are still not mistaken for the shipped lexicon: an edited copy that keeps the version `5` is recorded as `5-modified-<digest>`, and a file without a `version` as `custom-<digest>`.
 3. Add phrases to a rule, or a rule of your own. For example, a study that sampled only hospital sinks can classify a bare `sink`:
 
     ```yaml

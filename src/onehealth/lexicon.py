@@ -1,4 +1,4 @@
-"""Load and apply the versioned seed lexicon."""
+"""Load and apply the lexicon. onehealth ships one, and its `version` is recorded with every result."""
 
 from __future__ import annotations
 
@@ -50,24 +50,27 @@ def _healthcare(value: Any) -> str:
 
 
 def default_lexicon_path() -> Path:
-    return shipped_lexicon_path(SEED_LEXICON_VERSION)
-
-
-def shipped_lexicon_path(version: str) -> Path:
-    return Path(str(files("onehealth").joinpath(f"data/lexicon/v{version}.yaml")))
+    """The lexicon that ships with onehealth. There is one; its history is in the repository."""
+    return Path(str(files("onehealth").joinpath("data/lexicon.yaml")))
 
 
 def _lexicon_file(path: Path | None) -> Path:
-    """The default, a YAML file, or a version that ships with onehealth ("v2"), so older results can be reproduced."""
+    """The shipped lexicon, or a YAML file of the user's.
+
+    A version number in place of a file ("v3") used to select an older lexicon that
+    shipped alongside the current one. Only the current number still works.
+    """
     if path is None:
         return default_lexicon_path()
     version = re.fullmatch(r"v?(\d+)", str(path))
     if version and not path.exists():
-        shipped = shipped_lexicon_path(version.group(1))
-        if not shipped.exists():
-            available = sorted(p.stem for p in shipped.parent.glob("v*.yaml"))
-            raise InputError(f"no lexicon {path}: onehealth ships {', '.join(available)}")
-        return shipped
+        if version.group(1) == SEED_LEXICON_VERSION:
+            return default_lexicon_path()
+        raise InputError(
+            f"no lexicon {path}: onehealth ships one lexicon, version {SEED_LEXICON_VERSION}, which is the default. "
+            "To reproduce results made with an earlier version, run the onehealth release or commit that made "
+            "them, or pass that version's YAML file from the repository history"
+        )
     return path
 
 
@@ -92,19 +95,19 @@ def _recorded_version(declared: Any, text: str) -> str:
     """What goes in the lexicon_version column, so a table always says which rules made it.
 
     A file's own `version` is used as written, with two exceptions. A file with no
-    version is `custom-<digest>`; it used to be recorded as the seed version. A file
-    that carries the number of a lexicon that ships with onehealth but has different
-    contents (an edited copy) is `<number>-modified-<digest>`. The digest is the first
-    8 hex digits of the file's SHA-256, with line endings normalised.
+    version is `custom-<digest>`; it used to be recorded as the shipped version. A file
+    that carries the shipped lexicon's version but has different contents (an edited
+    copy) is `<version>-modified-<digest>`. The digest is the first 8 hex digits of the
+    file's SHA-256, with line endings normalised.
     """
     content = text.replace("\r\n", "\n").replace("\r", "\n")
     digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:8]
     version = "" if declared is None else str(declared).strip()
     if not version:
         return f"custom-{digest}"
-    if re.fullmatch(r"\d+", version):
-        shipped = shipped_lexicon_path(version)
-        if shipped.exists() and read_text(shipped).replace("\r\n", "\n").replace("\r", "\n") != content:
+    if version == SEED_LEXICON_VERSION:
+        shipped = read_text(default_lexicon_path()).replace("\r\n", "\n").replace("\r", "\n")
+        if shipped != content:
             return f"{version}-modified-{digest}"
     return version
 

@@ -74,9 +74,9 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), lexicon v5 classifies 84.5% of isolates, and 99.8% of those agree with the curation (v4: the same; v3: 84.8% and 99.5%; v2: 84.5% and 99.2%). Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.5% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
-That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 39,722 records held out while v5 was written, v5 classifies 88.7% and 93.9% of those match NCBI's label (v4: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
+That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 39,722 records held out while the current lexicon (v5) was written, it classifies 88.7% and 93.9% of those match NCBI's label (the previous version: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
 
 ## Report
 
@@ -147,7 +147,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-The seeded lexicon is versioned at `src/onehealth/data/lexicon/v5.yaml`, and every classified row records `lexicon_version`. Pass `--lexicon` to use another YAML, or `--lexicon v4` (or `v3`, `v2`) to reproduce results made with a previous seed, which still ships. A YAML of your own is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps a shipped number is `<number>-modified-<digest>`, so a table never claims a shipped lexicon that did not make it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 5, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `5-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 

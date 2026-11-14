@@ -11,6 +11,8 @@ description: >
   and food-plant swabs Food ("non-food-contact surface"); changes are marked "v5". The
   terms come from NCBI Pathogen Detection records whose submitters also filled in NCBI's
   own source_type (tests/data/ncbi_pd_source_types). See CHANGELOG.md.
+  This is the only lexicon that ships. Earlier versions are in the repository history;
+  when this file changes, raise `version` here and SEED_LEXICON_VERSION in constants.py.
 
 # How rules are applied (classify.py):
 #   * Matching is on lower-case word tokens, so "drain" does not match "drainage".

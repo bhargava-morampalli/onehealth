@@ -14,7 +14,7 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 |---|---|
 | `-o`, `--out` | Output TSV (required). |
 | `--overrides` | A curator overrides file. A complete override always wins; see [Overrides](#overrides). |
-| `--lexicon` | A lexicon YAML, or a version that ships with onehealth: `v5` (the default), `v4`, `v3` or `v2`. |
+| `--lexicon` | A lexicon YAML of your own. The default is the one lexicon that ships with onehealth; see [The lexicon](../guides/lexicon.md#version). |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
 
 `classify` prints how many rows were classified and which lexicon version was used.
@@ -82,7 +82,7 @@ The input columns, followed by:
 | `paper_rollup` | The three-class rollup |
 | `classify_status` | `ok` or `review` |
 | `classify_reason` | Why (below) |
-| `lexicon_version` | The lexicon version that made the call. For a lexicon of your own: its `version`, or `custom-<digest>` if it has none, or `<number>-modified-<digest>` for an edited copy of a shipped one; see [The lexicon](../guides/lexicon.md#versions). |
+| `lexicon_version` | The lexicon version that made the call. For a lexicon of your own: its `version`, or `custom-<digest>` if it has none, or `<number>-modified-<digest>` for an edited copy of a shipped one; see [The lexicon](../guides/lexicon.md#version). |
 | `override_applied` | `yes` when an override decided |
 | `lexicon_suggestion` | For an override, the lexicon's own answer; for a review row, the competing classes, if any |
 

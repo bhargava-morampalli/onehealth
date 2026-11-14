@@ -93,7 +93,7 @@ def _build_parser() -> argparse.ArgumentParser:
     classify_p.add_argument("-o", "--out", type=Path, required=True, help="Classified TSV")
     classify_p.add_argument("--overrides", type=Path, help="Curator override TSV; complete rows always win")
     classify_p.add_argument("--lexicon", type=Path,
-                            help=f"Lexicon YAML, or a version that ships with onehealth such as v2 (default: seeded v{SEED_LEXICON_VERSION})")
+                            help=f"A lexicon YAML of your own (default: the lexicon that ships with onehealth, seeded v{SEED_LEXICON_VERSION})")
     classify_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
     classify_p.set_defaults(handler=cmd_classify)
 

@@ -11,7 +11,6 @@ import pytest
 
 from onehealth.classify import classify_record
 from onehealth.io_tsv import read_tsv
-from onehealth.lexicon import load_lexicon
 
 RECORDS = Path(__file__).parent / "data" / "ncbi_pd_source_types" / "records.tsv"
 LABEL = {"human": "Human", "animal": "Animal", "food": "Food", "environmental": "Environmental"}
@@ -60,7 +59,12 @@ def test_the_fixture_is_what_the_readme_says(records):
 
 
 def test_heldout_baseline(records, lexicon):
-    """Floors just under lexicon v5 on records nobody looked at: 88.7% classified, 93.9% of those right."""
+    """Floors just under lexicon v5 on records nobody looked at: 88.7% classified, 93.9% of those right.
+
+    Lexicon v4, the last one before this benchmark existed, classified 76.9% and got 80.9% of
+    those right: fewer than half of its Animal calls agreed with NCBI (45.4%), because it called
+    retail meat Animal. A change that drops below these floors is heading back there.
+    """
     result = _score([r for r in records if r["split"] == "heldout"], lexicon)
     assert result["coverage"] >= 0.885
     assert result["accuracy"] >= 0.935
@@ -74,15 +78,3 @@ def test_heldout_baseline(records, lexicon):
 def test_development_baseline(records, lexicon):
     result = _score([r for r in records if r["split"] == "development"], lexicon)
     assert result["coverage"] >= 0.935 and result["accuracy"] >= 0.945
-
-
-def test_v5_fixes_what_v4_got_wrong_on_records_it_was_not_tuned_on(records, lexicon):
-    """v4 called retail meat Animal: fewer than half of its Animal calls agreed with NCBI."""
-    heldout = [r for r in records if r["split"] == "heldout"]
-    v4, v5 = _score(heldout, load_lexicon(Path("v4"))), _score(heldout, lexicon)
-    assert v4["precision"]["Animal"] < 0.5 and v4["recall"]["Food"] < 0.35
-    assert (round(v4["coverage"], 3), round(v4["accuracy"], 3)) == (0.769, 0.809)
-    assert v5["coverage"] > v4["coverage"] + 0.1 and v5["accuracy"] > v4["accuracy"] + 0.1
-    for label in LABEL.values():
-        assert v5["recall"][label] >= v4["recall"][label] - 0.01, label
-        assert v5["precision"][label] >= v4["precision"][label] - 0.01, label
