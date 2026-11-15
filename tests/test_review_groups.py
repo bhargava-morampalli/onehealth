@@ -144,7 +144,7 @@ def test_classify_writes_the_groups_and_reads_them_back_as_decisions(tmp_path: P
     assert "the review rows hold 2 distinct source texts" in capsys.readouterr().err
     groups_path = tmp_path / "classified.review_groups.tsv"
     groups = read_tsv(groups_path)
-    assert [(g["rows"], g["classify_reason"]) for g in groups] == [("2", "taxon_only_source"), ("2", "unmatched")]
+    assert [(g["rows"], g["classify_reason"]) for g in groups] == [("2", "unmatched"), ("2", "taxon_only_source")]
 
     # The curator fills in l1 and passes the same table back. The formula text was written
     # with a leading apostrophe; it still matches, because texts are compared by their words.

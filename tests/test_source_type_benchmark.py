@@ -47,36 +47,57 @@ def test_the_fixture_is_what_the_readme_says(records):
     by_split = Counter()
     for row in records:
         by_split[row["split"]] += int(row["records"])
-    assert by_split == {"development": 33372, "heldout": 39722}
+    assert by_split == {"development": 33372, "heldout": 39722, "validation": 32208}
     assert {row["ncbi_source_type"] for row in records} == set(LABEL)
     # Every record has something to classify from, and the answer is not in a column classify reads.
     assert all(row["isolation_source"] or row["host"] for row in records)
     assert "source_type" not in records[0] and "sample_type" not in records[0]
-    heldout_only = {row["organism_group"] for row in records if row["split"] == "heldout"} - {
-        row["organism_group"] for row in records if row["split"] == "development"
-    }
-    assert heldout_only == {"Staphylococcus_aureus", "Vibrio_parahaemolyticus", "Bacillus_cereus_group", "Cronobacter"}
+    groups = {split: {row["organism_group"] for row in records if row["split"] == split} for split in by_split}
+    assert groups["heldout"] - groups["development"] == {
+        "Staphylococcus_aureus", "Vibrio_parahaemolyticus", "Bacillus_cereus_group", "Cronobacter"}
+    assert groups["validation"] - groups["development"] - groups["heldout"] == {
+        "Clostridium_perfringens", "Vibrio_cholerae", "Yersinia_enterocolitica"}
+
+
+def test_validation_baseline(records, lexicon):
+    """Floors just under lexicon v7 on records nobody looked at while it was written: 95.9% classified,
+    96.0% of those right. This is the figure to quote for v7.
+
+    The validation split was read once, after v7 was finished, and v7 was not changed afterwards.
+    Before v7 the same records scored 95.5% and 94.8% (Animal precision 82.0%, Environmental recall 73.6%).
+    """
+    result = _score([r for r in records if r["split"] == "validation"], lexicon)
+    assert result["coverage"] >= 0.955
+    assert result["accuracy"] >= 0.955
+    assert result["precision"]["Human"] >= 0.985 and result["precision"]["Environmental"] >= 0.985
+    assert result["precision"]["Food"] >= 0.98
+    assert result["precision"]["Animal"] >= 0.855
+    assert result["recall"]["Environmental"] >= 0.84
+    assert result["recall"]["Animal"] >= 0.895
 
 
 def test_heldout_baseline(records, lexicon):
-    """Floors just under lexicon v6 on the held-out records: 89.1% classified, 93.9% of those right.
+    """Floors just under lexicon v7 on the held-out records: 90.3% classified, 96.1% of those right.
 
     Lexicon v4, the last one before this benchmark existed, classified 76.9% and got 80.9% of
     those right: fewer than half of its Animal calls agreed with NCBI (45.4%), because it called
-    retail meat Animal. v5 fixed that (88.7% and 93.9%), and v6 finds more animal hosts (Animal
-    recall 88.3% to 91.7%). A change that drops below these floors is heading back.
+    retail meat Animal. v5 fixed that (88.7% and 93.9%), v6 found more animal hosts, and v7
+    follows NCBI on farm settings and on "chicken" (Animal precision 74.3% to 84.2%, Environmental
+    recall 77.6% to 86.9%). v7 was checked against this split, so it is no longer unseen; the
+    validation split is. Animal recall is a little lower than in v6 (91.7% to 90.8%): a minority
+    of submitters label manure and a bare "chicken" as animal.
     """
     result = _score([r for r in records if r["split"] == "heldout"], lexicon)
-    assert result["coverage"] >= 0.89
-    assert result["accuracy"] >= 0.935
-    assert result["recall"]["Animal"] >= 0.91
-    assert result["precision"]["Human"] >= 0.975 and result["precision"]["Environmental"] >= 0.985
-    assert result["precision"]["Food"] >= 0.97
-    # Still the weak class: a bare "chicken" or "turkey" is called Animal, and NCBI's label is often food.
-    assert result["precision"]["Animal"] >= 0.73
-    assert result["recall"]["Food"] >= 0.70
+    assert result["coverage"] >= 0.90
+    assert result["accuracy"] >= 0.955
+    assert result["precision"]["Human"] >= 0.975 and result["precision"]["Environmental"] >= 0.975
+    assert result["precision"]["Food"] >= 0.975
+    assert result["precision"]["Animal"] >= 0.835
+    assert result["recall"]["Animal"] >= 0.90
+    assert result["recall"]["Food"] >= 0.73
+    assert result["recall"]["Environmental"] >= 0.86
 
 
 def test_development_baseline(records, lexicon):
     result = _score([r for r in records if r["split"] == "development"], lexicon)
-    assert result["coverage"] >= 0.94 and result["accuracy"] >= 0.95
+    assert result["coverage"] >= 0.955 and result["accuracy"] >= 0.97

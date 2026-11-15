@@ -43,10 +43,10 @@ def test_meat_cuts_and_foods_are_food_not_animal(lexicon, source):
 @pytest.mark.parametrize(
     "source, host, l1, reason",
     [
-        # The species with a host, or in the plural, still means the animal. On its own
-        # with no host, "chicken" is meat since v7 (test_ncbi_conventions.py).
+        # The species with a host, or with another word, still means the animal. On its
+        # own with no host, "chicken" is meat since v7 (test_ncbi_conventions.py).
         ("chicken", "Gallus gallus", "Animal", "animal-hosts"),
-        ("chickens", "", "Animal", "animal-hosts"),
+        ("live chicken", "", "Animal", "animal-hosts"),
         ("cecum", "Gallus gallus", "Animal", "animal-hosts"),
         # An organ is not a cut: retail giblets or a necropsy sample.
         ("chicken liver", "", "Animal", "animal-hosts"),

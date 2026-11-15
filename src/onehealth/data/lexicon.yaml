@@ -744,8 +744,8 @@ rules:
       from an animal, and where a record has no host and a source_type, "chicken" on its
       own is food in 151 records of 154 and "turkey" in 63 of 64. onehealth follows that:
       with no host these two words are Food; with a host the rule does not apply and the
-      host decides, as before. Only words with that much evidence are listed. "chickens",
-      "duck" and "fish" still mean the animal. A veterinary study whose "chicken" is a
+      host decides, as before. Only words with that much evidence are listed: "duck" and
+      "fish" still mean the animal, and so does "live chicken". A veterinary study whose "chicken" is a
       bird can say so in one line with --decisions.
 
   # --- v6: any other animal host, by its name in NCBI Taxonomy ---
