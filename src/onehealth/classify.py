@@ -13,7 +13,8 @@ from onehealth.constants import (
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
-from onehealth.text import is_blank, is_taxon_only_source, is_unknown_value, known_part, tokenize
+from onehealth.review import DecisionKey, lookup_decision
+from onehealth.text import environmental_package, is_blank, is_taxon_only_source, is_unknown_value, known_part
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -38,9 +39,18 @@ def classify_record(
     record: dict[str, str],
     lexicon: Lexicon,
     overrides: dict[str, list[OverrideRow]] | None = None,
+    decisions: dict[DecisionKey, OverrideRow] | None = None,
 ) -> Classification:
-    auto = _classify_with_lexicon(metadata_view(record), lexicon)
+    """The lexicon's class, unless a curator said otherwise.
+
+    An override names one isolate and wins. A decision names a source text (the same
+    isolation_source, host, sample_type and host_disease) and applies to every row with it.
+    """
+    view = metadata_view(record)
+    auto = _classify_with_lexicon(view, lexicon)
     override = lookup_override(record, overrides or {})
+    if override is None and decisions:
+        override = lookup_decision(view, decisions)
     if override is None:
         return auto
     return _apply_override(override, auto.lexicon_suggestion, lexicon.version)
@@ -50,11 +60,12 @@ def classify_rows(
     rows: list[dict[str, str]],
     lexicon: Lexicon,
     overrides: dict[str, list[OverrideRow]] | None = None,
+    decisions: dict[DecisionKey, OverrideRow] | None = None,
 ) -> list[dict[str, str]]:
     classified: list[dict[str, str]] = []
     for row in rows:
         merged = dict(row)
-        merged.update(classify_record(row, lexicon, overrides).as_row())
+        merged.update(classify_record(row, lexicon, overrides, decisions).as_row())
         classified.append(merged)
     return classified
 
@@ -82,7 +93,9 @@ def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classifica
     if any(hit.field == "isolation_source" for hit in hits) and (is_unknown_value(source) or _taxon_only(source, hits)):
         hits = match_rules({**matched, "isolation_source": ""}, lexicon)
 
-    winners = best_hits(hits)
+    # A specimen_only rule ("human" in the text) only says whose specimen it is.
+    plain = [hit for hit in hits if not hit.rule.specimen_only]
+    winners = best_hits(plain)
     if not winners:
         return _review(_no_evidence_reason(view), version)
 
@@ -97,7 +110,7 @@ def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classifica
     if all(hit.rule.host_dependent for hit in winners):
         return _classify_specimen(rule, hits, view, version)
 
-    conflict = _host_source_conflict(hits)
+    conflict = _host_source_conflict(plain)
     if conflict:
         return _review("host_source_conflict", version, conflict)
     return _ok(rule.l1, rule.healthcare_environment, rule.rule_id, version)
@@ -145,21 +158,11 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     if not is_unknown_value(view.get("host")):
         # A host the lexicon cannot place (plant, unlisted species): do not assume Human.
         return _review("host_unrecognised", version, {rule.l1})
-    if _environmental_package(view.get("package")):
+    if environmental_package(view.get("package")):
         # No host, and the submitter filed the sample as environmental, food or other, not
         # as clinical or host-associated: "feces" or "wound" here is often an animal's.
         return _review("no_host_env_package", version, {rule.l1})
     return _ok(rule.l1, rule.healthcare_environment, f"{rule.rule_id}+no_host", version)
-
-
-def _environmental_package(value: str | None) -> bool:
-    """The record was submitted under NCBI's package for non-clinical pathogen samples.
-
-    True for the BioSample package "Pathogen.env.1.0", its display name "Pathogen:
-    environmental/food/other", and NCBI Pathogen Detection's epi_type "environmental/other".
-    """
-    tokens = tokenize(value)
-    return tokens[:2] in (["pathogen", "env"], ["pathogen", "environmental"]) or tokens == ["environmental", "other"]
 
 
 def _host_source_conflict(hits: list[RuleHit]) -> set[str]:
@@ -205,7 +208,7 @@ def _apply_override(override: OverrideHit, suggestion: str, version: str) -> Cla
         healthcare_environment=healthcare,
         paper_rollup=row.paper_rollup or derive_paper_rollup(row.l1, healthcare),
         classify_status="ok",
-        classify_reason="override",
+        classify_reason=override.reason,  # "override" for one isolate, "decision" for a source text
         lexicon_version=version,
         override_applied="yes",
         lexicon_suggestion=suggestion,

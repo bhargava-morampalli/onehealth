@@ -35,7 +35,7 @@ onehealth classify work/resolved.tsv -o work/classified.tsv --overrides examples
 
 ```text
 classify: 4 rows (4 ok, 0 review)
-lexicon v5 (seed v5)
+lexicon v6 (seed v6)
 ```
 
 `classify` adds the class columns:
@@ -47,7 +47,7 @@ lexicon v5 (seed v5)
 | SRR0000001 | cloacal swab | Animal | Animal | override |
 | PDT000000001.1 | wound drainage | Human | Human | wound-drainage+human-host |
 
-`classify_reason` says why: `wound-drainage+human-host` means the specimen rule matched and the human host decided Human. `override` means the row in `examples/overrides.tsv` decided. Rows that cannot be classified would be in `work/classified.review.tsv`.
+`classify_reason` says why: `wound-drainage+human-host` means the specimen rule matched and the human host decided Human. `override` means the row in `examples/overrides.tsv` decided. Rows that cannot be classified would be in `work/classified.review.tsv`, and each distinct source text among them once, with its row count, in `work/classified.review_groups.tsv`.
 
 ### Count and plot
 

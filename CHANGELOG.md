@@ -2,7 +2,59 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: lexicon v5, and fixes from a review of the whole tool (branch `lexicon-v5-food-fixes-and-hardening`)
+## Unreleased: any animal host, the review queue by source text, and a licence (branch `host-taxonomy-ncbi-terms-grouped-review`)
+
+Three things from the list the last review left open, and one it proposed that turned out not to be worth building.
+
+### Any animal is a host (lexicon v6)
+
+The lexicon named the hosts seen most often (`chicken`, `Bos taurus`, `dog`), so a gull, a macaque or a water buffalo went to review as a host it could not place. v6 recognises any animal host by the names NCBI Taxonomy gives it:
+
+- the scientific name of a chordate at any rank (`Larus dominicanus`, `Macaca`, `Cervidae`), a species with a subspecies or breed (`Bos primigenius taurus`), or a genus with `sp.`;
+- the common name of any animal, singular or plural (`gull`, `sika deer`, `mud crab`).
+
+Only a whole name counts, never a word inside a longer value, so `sea water` is not the fish genus *Sea* and `white stork nestling` stays in review. Scientific names are limited to chordates because other animals have genera called *Sepsis*, *Cancer* and *Colon*. Plants and bacteria are not placed. The names (82,711 scientific, 35,780 common) ship with the package, so `classify` still needs no network; `tools/build_animal_names.py` rebuilds them from the NCBI Taxonomy dump.
+
+It is a rule in the lexicon, not code around it: a rule can say `taxonomy: animal` or `taxonomy: human`. The two new rules, `host-taxonomy` and `host-taxonomy-human`, come after the word-list rules of the same priority, so a host those know keeps its reason.
+
+| | v5 | v6 |
+|---|---|---|
+| IMP benchmark: animal isolates found | 38 of 51 | 51 of 51 |
+| IMP benchmark: coverage / accuracy | 84.5% / 99.8% | 84.8% / 99.8% |
+| NCBI `source_type`, held out: Animal recall | 88.3% | 91.7% |
+| NCBI `source_type`, held out: coverage / accuracy | 88.7% / 93.9% | 89.1% / 93.9% |
+
+The 13 IMP isolates are 11 American crows and 2 silver gulls. In a sample of 159,045 NCBI records, 495 more rows are classified, and 43 that v5 called Environmental or Food from a word in the source now go to review, because the host is recognised as an animal and disagrees. No row of the NCBI *Klebsiella*, demo or example data changes.
+
+### `human` in a specimen's own text
+
+`pig feces` was Animal because the text names the animal, but `human feces` was Human only by the no-host default, and since the last release it went to review in a record filed as environmental, food or other. The new rule `human-word` lets the word decide, with the reason `specimens+human-word`. It is `specimen_only`, a new rule key: on its own the word decides nothing, so `human contact surface` is still a surface. In the NCBI sample, 340 of the 583 rows called Human by the no-host default now have this reason, so `+no_host` counts only the calls that really are a default, and 9 rows come back from review.
+
+### The review queue by source text, and decisions
+
+`classify` now also writes `<out>.review_groups.tsv`: each distinct source text in the review queue once, with the number of rows that carry it, largest first. Texts are compared by their words, so `Bed Rails`, `bed_rails` and `bed-rails` are one. In the NCBI sample the 3,794 review rows that say anything hold 823 distinct texts, and the 100 most common cover 69% of them.
+
+The table has empty `l1`, `healthcare_environment` and `note` columns. Fill in `l1` for the texts you can place and pass the table back with the new `--decisions` option: each decision applies to every row with that text.
+
+- A decision wins over the lexicon, for rows it classifies as well as rows in review, so a food-safety study can decide that a bare `chicken` is Food. An override for one isolate still wins over a decision for its text.
+- A mistake stops the run: a class that is not a class, two decisions for one text, or a decision with no text.
+- Decided rows have `classify_reason` `decision` and `override_applied` `yes`.
+- `--review-groups` chooses where the table is written.
+
+### Licence
+
+The code is now under the MIT licence (`LICENSE`), and the package metadata says so.
+
+### Proposed, measured, and not built: reading `IFSAC_category` and `ontological_term`
+
+The last review suggested reading these two NCBI fields as evidence, expecting them to settle records with no `source_type`. They do not occur there: of 107,757 sampled records without a usable `source_type`, 158 have an IFSAC category and 152 an ontological term. Submitters who fill them in fill in `source_type` too, and `classify` already reads that. Where `source_type` is present, `classify` agrees with it for 98.0% of records. So nothing was added.
+
+### Also
+
+- `lexicon_version` is 6. A lexicon of your own without the new rules behaves as before.
+- The README no longer says the documentation site will be published once the repository is public: it is.
+
+## 14 November 2026: lexicon v5, one lexicon, and fixes from a review of the whole tool ([#12](https://github.com/bhargava-morampalli/onehealth/pull/12))
 
 A review ran `classify` on 159,045 NCBI Pathogen Detection records from six organism groups and compared it with NCBI's own `source_type`, read every source file, and tried the commands on awkward input. Everything it found that has one right answer is fixed here, each with a test. What it found that is a decision is listed at the end.
 

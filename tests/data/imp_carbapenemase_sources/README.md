@@ -35,7 +35,7 @@ The 69 genomes in Table S1 without a public BioSample are excluded. One BioSampl
 
 ## Baseline
 
-Measured with `onehealth classify` then `onehealth validate`. The lexicon that ships is v5. It gives the same figures as v4, with one more row classified (680 sent to review, Environmental recall 17.8%). The table records what each earlier version scored when it was current; those versions are in the repository history.
+Measured with `onehealth classify` then `onehealth validate`. The lexicon that ships is v6: 84.8% coverage, 99.8% accuracy, 667 sent to review, and every one of the 51 animal isolates found (Animal recall 100%, precision 89.5%; Environmental recall 17.8%). v5 gave the same figures as v4, with one more row classified. The table records what each earlier version scored when it was current; those versions are in the repository history.
 
 | Metric | Lexicon v2 | Lexicon v3 | Lexicon v4 |
 |---|---|---|---|

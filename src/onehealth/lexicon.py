@@ -14,6 +14,7 @@ import yaml
 from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, SEED_LEXICON_VERSION
 from onehealth.errors import InputError
 from onehealth.io_tsv import read_text
+from onehealth.taxonomy import KINDS, taxon_kind
 from onehealth.text import contains_phrase, tokenize
 
 # Metadata fields a rule may read (keys of io_tsv.metadata_view).
@@ -33,6 +34,13 @@ class LexiconRule:
     # host. L1 then comes from host evidence; `l1` is used only when there is none.
     host_dependent: bool = False
     note: str = ""
+    # "animal" or "human": the rule also matches a field whose whole value is a name
+    # NCBI Taxonomy gives to an animal, or to people (onehealth.taxonomy).
+    taxonomy: str = ""
+    # The rule says whose specimen it is ("human feces") and nothing else: it decides
+    # Human or Animal for a specimen rule that matched the same row, and is ignored
+    # everywhere else ("human contact surface" is not a person).
+    specimen_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -144,7 +152,18 @@ def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:
         priority=priority,
         host_dependent=bool(item.get("host_dependent", False)),
         note=str(item.get("note") or ""),
+        taxonomy=_taxonomy(item.get("taxonomy"), where),
+        specimen_only=bool(item.get("specimen_only", False)),
     )
+
+
+def _taxonomy(value: Any, where: str) -> str:
+    if value in (None, ""):
+        return ""
+    kind = str(value).strip().lower()
+    if isinstance(value, bool) or kind not in KINDS:
+        raise InputError(f"{where}: taxonomy must be one of {', '.join(KINDS)}, not {value!r}")
+    return kind
 
 
 def _words(value: Any, where: str, key: str) -> list[str]:
@@ -179,6 +198,8 @@ def match_rules(record: dict[str, str], lexicon: Lexicon) -> list[RuleHit]:
             matched = tokens if tokens in rule.exact else None
             if matched is None:
                 matched = next((phrase for phrase in rule.phrases if contains_phrase(list(tokens), phrase)), None)
+            if matched is None and rule.taxonomy and taxon_kind(record.get(field, "")) == rule.taxonomy:
+                matched = tokens
             if matched is not None:
                 hits.append(RuleHit(rule=rule, field=field, matched=" ".join(matched)))
                 break

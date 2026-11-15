@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from onehealth.constants import SEED_LEXICON_VERSION
 from onehealth.lexicon import load_lexicon
 from onehealth.text import is_taxon_only_source
 
@@ -47,4 +48,4 @@ def test_unknown_rule_field_is_rejected(tmp_path: Path):
 
 
 def test_seed_lexicon_version_matches_file(lexicon):
-    assert lexicon.version == "5"
+    assert lexicon.version == SEED_LEXICON_VERSION == "6"

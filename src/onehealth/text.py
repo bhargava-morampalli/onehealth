@@ -68,6 +68,16 @@ def is_unknown_value(value: str | None) -> bool:
     return False
 
 
+def environmental_package(value: str | None) -> bool:
+    """The record was submitted under NCBI's package for non-clinical pathogen samples.
+
+    True for the BioSample package "Pathogen.env.1.0", its display name "Pathogen:
+    environmental/food/other", and NCBI Pathogen Detection's epi_type "environmental/other".
+    """
+    tokens = tokenize(value)
+    return tokens[:2] in (["pathogen", "env"], ["pathogen", "environmental"]) or tokens == ["environmental", "other"]
+
+
 # Common pathogen abbreviations stuffed into isolation_source instead of a specimen.
 _TAXON_ABBREVIATIONS = frozenset(
     {

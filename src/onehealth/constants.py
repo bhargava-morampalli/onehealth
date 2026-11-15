@@ -16,7 +16,7 @@ PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal", "Unclassified")
 HEALTHCARE_YES = "yes"
 HEALTHCARE_NO = "no"
 
-SEED_LEXICON_VERSION = "5"
+SEED_LEXICON_VERSION = "6"
 
 UNKNOWN_EXACT = frozenset(
     {

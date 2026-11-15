@@ -16,6 +16,8 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 | `--overrides` | A curator overrides file. A complete override always wins; see [Overrides](#overrides). |
 | `--lexicon` | A lexicon YAML of your own. The default is the one lexicon that ships with onehealth; see [The lexicon](../guides/lexicon.md#version). |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
+| `--review-groups` | Where to write the review queue by distinct source text (default `<out>.review_groups.tsv`); see [Working through the review queue](#working-through-the-review-queue). |
+| `--decisions` | A review-groups table with its `l1` column filled in. Each decision applies to every row with that source text; see [Decisions](#decisions). |
 
 `classify` prints how many rows were classified and which lexicon version was used.
 
@@ -57,10 +59,10 @@ A table with none of these columns stops with an error, because every row would 
 Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinical") occur in any host:
 
 - With an animal host or an animal word (`pig faeces`, urine from *Canis lupus familiaris*), the row is **Animal**.
-- With a human host, it is **Human**.
+- With a human host, or the word `human` in its own text (`human feces`, `Human, blood culture`), it is **Human**. The word counts only for a specimen: `human contact surface` is not a person.
 - If another field names food, an environment or a laboratory, such as `source_type` food, it goes to review as `host_source_conflict`. Words in the specimen's own text do not count: `stool from a food handler` is still Human.
 - With both, it goes to review as `host_source_conflict`.
-- With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`.
+- With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`. Any animal NCBI Taxonomy names is recognised, not only those on the lexicon's word list; see [Hosts by taxonomy](../guides/lexicon.md#hosts-by-taxonomy).
 - With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
 - With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
 
@@ -83,8 +85,8 @@ The input columns, followed by:
 | `classify_status` | `ok` or `review` |
 | `classify_reason` | Why (below) |
 | `lexicon_version` | The lexicon version that made the call. For a lexicon of your own: its `version`, or `custom-<digest>` if it has none, or `<number>-modified-<digest>` for an edited copy of a shipped one; see [The lexicon](../guides/lexicon.md#version). |
-| `override_applied` | `yes` when an override decided |
-| `lexicon_suggestion` | For an override, the lexicon's own answer; for a review row, the competing classes, if any |
+| `override_applied` | `yes` when an override or a decision decided |
+| `lexicon_suggestion` | For an override or a decision, the lexicon's own answer; for a review row, the competing classes, if any |
 
 ### classify_reason
 
@@ -93,7 +95,8 @@ The input columns, followed by:
 | a rule id, e.g. `hospital-drain` | ok | That lexicon rule matched |
 | `<specimen rule>+<host rule>`, e.g. `specimens+human-host` | ok | A specimen, classed by its host |
 | `<specimen rule>+no_host` | ok | A specimen with no host, defaulted to Human |
-| `override` | ok | An override decided |
+| `override` | ok | An override for this isolate decided |
+| `decision` | ok | A decision for this source text decided |
 | `host_source_conflict` | review | Host and source point to different classes |
 | `host_unrecognised` | review | A specimen from a host the lexicon cannot place |
 | `no_host_env_package` | review | A specimen with no host, in a record filed as environmental, food or other |
@@ -126,11 +129,47 @@ An overrides file records a curator's decisions. It is a TSV with these columns:
 - A row with an empty or invalid `l1`, or two rows that disagree about the same isolate, sends that isolate to review rather than silently using the lexicon.
 - A file without an ID or `l1` column is an error.
 
+## Decisions
+
+An override names one isolate. A decision names a **source text**, and applies to every row that says the same thing: the same words in `isolation_source`, `host`, `sample_type` and `host_disease`. One decision for `bed rails` classifies every bed rail in the table, however it is typed (`Bed Rails`, `bed_rails`, `bed-rails`).
+
+The decisions file is the review-groups table that `classify` writes (below), with its `l1` column filled in:
+
+| Column | Required | Contents |
+|---|---|---|
+| `isolation_source`, `host`, `sample_type`, `host_disease` | at least one | The text the decision is about |
+| `l1` (or `source_l1`, `classification`) | yes | The class. A row with an empty `l1` is not decided yet and is skipped. |
+| `healthcare_environment` | no | `yes` or `no` (default `no`) |
+| `paper_rollup` | no | Defaults to the rollup of `l1` and `healthcare_environment` |
+| `environmental_package` | no | `yes` when the decision is for records filed as environmental, food or other; see below |
+| `note` (or `reason`, `comment`) | no | Kept for your records |
+
+- **A decision wins over the lexicon**, for rows the lexicon classifies as well as rows in review. A food-safety study can decide that a bare `chicken` is Food; the lexicon's answer is kept in `lexicon_suggestion`.
+- **An override wins over a decision**, since it is about that one isolate.
+- **The whole text must match.** `chicken` with host *Gallus gallus* is a different text from `chicken` with no host, so a decision for one does not reach the other. Missing-value words count as empty.
+- **A mistake stops the run**: a class that is not a class, two different decisions for one text, or a decision with no text at all (it would apply to every row with no host and no source). A decision reaches many rows at once, so none of these is allowed to pass.
+- **`environmental_package`.** A specimen with no host is classified differently in a record filed as environmental, food or other. The table `classify` writes says which of the two a group is, and a decision then applies only to that kind of record. A table you write by hand can leave the column out; its decisions are about the text alone.
+- `classify` says how many rows the decisions classified, and warns about decisions that matched no row.
+
 ## Working through the review queue
 
-The review queue (`<out>.review.tsv`) lists every row `classify` would not guess, with the reason.
+`classify` writes the rows it would not guess twice:
 
-1. Sort by `classify_reason`. `missing_source` rows have no information to go on: check the BioSample or your lab records.
-2. For `unmatched` rows, look for a word the lexicon should know. If it is general, add it to a copy of the lexicon and pass `--lexicon`; see [The lexicon](../guides/lexicon.md).
-3. For individual isolates, add a row to an overrides file.
-4. Measure the effect with [`validate`](validate.md) before relying on a changed lexicon.
+- `<out>.review.tsv` lists every row, with its reason.
+- `<out>.review_groups.tsv` lists every **distinct source text** once, with the number of rows that carry it, largest first. In a sample of 159,045 NCBI Pathogen Detection records, the 3,794 review rows that say anything hold 823 distinct texts, and the 100 most common cover 69% of them. This is the shorter table to work through.
+
+| Column | Contents |
+|---|---|
+| `rows` | How many review rows say this |
+| `classify_reason`, `lexicon_suggestion` | Why they are in review, and the classes in competition, if any |
+| `isolation_source`, `host`, `sample_type`, `host_disease` | The text, as first typed. A missing-value word is shown as empty. |
+| `environmental_package` | `yes` for records filed as environmental, food or other |
+| `example_id` | One isolate with this text |
+| `l1`, `healthcare_environment`, `note` | Empty, for your decision |
+
+1. Start at the top of the review-groups table: the first lines cover the most rows. Rows with no text at all (`missing_source`) have nothing to decide from; check the BioSample or your lab records for those.
+2. Fill in `l1` for the texts you can place, and `healthcare_environment` where it is `yes`. Leave the rest empty.
+3. Run `classify` again with `--decisions` pointing at the table you filled in. The same file can be kept and extended from one dataset to the next.
+4. For an isolate that is an exception to its text, add a row to an [overrides](#overrides) file.
+5. If a word is general, add it to a copy of the lexicon and pass `--lexicon`; see [The lexicon](../guides/lexicon.md).
+6. Measure the effect with [`validate`](validate.md) before relying on decisions or a changed lexicon.

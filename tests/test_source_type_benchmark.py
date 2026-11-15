@@ -59,15 +59,17 @@ def test_the_fixture_is_what_the_readme_says(records):
 
 
 def test_heldout_baseline(records, lexicon):
-    """Floors just under lexicon v5 on records nobody looked at: 88.7% classified, 93.9% of those right.
+    """Floors just under lexicon v6 on the held-out records: 89.1% classified, 93.9% of those right.
 
     Lexicon v4, the last one before this benchmark existed, classified 76.9% and got 80.9% of
     those right: fewer than half of its Animal calls agreed with NCBI (45.4%), because it called
-    retail meat Animal. A change that drops below these floors is heading back there.
+    retail meat Animal. v5 fixed that (88.7% and 93.9%), and v6 finds more animal hosts (Animal
+    recall 88.3% to 91.7%). A change that drops below these floors is heading back.
     """
     result = _score([r for r in records if r["split"] == "heldout"], lexicon)
-    assert result["coverage"] >= 0.885
+    assert result["coverage"] >= 0.89
     assert result["accuracy"] >= 0.935
+    assert result["recall"]["Animal"] >= 0.91
     assert result["precision"]["Human"] >= 0.975 and result["precision"]["Environmental"] >= 0.985
     assert result["precision"]["Food"] >= 0.97
     # Still the weak class: a bare "chicken" or "turkey" is called Animal, and NCBI's label is often food.
@@ -77,4 +79,4 @@ def test_heldout_baseline(records, lexicon):
 
 def test_development_baseline(records, lexicon):
     result = _score([r for r in records if r["split"] == "development"], lexicon)
-    assert result["coverage"] >= 0.935 and result["accuracy"] >= 0.945
+    assert result["coverage"] >= 0.94 and result["accuracy"] >= 0.95

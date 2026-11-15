@@ -33,6 +33,7 @@ from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides, unmatched_overrides
 from onehealth.plot import plot_counts
 from onehealth.resolve import INTERRUPTED, load_local_metadata, resolve_ids
+from onehealth.review import GROUP_FIELDS, load_decisions, review_groups, unused_decisions
 from onehealth.summarize import summarize, summary_fieldnames
 
 
@@ -95,6 +96,12 @@ def _build_parser() -> argparse.ArgumentParser:
     classify_p.add_argument("--lexicon", type=Path,
                             help=f"A lexicon YAML of your own (default: the lexicon that ships with onehealth, seeded v{SEED_LEXICON_VERSION})")
     classify_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
+    classify_p.add_argument("--review-groups", type=Path,
+                            help="The review queue by distinct source text, with the number of rows for each and empty "
+                            "columns for a decision (default: <out>.review_groups.tsv)")
+    classify_p.add_argument("--decisions", type=Path,
+                            help="A review-groups table with its l1 column filled in; each decision applies to every row "
+                            "with that source text")
     classify_p.set_defaults(handler=cmd_classify)
 
     summarize_p = sub.add_parser(
@@ -270,12 +277,26 @@ def cmd_classify(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
     lexicon = load_lexicon(args.lexicon)
     overrides = load_overrides(args.overrides)
+    decisions = load_decisions(args.decisions)
     _check_classify_columns(rows, args.input, has_overrides=bool(overrides))
-    classified = classify_rows(rows, lexicon, overrides)
+    classified = classify_rows(rows, lexicon, overrides, decisions)
     fieldnames = classify_fieldnames(classified)
     write_tsv(args.out, classified, fieldnames)
     _write_review(args.review or _sidecar(args.out, "review"), classified, fieldnames, status_field="classify_status")
+    groups = review_groups(classified)
+    groups_path = args.review_groups or _sidecar(args.out, "review_groups")
+    write_tsv(groups_path, groups, GROUP_FIELDS)
     _print_counts("classify", classified, "classify_status")
+    if groups:
+        print(f"classify: the review rows hold {len(groups)} distinct source texts, listed with their row counts in "
+              f"{groups_path}", file=sys.stderr)
+    if decisions:
+        decided = sum(1 for row in classified if row.get("classify_reason") == "decision")
+        print(f"classify: decisions in {args.decisions} classified {decided} rows", file=sys.stderr)
+        unused = unused_decisions(rows, decisions)
+        if unused:
+            print(f"warning: {len(unused)} decision{'s' if len(unused) > 1 else ''} in {args.decisions} matched no row "
+                  f"(e.g. {'; '.join(unused[:3])})", file=sys.stderr)
     name = f"v{lexicon.version}" if lexicon.version.isdigit() else lexicon.version
     print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
     missed = unmatched_overrides(rows, overrides)
