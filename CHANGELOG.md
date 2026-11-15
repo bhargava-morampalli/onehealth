@@ -2,7 +2,67 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: any animal host, the review queue by source text, and a licence (branch `host-taxonomy-ncbi-terms-grouped-review`)
+## Unreleased: 0.2.0, the classes follow NCBI (lexicon v7) (branch `lexicon-v7-follow-ncbi-source-type-and-specimens`)
+
+**This version changes what some classes mean.** Where NCBI's records show a convention, `onehealth` now follows it, in three places. Results made with 0.1.0 (lexicon v6 and earlier) use the old definitions and are not comparable class for class; `v0.1.0` is the tag to check out to reproduce them. The new page [Definitions](documentation/guides/definitions.md) in the documentation gives the figures behind each convention and how to choose differently for a study.
+
+### 1. A record's own `source_type` is its class
+
+NCBI's `source_type` is its controlled One Health category (`human`, `animal`, `food`, `environmental`), chosen by the submitter. Until now it was one more text field: a word in `isolation_source` could outrank it, and a host that pointed elsewhere sent the row to review. Now, where it names a class, that is the row's class.
+
+- `classify_reason` is `source_type` where the free text could not settle it (`animal-cattle-steer`, host bovine, `source_type` food: review before, Food now), and `source_type_over_text` where the text said something else (`raw milk` with `source_type` environmental: Food before, Environmental now). `lexicon_suggestion` keeps what the lexicon said.
+- In a sample of 159,045 NCBI records, 51,288 have a `source_type` that names a class; 456 of them are now decided as `source_type` and 141 as `source_type_over_text`. None goes to review.
+- `resolve` writes `source_type` in a new column of its own. `sample_type` held it mixed with the tissue and NCBI's material type, so `classify` could not tell which it was.
+- Overrides and decisions still win. Any other value (`other`, `not provided`) declares nothing.
+
+### 2. Farm settings are Environmental, and a farm with a host is the host
+
+Until now `manure`, `litter`, `barn` and `farm` were Animal. In 139,554 NCBI records with a `source_type`:
+
+- **Manure, litter and bedding are Environmental**, with or without a host. NCBI submitters record manure as environmental in 646 records of 747, litter in 77 of 77.
+- **A farm, a barn, a coop or a poultry shed with no host is Environmental** (a farm: 141 records of 187). **With a host, the host decides**: `pig farm` with host *Sus scrofa* is Animal (507 of 641 farm records with a host are animal), and `farm` with host *Homo sapiens* is Human. The reason is then `farm-environment+<host rule>`.
+- Swabs of a poultry house (`drag swab`, `boot swab`) are Environmental.
+- `farm worker stool` is no longer Animal: `farm` is not an animal word any more.
+
+### 3. `chicken` or `turkey` on its own, with no host, is Food
+
+They were Animal. NCBI asks for a host when a sample is from an animal, and a bare `chicken` with no host is food in 810 records of 867, a bare `turkey` in 255 of 256. The reason is `meat-species-no-host`. With a host the host decides as before, and `duck`, `fish`, `pig` and `live chicken` are still the animal. A veterinary study whose `chicken` is a bird says so with one line in a `--decisions` file.
+
+### Other changes in lexicon v7
+
+- **A floor drain is not assumed to be in a hospital.** `floor drain` had the healthcare flag; in NCBI records it is a food plant's (`floor drain in produce prep room`). It is Environmental without the flag. `hospital floor drain` and `sink drain` keep it.
+- **A specimen word in a food is not a patient.** `pork blood sausage` was Human, because `blood` is a specimen and a specimen with no host defaults to Human. With no host and a food named in the same text, the row now goes to review as `specimen_or_food`.
+- **Fixtures and equipment of food premises** are Environmental even when the text names the food: `drain-raw meat`, `deli case`, `cutting boards`, `utensils`, `cooler`, `floor`.
+- **Water** in any phrase is Environmental (`pond water`, `ice water`), with `creek`, `stream`, `runoff`, `lagoon` and `pond`. `bottled water` is Food, and `water buffalo` is Animal.
+- **More body sites and fluids** are specimens: `respiratory`, `rectal`, `perirectal`, `urinary`, `vaginal`, `throat`, `aspirate`, `secretion`, `ascites`, `body fluid`. Organs are not, since in NCBI records a `lung` or `intestine` is an animal necropsy sample.
+- **Hospital equipment** is healthcare environment: `bed rails`, `ECG monitors`, `nebulisers`, `syringe drivers`, `infusion stands`, `stethoscopes`, `hospital bed`, `patient room`. Not `bronchoscope` or `duodenoscope`: in the IMP benchmark those are patient samples taken through the scope.
+- **`human ...` as a whole value** is Human: `Human Listeriosis`, `human infection`, `Human, Other`.
+- **Accents no longer split words.** `pâté` was read as the letters `p` and `t`; it is the word `pate`.
+- Four rule keys are new for a lexicon of your own: `no_host`, `setting_of`, `yields_to_host` and (from 0.1.0) `specimen_only`.
+
+### How it was measured
+
+The benchmark of NCBI records with a `source_type` grew from 73,094 records to 139,554, from 18 organism groups, in four parts that share no record. With `source_type` hidden:
+
+| Final part, 34,252 records | v6 | v7 |
+|---|---|---|
+| Coverage | 94.6% | 95.5% |
+| Accuracy | 95.3% | 96.5% |
+| Animal precision | 88.2% | 91.7% |
+| Environmental recall | 78.7% | 90.2% |
+| Food recall | 81.3% | 83.3% |
+| Animal recall | 97.5% | 97.0% |
+
+The final part was read once, after v7 was finished, and v7 was not changed afterwards. The road there was less tidy and is recorded in the benchmark's README: v7 was checked against the held-out part, where three of its additions proved too broad and were narrowed (`canal` also matched "alimentary canal"); a validation part meant to be read once then showed that a farm with an animal host is the animal in NCBI's records, not a conflict, and that rule was corrected; so a fourth part was drawn for the final figures.
+
+On the IMP benchmark, coverage is 84.9% and accuracy 99.8% (v6: 84.8% and 99.8%). Two rows change: `rectal infection` is now Human, and `manure` with a pig host is Environmental, which is what the curators say. Animal precision goes from 89.5% to 91.1%. No row of the NCBI *Klebsiella*, demo or example data changes class.
+
+### Also
+
+- The package version is 0.2.0, and `lexicon_version` is 7.
+- The tag `v0.1.0` marks the last version with the old definitions.
+
+## 15 November 2026: any animal host, the review queue by source text, and a licence ([#13](https://github.com/bhargava-morampalli/onehealth/pull/13))
 
 Three things from the list the last review left open, and one it proposed that turned out not to be worth building.
 

@@ -80,7 +80,7 @@ def test_final_baseline(records, lexicon):
 
 
 def test_validation_baseline(records, lexicon):
-    """Floors just under lexicon v7 on the validation split: 96.7% classified, 96.2% of those right.
+    """Floors just under lexicon v7 on the validation split: 96.7% classified, 96.1% of those right.
 
     This split was meant to be read once. It showed that one v7 rule went against NCBI's records
     (a farm with an animal host is the animal, not a conflict), and the rule was corrected, so it
