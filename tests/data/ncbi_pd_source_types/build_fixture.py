@@ -17,8 +17,12 @@ with HTTP range requests instead of whole files. Nothing is simulated.
                 eight, and four organism groups not in the development split. Nobody
                 looked at these before v5 was finished. v7 was checked against them.
 * validation    Eight more parts of the same six tables, right after the held-out
-                parts, and three organism groups in neither other split. Read once,
-                after v7 was finished, and never used to change the lexicon.
+                parts, and three organism groups in neither other split. Meant to be
+                read once, after v7; it showed that one v7 rule (a farm with a host)
+                went against NCBI's records, and the rule was corrected.
+* final         The last eight parts of the same six tables, right after the
+                development parts, and five more organism groups. Read once, after
+                v7 was corrected, and never used to change the lexicon.
 
 Records are counted, not listed: one output row per distinct (organism group,
 isolation_source, host, host_disease, source_type), with the number of records. A
@@ -64,6 +68,13 @@ VALIDATION_ONLY = {
     "Vibrio_cholerae": "PDG000000055.1027",
     "Yersinia_enterocolitica": "PDG000000087.760",
 }
+FINAL_ONLY = {
+    "Vibrio_vulnificus": "PDG000000058.490",
+    "Listeria_innocua": "PDG000000091.235",
+    "Staphylococcus_pseudintermedius": "PDG000000042.545",
+    "Clostridium_botulinum": "PDG000000059.243",
+    "Aeromonas": "PDG000000068.313",
+}
 
 
 def url(group: str, release: str) -> str:
@@ -91,19 +102,23 @@ def offsets(total: int, split: str, shared: bool) -> list[tuple[int, int]]:
     """(start, length) of each part.
 
     The development parts start each eighth of the table, and the held-out parts half-way
-    between them. In the six tables every split reads, the validation parts come right
-    after the held-out parts, shortened where the table is too small for a full part, so
-    the byte ranges do not overlap and no record is in two splits. A table that only the
-    validation split reads is read at the development positions.
+    between them. In the six tables every split reads, the final parts come right after
+    the development parts and the validation parts right after the held-out parts, each
+    shortened where the table is too small for a full part. The byte ranges do not
+    overlap, so no record is in two splits. A table that only the validation or the final
+    split reads is read at the development positions.
     """
     step = total // PARTS
-    if split == "development" or (split == "validation" and not shared):
+    if split == "development" or (split in ("validation", "final") and not shared):
         shift, length = 5_000, PART_BYTES
     elif split == "heldout":
         shift, length = step // 2, PART_BYTES
-    else:
+    elif split == "validation":
         shift = step // 2 + PART_BYTES + 5_000
         length = min(PART_BYTES, step - shift - 5_000)
+    else:
+        shift = PART_BYTES + 10_000
+        length = min(PART_BYTES, step // 2 - shift - 5_000)
     return [(step * k + shift, length) for k in range(PARTS)]
 
 
@@ -144,7 +159,8 @@ def main() -> int:
     plan = [("development", group, release) for group, release in DEVELOPMENT.items()]
     plan += [("heldout", group, release) for group, release in {**DEVELOPMENT, **HELDOUT_ONLY}.items()]
     plan += [("validation", group, release) for group, release in {**DEVELOPMENT, **VALIDATION_ONLY}.items()]
-    every = {**DEVELOPMENT, **HELDOUT_ONLY, **VALIDATION_ONLY}
+    plan += [("final", group, release) for group, release in {**DEVELOPMENT, **FINAL_ONLY}.items()]
+    every = {**DEVELOPMENT, **HELDOUT_ONLY, **VALIDATION_ONLY, **FINAL_ONLY}
     lines = ["# NCBI Pathogen Detection records that carry NCBI's own source_type. See README.md."]
     lines += [f"# {group} {release}" for group, release in every.items()]
     lines.append("\t".join(("split", "organism_group", *COLUMNS, "ncbi_source_type", "records")))
