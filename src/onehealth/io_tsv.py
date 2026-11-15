@@ -21,6 +21,7 @@ from onehealth.constants import (
     PDT_ALIASES,
     PLASMID_ALIASES,
     SAMPLE_TYPE_ALIASES,
+    SOURCE_TYPE_ALIASES,
     SRA_ALIASES,
 )
 from onehealth.errors import InputError
@@ -309,6 +310,7 @@ def metadata_view(row: dict[str, str]) -> dict[str, str]:
         "isolation_source": get_field(row, ISOLATION_SOURCE_ALIASES),
         "host_disease": get_field(row, HOST_DISEASE_ALIASES),
         "sample_type": get_field(row, SAMPLE_TYPE_ALIASES),
+        "source_type": get_field(row, SOURCE_TYPE_ALIASES),
         "package": get_field(row, PACKAGE_ALIASES),
         "biosample": get_field(row, BIOSAMPLE_ALIASES),
         "assembly": get_field(row, ASSEMBLY_ALIASES),

@@ -16,7 +16,7 @@ PAPER_ROLLUP_VALUES = ("Human", "Environmental", "Animal", "Unclassified")
 HEALTHCARE_YES = "yes"
 HEALTHCARE_NO = "no"
 
-SEED_LEXICON_VERSION = "6"
+SEED_LEXICON_VERSION = "7"
 
 UNKNOWN_EXACT = frozenset(
     {
@@ -101,6 +101,11 @@ SAMPLE_TYPE_ALIASES = ("source_type", "tissue", "sample_type")
 # and epi_type ("environmental/other").
 PACKAGE_ALIASES = ("package", "attribute_package", "biosample_package", "epi_type")
 
+# NCBI's One Health category of a record, as its submitter gave it. Read on its own as well
+# as through SAMPLE_TYPE_ALIASES: where it names a class, that class is the answer.
+SOURCE_TYPE_ALIASES = ("source_type",)
+SOURCE_TYPE_CLASSES = {"human": "Human", "animal": "Animal", "food": "Food", "environmental": "Environmental"}
+
 CLUSTER_ALIASES = ("cluster_id", "cluster", "poppunk_cluster")
 PLASMID_ALIASES = ("plasmid_id", "plasmid", "plasmid_replicon")
 
@@ -116,6 +121,7 @@ RESOLVE_FIELDS = (
     "isolation_source",
     "host_disease",
     "sample_type",
+    "source_type",
     "package",
     "geo_loc_name",
     "collection_date",

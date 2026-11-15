@@ -15,7 +15,7 @@ from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, SEED_L
 from onehealth.errors import InputError
 from onehealth.io_tsv import read_text
 from onehealth.taxonomy import KINDS, taxon_kind
-from onehealth.text import contains_phrase, tokenize
+from onehealth.text import contains_phrase, is_unknown_value, tokenize
 
 # Metadata fields a rule may read (keys of io_tsv.metadata_view).
 RULE_FIELDS = ("isolation_source", "host", "sample_type", "host_disease")
@@ -41,6 +41,12 @@ class LexiconRule:
     # Human or Animal for a specimen rule that matched the same row, and is ignored
     # everywhere else ("human contact surface" is not a person).
     specimen_only: bool = False
+    # The rule applies only to a row with no host: "chicken" on its own is meat, but
+    # "chicken" from a chicken is the animal.
+    no_host: bool = False
+    # "animal": the rule names a place where animals are kept (a barn, manure). An animal
+    # host then names the animals kept there and is not a contradiction.
+    setting_of: str = ""
 
 
 @dataclass(frozen=True)
@@ -154,7 +160,18 @@ def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:
         note=str(item.get("note") or ""),
         taxonomy=_taxonomy(item.get("taxonomy"), where),
         specimen_only=bool(item.get("specimen_only", False)),
+        no_host=bool(item.get("no_host", False)),
+        setting_of=_setting_of(item.get("setting_of"), where),
     )
+
+
+def _setting_of(value: Any, where: str) -> str:
+    if value in (None, ""):
+        return ""
+    kind = str(value).strip().lower()
+    if isinstance(value, bool) or kind != "animal":
+        raise InputError(f"{where}: setting_of must be animal, not {value!r}")
+    return kind
 
 
 def _taxonomy(value: Any, where: str) -> str:
@@ -190,7 +207,10 @@ class RuleHit:
 def match_rules(record: dict[str, str], lexicon: Lexicon) -> list[RuleHit]:
     """One hit per rule: the first of the rule's fields that matches."""
     hits: list[RuleHit] = []
+    no_host = is_unknown_value(record.get("host"))
     for rule in lexicon.rules:
+        if rule.no_host and not no_host:
+            continue
         for field in rule.fields:
             tokens = tuple(tokenize(record.get(field, "")))
             if not tokens:

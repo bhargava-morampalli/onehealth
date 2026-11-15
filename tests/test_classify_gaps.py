@@ -157,10 +157,11 @@ def test_taxon_plus_specimen_still_classifies(lexicon):
     assert result.classify_reason != "taxon_only_source"
 
 
-def test_chicken_isolation_source_is_still_animal(lexicon):
+def test_chicken_on_its_own_is_meat_and_chicken_from_a_chicken_is_the_animal(lexicon):
+    """Until v7 a bare "chicken" was Animal. With no host it is Food, as in NCBI's records; see test_ncbi_conventions.py."""
     result = _cls(lexicon, "chicken")
-    assert result.l1 == "Animal"
-    assert result.classify_status == "ok"
+    assert (result.l1, result.classify_status, result.classify_reason) == ("Food", "ok", "meat-species-no-host")
+    assert _cls(lexicon, "chicken", host="Gallus gallus").l1 == "Animal"
 
 
 def test_is_taxon_only_source_accepts_binomials_and_rejects_specimens():
@@ -258,7 +259,6 @@ def test_lexicon_v3_additions(lexicon, source, host, expected):
         ("Shower 3", "fixture-no-setting"),  # bare fixtures stay in review; v4 names the reason
         ("Sink swab", "fixture-no-setting"),
         ("infection control screening", "unmatched"),  # only "tract infection" is a specimen word
-        ("water bath", "unmatched"),  # bare water is an exact match only
     ],
 )
 def test_lexicon_v3_leaves_these_for_review(lexicon, source, reason):
@@ -280,7 +280,8 @@ def test_human_as_a_source_with_an_animal_host_is_a_conflict(lexicon):
         # A fixture alone says neither whose sample it is nor where: review, whatever a human host says.
         ("Rm 14 Drain", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
         ("Sink swab", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
-        ("Floor Trap Bathroom Room 1 Swab", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
+        # v7: a floor is environmental, so with this host it is a conflict; still review.
+        ("Floor Trap Bathroom Room 1 Swab", "Homo sapiens", ("review", "host_source_conflict", "Unclassified")),
         ("kitchen sink", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
         ("drain drainage", "Homo sapiens", ("review", "fixture-no-setting", "Unclassified")),
         ("Shower 3", "", ("review", "fixture-no-setting", "Unclassified")),

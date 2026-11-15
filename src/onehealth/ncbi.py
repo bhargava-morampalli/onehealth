@@ -39,6 +39,7 @@ _TEXT_FIELDS = (
     "isolation_source",
     "host_disease",
     "sample_type",
+    "source_type",
     "package",
     "geo_loc_name",
     "collection_date",
@@ -532,6 +533,8 @@ def attributes_from_biosample(report: dict[str, Any]) -> dict[str, str]:
             or attrs.get("sample_type")
             or ""
         ),
+        # On its own too: where the submitter named a One Health class, classify uses it as is.
+        "source_type": str(report.get("source_type") or attrs.get("source_type") or ""),
         # The BioSample package ("Pathogen.cl.1.0", "Pathogen.env.1.0"): what kind of
         # sample the submitter said this was.
         "package": str(report.get("package") or ""),

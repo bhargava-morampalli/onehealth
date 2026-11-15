@@ -1,4 +1,4 @@
-version: "6"
+version: "7"
 description: >
   Seed lexicon for One Health L1 classification of isolation-source metadata.
   Unknown values are handled in code and never map to Environmental.
@@ -14,6 +14,10 @@ description: >
   v6 (November 2026) recognises a host the word lists do not name, by the names NCBI
   Taxonomy gives to animals ("gull", "Macaca mulatta", "Bubalus bubalis"); changes are
   marked "v6". It also reads "human" in a specimen's own text ("human feces").
+  v7 (November 2026) follows NCBI where its records show a convention: a farm setting
+  (manure, a barn) is Environmental, "chicken" or "turkey" on its own with no host is
+  Food, and a floor drain is not assumed to be in a hospital. It adds body sites, water
+  bodies, food-premises equipment and hospital equipment; changes are marked "v7".
   This is the only lexicon that ships. Earlier versions are in the repository history;
   when this file changes, raise `version` here and SEED_LEXICON_VERSION in constants.py.
 
@@ -31,6 +35,11 @@ description: >
 #     name NCBI Taxonomy gives to an animal (or to people), as well as its phrases.
 #   * specimen_only: true marks a rule that only says whose specimen it is. It decides
 #     Human or Animal for a specimen rule on the same row and is ignored otherwise.
+#   * no_host: true marks a rule that applies only to a row with no host.
+#   * setting_of: animal marks a place where animals are kept. An animal host there names
+#     the animals and is not a contradiction.
+#   * NCBI's source_type, where a record has one, is not a matter for the lexicon: it is
+#     the class (classify.py). These rules read the free text of everything else.
 #   * The paper rollup is fixed in code (constants.derive_paper_rollup), not here.
 #   * A bare scientific name in isolation_source ("Bos taurus") is ignored. The
 #     guess is by word shape, so a rule that does not read `host` still matches a
@@ -78,7 +87,6 @@ rules:
       - hospital drain
       - sink drain
       - shower drain
-      - floor drain
       - ward drain
       - icu drain
       - bathroom drain
@@ -91,7 +99,6 @@ rules:
       - hospital drains
       - sink drains
       - shower drains
-      - floor drains
       - ward drains
       - icu drains
       - bathroom drains
@@ -100,9 +107,11 @@ rules:
     healthcare_environment: "yes"
     priority: 95
     note: >
-      Built-environment drain fixture, not wound drainage. Unqualified drains
-      (sink drain, floor drain) are assumed to be in a healthcare setting. If a
-      dataset mixes hospitals with food plants, require a hospital word.
+      Built-environment drain fixture, not wound drainage. An unqualified sink or
+      shower drain is assumed to be in a healthcare setting. v7: a floor drain is not.
+      In NCBI records it is a food plant's ("floor drain in produce prep room"), where
+      it is the classic Listeria sample; it is Environmental without the healthcare
+      flag (environmental-sampling). "hospital floor drain" is still healthcare.
 
   - id: clinical-environment
     fields: [isolation_source, sample_type]
@@ -131,6 +140,9 @@ rules:
       # v5: "food animal" is livestock too.
       - food animal
       - food animals
+      # v7: an animal whose name holds an environment word.
+      - water buffalo
+      - water buffaloes
     l1: Animal
     healthcare_environment: "no"
     priority: 88
@@ -180,7 +192,35 @@ rules:
       # v3: "waste water" in two words; bedpans and bedpan washers are hospital equipment.
       - hospital waste water
       - bedpan
-    exact: [ventilator]
+      # v7: hospital equipment and rooms, from hospital-environment studies in NCBI. Not
+      # "bronchoscope" or "duodenoscope": in the IMP benchmark those are samples taken from
+      # a patient through the scope, and the curators call them human.
+      - bed rail
+      - bed rails
+      - hospital bed
+      - hospital beds
+      - hospital room
+      - patient room
+      - nursing station
+      - nursing stations
+      - healthcare facility
+      - ventilator shelves
+      - ventilator surface
+      - ecg monitor
+      - ecg monitors
+      - nebuliser
+      - nebulisers
+      - nebulizer
+      - nebulizers
+      - syringe driver
+      - syringe drivers
+      - infusion stand
+      - infusion stands
+      - infusion pump
+      - infusion pumps
+      - stethoscope
+      - stethoscopes
+    exact: [ventilator, ventilators]
     l1: Environmental
     healthcare_environment: "yes"
     priority: 85
@@ -254,6 +294,28 @@ rules:
       # so that the fixture-no-setting rule below does not send it to review.
       - drain tip
       - drain tips
+      # v7: more body sites and fluids. Organs (lung, liver, intestine) are not listed:
+      # in NCBI records they are necropsy samples of animals, and with no host a specimen
+      # defaults to Human.
+      - body fluid
+      - bodily fluid
+      - aspirate
+      - secretion
+      - secretions
+      - exudate
+      - ascites
+      - ascitic
+      - respiratory
+      - urinary
+      - rectal
+      - perirectal
+      - perianal
+      - anal swab
+      - vaginal
+      - throat
+      - nasopharyngeal
+      - oropharyngeal
+      - endotracheal
     l1: Human
     healthcare_environment: "no"
     priority: 80
@@ -280,6 +342,26 @@ rules:
       - processing plant
       - processing facility
       - processing establishment
+      # v7: fixtures and equipment of food premises. Each is environmental in every NCBI
+      # record that has a source_type, or all but one ("floor" 142 of 142, "drain raw" 72
+      # of 72, "deli case" 46 of 46). "drain" alone is not listed: it may be a surgical
+      # drain (fixture-no-setting).
+      - floor
+      - floor drain
+      - floor drains
+      - drain raw
+      - drain rte
+      - drain produce
+      - drain deli
+      - deli case
+      - dairy case
+      - cooler
+      - coolers
+      - utensils
+      - cutting board
+      - cutting boards
+      - factory
+      - environmental surface
     l1: Environmental
     healthcare_environment: "no"
     priority: 78
@@ -342,6 +424,8 @@ rules:
       # ("comminuted chicken", "ground turkey"), which on its own still means the animal.
       - comminuted
       - nonintact
+      - farm raised
+      - bottled water
       - raw intact
       - product raw
       - raw ground
@@ -509,7 +593,14 @@ rules:
       - wastewater treatment
       - wwtp
       - influent
-    exact: [air, water]
+      # v7: water in any phrase (environmental in 1,958 of 1,959 NCBI records with a
+      # source_type) and more water bodies.
+      - water
+      - creek
+      - stream
+      - runoff
+      - lagoon
+    exact: [air, pond, ponds]
     l1: Environmental
     healthcare_environment: "no"
     priority: 70
@@ -524,19 +615,58 @@ rules:
     healthcare_environment: "no"
     priority: 60
 
-  # --- animal settings ---
+  # --- animal body sites ---
   - id: animal-sites
     fields: [isolation_source, sample_type]
     phrases:
       - cloaca
       - cloacal
-      - farm
-      - barn
-      - litter
-      - manure
     l1: Animal
     healthcare_environment: "no"
+    priority: 66
+
+  # --- v7: what animals leave behind, and where they are kept ---
+  - id: animal-waste
+    fields: [isolation_source, sample_type]
+    phrases:
+      - manure
+      - litter
+      - bedding
+    l1: Environmental
+    healthcare_environment: "no"
     priority: 65
+    setting_of: animal
+    note: >
+      v7. Manure and litter were Animal until v7. NCBI submitters record them as
+      environmental, so onehealth now does; the figures are in the documentation
+      (guides/definitions). Above the animal words (40), so "poultry litter" and "dairy
+      manure" are Environmental, and below specimens (80), so "feces, calf barn" still
+      follows its host. setting_of: an animal host names the animals it came from
+      ("manure", host Bos taurus) and does not send the row to review.
+
+  - id: farm-environment
+    fields: [isolation_source, sample_type]
+    phrases:
+      - barn
+      - barns
+      - farm
+      - farms
+      - coop
+      - poultry shed
+      - poultry house
+      - chicken house
+      - drag swab
+      - drag swabs
+      - boot swab
+      - boot swabs
+    l1: Environmental
+    healthcare_environment: "no"
+    priority: 65
+    note: >
+      v7. A farm, a barn, a poultry shed and the swabs taken of them (drag swab, boot
+      swab) were Animal until v7. NCBI submitters record them as environmental. With an
+      animal host the row goes to review as host_source_conflict: "farm" with host Gallus
+      gallus may be a bird on the farm or a swab of it.
 
   # --- animal hosts ---
   - id: animal-hosts
@@ -589,9 +719,34 @@ rules:
       - wildlife
       - livestock
       - companion
+      # v7
+      - bull
+      - bulls
+      - reptile
+      - reptiles
+      - ruminant
+      - ruminants
+      - housefly
     l1: Animal
     healthcare_environment: "no"
     priority: 40
+
+  # --- v7: a species that is also the name of its meat, with no host ---
+  - id: meat-species-no-host
+    fields: [isolation_source]
+    exact: [chicken, turkey]
+    l1: Food
+    healthcare_environment: "no"
+    priority: 45
+    no_host: true
+    note: >
+      v7. "chicken" names the animal and its meat. NCBI asks for a host when a sample is
+      from an animal, and where a record has no host and a source_type, "chicken" on its
+      own is food in 151 records of 154 and "turkey" in 63 of 64. onehealth follows that:
+      with no host these two words are Food; with a host the rule does not apply and the
+      host decides, as before. Only words with that much evidence are listed. "chickens",
+      "duck" and "fish" still mean the animal. A veterinary study whose "chicken" is a
+      bird can say so in one line with --decisions.
 
   # --- v6: any other animal host, by its name in NCBI Taxonomy ---
   - id: host-taxonomy
@@ -686,7 +841,19 @@ rules:
 
   - id: human-source
     fields: [isolation_source]
-    exact: [human, human sample, patient, patient sample]
+    exact:
+      - human
+      - human sample
+      - patient
+      - patient sample
+      # v7
+      - human other
+      - human listeriosis
+      - human infection
+      - human clinical
+      - human clinical isolate
+      - human isolate
+      - human case
     l1: Human
     healthcare_environment: "no"
     priority: 20

@@ -8,13 +8,21 @@ from onehealth.constants import (
     CLASSIFY_EXTRA_FIELDS,
     HEALTHCARE_NO,
     HEALTHCARE_YES,
+    SOURCE_TYPE_CLASSES,
     derive_paper_rollup,
 )
 from onehealth.io_tsv import metadata_view
 from onehealth.lexicon import Lexicon, LexiconRule, RuleHit, best_hits, match_rules
 from onehealth.overrides import OverrideHit, OverrideRow, lookup_override
 from onehealth.review import DecisionKey, lookup_decision
-from onehealth.text import environmental_package, is_blank, is_taxon_only_source, is_unknown_value, known_part
+from onehealth.text import (
+    environmental_package,
+    is_blank,
+    is_taxon_only_source,
+    is_unknown_value,
+    known_part,
+    normalize_text,
+)
 
 # Unclassified rows carry no healthcare-environment call.
 HEALTHCARE_UNKNOWN = ""
@@ -41,13 +49,15 @@ def classify_record(
     overrides: dict[str, list[OverrideRow]] | None = None,
     decisions: dict[DecisionKey, OverrideRow] | None = None,
 ) -> Classification:
-    """The lexicon's class, unless a curator said otherwise.
+    """The class of a row, from the best evidence it has.
 
-    An override names one isolate and wins. A decision names a source text (the same
-    isolation_source, host, sample_type and host_disease) and applies to every row with it.
+    In this order: a curator's override for the isolate; a curator's decision for its
+    source text (the same isolation_source, host, sample_type and host_disease); NCBI's
+    own `source_type`, where the submitter filled it in; and the lexicon's reading of the
+    free text.
     """
     view = metadata_view(record)
-    auto = _classify_with_lexicon(view, lexicon)
+    auto = _follow_source_type(view, _classify_with_lexicon(view, lexicon))
     override = lookup_override(record, overrides or {})
     if override is None and decisions:
         override = lookup_decision(view, decisions)
@@ -68,6 +78,32 @@ def classify_rows(
         merged.update(classify_record(row, lexicon, overrides, decisions).as_row())
         classified.append(merged)
     return classified
+
+
+def _follow_source_type(view: dict[str, str], auto: Classification) -> Classification:
+    """Where NCBI's `source_type` names a class, that class is the answer.
+
+    `source_type` is NCBI's controlled One Health category (human, animal, food,
+    environmental), chosen by the submitter, who knows the sample. The lexicon only
+    reads free text, so where the two differ, or the lexicon would send the row to
+    review, the record's own category is used. The lexicon's answer stays in
+    lexicon_suggestion, and the reason says which of the two happened, so both can be
+    counted. Any other value ("other", "not provided") declares nothing.
+    """
+    declared = SOURCE_TYPE_CLASSES.get(normalize_text(view.get("source_type")))
+    if declared is None or auto.l1 == declared:
+        return auto
+    reviewed = auto.classify_status == "review"
+    return Classification(
+        l1=declared,
+        healthcare_environment=HEALTHCARE_NO,
+        paper_rollup=derive_paper_rollup(declared, HEALTHCARE_NO),
+        classify_status="ok",
+        classify_reason="source_type" if reviewed else "source_type_over_text",
+        lexicon_version=auto.lexicon_version,
+        override_applied="no",
+        lexicon_suggestion=auto.lexicon_suggestion,
+    )
 
 
 def classify_fieldnames(rows: list[dict[str, str]]) -> list[str]:
@@ -158,6 +194,15 @@ def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, s
     if not is_unknown_value(view.get("host")):
         # A host the lexicon cannot place (plant, unlisted species): do not assume Human.
         return _review("host_unrecognised", version, {rule.l1})
+    specimen_words = {word for hit in hits if hit.rule.host_dependent for word in hit.matched.split()}
+    if any(
+        hit.rule.l1 == "Food" and hit.field in specimen_fields and not hit.rule.host_dependent
+        and not set(hit.matched.split()) <= specimen_words  # "milk" in "breast milk" is the specimen itself
+        for hit in hits
+    ):
+        # "pork blood sausage", "shrimp tissue": a specimen word in a text that also names a
+        # food, with no host and no "human" to say whose it is. Not a patient by default.
+        return _review("specimen_or_food", version, {rule.l1, "Food"})
     if environmental_package(view.get("package")):
         # No host, and the submitter filed the sample as environmental, food or other, not
         # as clinical or host-associated: "feces" or "wound" here is often an animal's.
@@ -180,6 +225,9 @@ def _host_source_conflict(hits: list[RuleHit]) -> set[str]:
         return set()
     # Submitters often record host = Homo sapiens for hospital sink or surface swabs.
     if host_l1 == {"Human"} and any(hit.rule.healthcare_environment == HEALTHCARE_YES for hit in source_hits):
+        return set()
+    # Manure, a barn: the host names the animals kept there, as NCBI submitters record it.
+    if host_l1 == {"Animal"} and any(hit.rule.setting_of == "animal" for hit in source_hits):
         return set()
     return source_l1 | host_l1
 

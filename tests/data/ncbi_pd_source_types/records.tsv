@@ -9,6 +9,9 @@
 # Vibrio_parahaemolyticus PDG000000023.1373
 # Bacillus_cereus_group PDG000000088.787
 # Cronobacter PDG000000043.488
+# Clostridium_perfringens PDG000000061.381
+# Vibrio_cholerae PDG000000055.1027
+# Yersinia_enterocolitica PDG000000087.760
 split	organism_group	isolation_source	host	host_disease	ncbi_source_type	records
 development	Salmonella	stool	Homo sapiens		human	1489
 development	Salmonella	stool			human	1005
@@ -6154,3 +6157,1939 @@ heldout	Cronobacter	water fountain basin			environmental	1
 heldout	Cronobacter	water irrigation canal			environmental	1
 heldout	Cronobacter	water well			environmental	1
 heldout	Cronobacter	whole grain corn			food	1
+validation	Salmonella	stool	Homo sapiens		human	2214
+validation	Salmonella	stool			human	322
+validation	Salmonella	urine	Homo sapiens		human	265
+validation	Salmonella	blood	Homo sapiens		human	242
+validation	Salmonella	Chicken Liver (Giblets)			food	152
+validation	Salmonella	Poultry			food	125
+validation	Salmonella	Chicken Gizzard (Giblets)			food	99
+validation	Salmonella	chicken	Gallus gallus		animal	82
+validation	Salmonella	raw intact chicken			food	67
+validation	Salmonella	environmental swab sponge			environmental	58
+validation	Salmonella	Stool specimen			human	57
+validation	Salmonella	ground turkey			food	46
+validation	Salmonella	Chicken samples			food	41
+validation	Salmonella	comminuted chicken			food	36
+validation	Salmonella	Chicken Heart (Giblets)			food	34
+validation	Salmonella	spleen mouse	Mus musculus		animal	32
+validation	Salmonella	Nonintact Chicken			food	28
+validation	Salmonella		Homo sapiens		human	27
+validation	Salmonella	poultry carcass	poultry		animal	27
+validation	Salmonella	urine			human	27
+validation	Salmonella	skin after chiller	Gallus gallus domesticus		animal	26
+validation	Salmonella	blood			human	21
+validation	Salmonella	ground component chicken			food	21
+validation	Salmonella	chicken - young chicken carcass rinse (post-chill)			food	20
+validation	Salmonella	swab			environmental	20
+validation	Salmonella	creek water			environmental	19
+validation	Salmonella	environmental swab			environmental	19
+validation	Salmonella	chicken drag swab			environmental	18
+validation	Salmonella	feces	Bos taurus		animal	18
+validation	Salmonella	feces	Equus caballus		animal	17
+validation	Salmonella	sewage			environmental	16
+validation	Salmonella	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	15
+validation	Salmonella	skin before chiller	Gallus gallus domesticus		animal	15
+validation	Salmonella	Beef Jerky			food	13
+validation	Salmonella	Comminuted Turkey			food	13
+validation	Salmonella	environmental swab from a seafood manufacturer			environmental	13
+validation	Salmonella	stool	Homo sapiens	gastroenteritis	human	13
+validation	Salmonella	wastewater			environmental	13
+validation	Salmonella	wound	Homo sapiens		human	12
+validation	Salmonella	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	11
+validation	Salmonella	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	11
+validation	Salmonella	Animal-Swine-Sow (cecal)	Sus scrofa		animal	11
+validation	Salmonella	Environmental Swab-Farm			environmental	11
+validation	Salmonella	Product-Raw-Ground, Comminuted or Otherwise Nonintact-Pork			food	11
+validation	Salmonella	chicken			food	11
+validation	Salmonella	finished ground chicken			food	11
+validation	Salmonella	intestine mouse	Mus musculus		animal	11
+validation	Salmonella	Chicken Breasts			food	10
+validation	Salmonella	Pork			food	10
+validation	Salmonella	poultry house overshoe (Gallus gallus domesticus)			environmental	10
+validation	Salmonella	water			environmental	10
+validation	Salmonella	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	9
+validation	Salmonella	Chicken Thighs			food	9
+validation	Salmonella	chicken meat			food	9
+validation	Salmonella	lung	Bos taurus		animal	9
+validation	Salmonella	raw pet food			food	9
+validation	Salmonella	turkey			food	9
+validation	Salmonella	Chicken Wings			food	8
+validation	Salmonella	blood	Homo sapiens	gastroenteritis	human	8
+validation	Salmonella	chicken feed raw material			food	8
+validation	Salmonella	pooled tissue	Bos taurus		animal	8
+validation	Salmonella	Abscess	Homo sapiens		human	7
+validation	Salmonella	colon	Sus scrofa domesticus		animal	7
+validation	Salmonella	cucumber			food	7
+validation	Salmonella	finished pet food			environmental	7
+validation	Salmonella	peppercorn			food	7
+validation	Salmonella	raw chicken			food	7
+validation	Salmonella	soil			environmental	7
+validation	Salmonella	animal-cattle-dairy cow			food	6
+validation	Salmonella	animal-cattle-steer			food	6
+validation	Salmonella	intestine	Sus scrofa domesticus		animal	6
+validation	Salmonella	Animal Feed			food	5
+validation	Salmonella	Animal-Cattle-Steer (cecal)	Bovine		animal	5
+validation	Salmonella	Chicken Liver			food	5
+validation	Salmonella	Mahanak Market	Nile tilapia		food	5
+validation	Salmonella	Urine specimen			human	5
+validation	Salmonella	green leaf lettuce			food	5
+validation	Salmonella	kitten mixture cat food raw			food	5
+validation	Salmonella	other	Homo sapiens		human	5
+validation	Salmonella	raw ground poultry			food	5
+validation	Salmonella	sediment			environmental	5
+validation	Salmonella	shipment liner from hatchery			environmental	5
+validation	Salmonella	threadfin fish			food	5
+validation	Salmonella	Animal Bedding			environmental	4
+validation	Salmonella	Animal Feed Cottonseed Products			food	4
+validation	Salmonella	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	4
+validation	Salmonella	Animal-Cattle-Heifer (cecal)	Bovine		animal	4
+validation	Salmonella	Chicken Heart			food	4
+validation	Salmonella	Khlong Toei Market	Nile tilapia		food	4
+validation	Salmonella	Raw Chicken Breast			food	4
+validation	Salmonella	animal-cattle-heifer			food	4
+validation	Salmonella	comminuted beef			food	4
+validation	Salmonella	duck	Anatidae		animal	4
+validation	Salmonella	feces			animal	4
+validation	Salmonella	fertilizer			environmental	4
+validation	Salmonella	finished pizzle			environmental	4
+validation	Salmonella	pet food			food	4
+validation	Salmonella	poultry			food	4
+validation	Salmonella	Animal-Sheep-Mature Sheep (cecal)	Ovine		animal	3
+validation	Salmonella	Blood Specimen	Homo sapiens		human	3
+validation	Salmonella	Chicken Gizzard / Heart (Giblets: Unspecified)			food	3
+validation	Salmonella	Colon	Sus scrofa domesticus		animal	3
+validation	Salmonella	Environmental Swab-Manure belt			environmental	3
+validation	Salmonella	Pleural Fluid	Homo sapiens		human	3
+validation	Salmonella	Product-Raw-Intact-Pork			food	3
+validation	Salmonella	Rectal Swab			human	3
+validation	Salmonella	Turkey Ground Turkey			food	3
+validation	Salmonella	Urine Specimen	Homo sapiens		human	3
+validation	Salmonella	beef marrow bone			food	3
+validation	Salmonella	boneless pork butt			food	3
+validation	Salmonella	caeca content	Gallus gallus domesticus		animal	3
+validation	Salmonella	chicken carcass			food	3
+validation	Salmonella	feces	Sus scrofa domesticus	Enteritis	animal	3
+validation	Salmonella	fiber potato			food	3
+validation	Salmonella	finished peanut butter			food	3
+validation	Salmonella	finished product			food	3
+validation	Salmonella	fresh mangoes			food	3
+validation	Salmonella	liver	Bos taurus		animal	3
+validation	Salmonella	liver	Sus scrofa domesticus		animal	3
+validation	Salmonella	pork meat			food	3
+validation	Salmonella	product-raw-intact-beef			food	3
+validation	Salmonella	raw product			food	3
+validation	Salmonella	Blood Venous	Homo sapiens		human	2
+validation	Salmonella	Chicken - Mixed Parts			food	2
+validation	Salmonella	Chicken Gizzards			food	2
+validation	Salmonella	Chicken Legs			food	2
+validation	Salmonella	Chicken hearts			food	2
+validation	Salmonella	Chicken thighs			food	2
+validation	Salmonella	Chicken wings			food	2
+validation	Salmonella	Ground Beef			food	2
+validation	Salmonella	Ground Pork			food	2
+validation	Salmonella	Ground pork			food	2
+validation	Salmonella	Pork Chops (Bone-In)			food	2
+validation	Salmonella	Si Mum Mueang Market	Nile tilapia		food	2
+validation	Salmonella	Tissue	Homo sapiens		human	2
+validation	Salmonella	Yolk Sac	Gallus gallus	Yolk Saculititis	animal	2
+validation	Salmonella	bitter leaves			food	2
+validation	Salmonella	boneless pork			food	2
+validation	Salmonella	carcass rinse	not provided		animal	2
+validation	Salmonella	chicken	dead chick embryo		animal	2
+validation	Salmonella	culture Plate	Sus scrofa domesticus		animal	2
+validation	Salmonella	cumin powder			food	2
+validation	Salmonella	dried glassy squid			food	2
+validation	Salmonella	dried mussel			food	2
+validation	Salmonella	feces	Equus caballus	Colic	animal	2
+validation	Salmonella	feces	Equus caballus	Enteritis	animal	2
+validation	Salmonella	feces	Sus scrofa		animal	2
+validation	Salmonella	feces	Sus scrofa domesticus		animal	2
+validation	Salmonella	feces	Sus scrofa domesticus	Incidental Finding	animal	2
+validation	Salmonella	field baby spinach			food	2
+validation	Salmonella	field lettuce			food	2
+validation	Salmonella	finished almond			food	2
+validation	Salmonella	finished beef			food	2
+validation	Salmonella	finished product celery			food	2
+validation	Salmonella	finished product meat			food	2
+validation	Salmonella	food			food	2
+validation	Salmonella	fresh produce parsley			food	2
+validation	Salmonella	frog leg			food	2
+validation	Salmonella	frozen hardtail horse mackerel scad (Megalaspis coldyla)			food	2
+validation	Salmonella	kratom powder			food	2
+validation	Salmonella	lung	Bos taurus	Pneumonia	animal	2
+validation	Salmonella	lung	Sus scrofa domesticus		animal	2
+validation	Salmonella	organic black chia seeds			food	2
+validation	Salmonella	paradise threadfin (Polynemus paradiseus)			food	2
+validation	Salmonella	pistachio			food	2
+validation	Salmonella	pooled tissue	Ovis aries		animal	2
+validation	Salmonella	raw ground beef			food	2
+validation	Salmonella	rinse water			environmental	2
+validation	Salmonella	river water			environmental	2
+validation	Salmonella	shrimp			food	2
+validation	Salmonella	spanish thyme			food	2
+validation	Salmonella	spleen	Sus scrofa domesticus		animal	2
+validation	Salmonella	stool	Meleagris gallopavo domesticus		human	2
+validation	Salmonella	tapioca cracker			food	2
+validation	Salmonella	thyme mixture			food	2
+validation	Salmonella	tissue	chicken		animal	2
+validation	Salmonella	whole blood	Homo sapiens		human	2
+validation	Salmonella	whole dried sage			food	2
+validation	Salmonella		Equus	Otitis	animal	1
+validation	Salmonella	ANIMAL STOOL			animal	1
+validation	Salmonella	Abscess			human	1
+validation	Salmonella	Beef Raw beef non-intact			food	1
+validation	Salmonella	Bile Fluid	Homo sapiens		human	1
+validation	Salmonella	Body Fluid Unspecified	Homo sapiens		human	1
+validation	Salmonella	Boot			environmental	1
+validation	Salmonella	Bovine Stool			animal	1
+validation	Salmonella	CHICKEN GIZZARD			food	1
+validation	Salmonella	CHICKEN LIVER			food	1
+validation	Salmonella	Carcass swab	not provided		animal	1
+validation	Salmonella	Cattle Feed			food	1
+validation	Salmonella	Chest left	Homo sapiens		human	1
+validation	Salmonella	Chicken Chicken Liver			food	1
+validation	Salmonella	Chicken Chicken hearts			food	1
+validation	Salmonella	Chicken Drumsticks			food	1
+validation	Salmonella	Chicken Hearts			food	1
+validation	Salmonella	Chicken Whole-Cut In Lab			food	1
+validation	Salmonella	Chicken gizzard			food	1
+validation	Salmonella	Chicken gizzards			food	1
+validation	Salmonella	Chicken liver			food	1
+validation	Salmonella	Composite Tissue	Gallus gallus	Yolk sac infection	animal	1
+validation	Salmonella	Enteric pool	Sus scrofa domesticus		animal	1
+validation	Salmonella	Environmental Swab-Conveyor Belt			environmental	1
+validation	Salmonella	FLUID ASPIRATE	Equus caballus	Pneumonia	animal	1
+validation	Salmonella	FOOD ISOLATE (POULTRY RINSE)			food	1
+validation	Salmonella	Frozen Shrimp			food	1
+validation	Salmonella	Gallbladder	Homo sapiens		human	1
+validation	Salmonella	Groin	Homo sapiens		human	1
+validation	Salmonella	Ground Turkey (Patties)			food	1
+validation	Salmonella	Isolate	Homo sapiens		human	1
+validation	Salmonella	LUNG 1	Bos taurus	SEPSIS	animal	1
+validation	Salmonella	Lamb	ovine		animal	1
+validation	Salmonella	Large Intestine	Felis catus	Bacterial Colitis	animal	1
+validation	Salmonella	Leg Swab	Homo sapiens		human	1
+validation	Salmonella	Milk Raw Cow Milk			food	1
+validation	Salmonella	PERITONEAL FLUID /ASCITES	Homo sapiens		human	1
+validation	Salmonella	Peritoneal Fluid	Homo sapiens		human	1
+validation	Salmonella	Pistachio Nut Butter			food	1
+validation	Salmonella	Pork Raw Pork Nose			food	1
+validation	Salmonella	Pork Raw Pork shoulder			food	1
+validation	Salmonella	Pork Raw pork ear			food	1
+validation	Salmonella	Pot Pie			food	1
+validation	Salmonella	Prachaniwet Market	Nile tilapia		food	1
+validation	Salmonella	RAW			food	1
+validation	Salmonella	Rectal Swab	Homo sapiens		human	1
+validation	Salmonella	Referred/Isolated Culture	Homo sapiens		human	1
+validation	Salmonella	Right Ear			human	1
+validation	Salmonella	SW, EYE	Others - Acinonyx jubatus	Conjunctivitis	animal	1
+validation	Salmonella	Small intestine			animal	1
+validation	Salmonella	Stall Gauze	Equus caballus		animal	1
+validation	Salmonella	Synovial Fluid	Homo sapiens		human	1
+validation	Salmonella	Synovial fluid	Homo sapiens		human	1
+validation	Salmonella	TISSUE			animal	1
+validation	Salmonella	Tahini			food	1
+validation	Salmonella	Tao Poon Market	Nile tilapia		food	1
+validation	Salmonella	Turkey Chicken Breast			food	1
+validation	Salmonella	Whole Body	Homo sapiens		human	1
+validation	Salmonella	abdomen	Homo sapiens		human	1
+validation	Salmonella	abdominal fluid	Homo sapiens		human	1
+validation	Salmonella	abscess			human	1
+validation	Salmonella	almond			food	1
+validation	Salmonella	aspirate	Homo sapiens		human	1
+validation	Salmonella	baila fish			food	1
+validation	Salmonella	beef			food	1
+validation	Salmonella	bile	Homo sapiens		human	1
+validation	Salmonella	blood	Equus caballus	Spesis	animal	1
+validation	Salmonella	body fluid	Homo sapiens		human	1
+validation	Salmonella	bone	Homo sapiens		human	1
+validation	Salmonella	boneless beef			food	1
+validation	Salmonella	boneless chicken meat			food	1
+validation	Salmonella	boneless pork picnic			food	1
+validation	Salmonella	bovine			environmental	1
+validation	Salmonella	bovine lung tissue			animal	1
+validation	Salmonella	bull pizzle 6" braided thick			food	1
+validation	Salmonella	camomile flowers			food	1
+validation	Salmonella	cardamom pod			food	1
+validation	Salmonella	cayenne pepper			food	1
+validation	Salmonella	ceremonial kava powder			food	1
+validation	Salmonella	cheese			food	1
+validation	Salmonella	chicken meat	Birds		food	1
+validation	Salmonella	crunchy beef jerky			food	1
+validation	Salmonella	cumin seed			food	1
+validation	Salmonella	drag swab			environmental	1
+validation	Salmonella	dried flounder fish			food	1
+validation	Salmonella	ear	Homo sapiens		human	1
+validation	Salmonella	environmental (Meleagris gallopavo)			environmental	1
+validation	Salmonella	environmental swab sponge - Egg Processor			environmental	1
+validation	Salmonella	feces	Canis lupus familiaris		animal	1
+validation	Salmonella	fenugreek leaves			food	1
+validation	Salmonella	field organic spinach			food	1
+validation	Salmonella	field spinach			food	1
+validation	Salmonella	finished canine beef formula patty			food	1
+validation	Salmonella	finished fertilizer			environmental	1
+validation	Salmonella	finished ground beef			food	1
+validation	Salmonella	finished ground turkey			food	1
+validation	Salmonella	finished lettuce			food	1
+validation	Salmonella	finished pet food			food	1
+validation	Salmonella	finished product chicken			food	1
+validation	Salmonella	finished product spinach			food	1
+validation	Salmonella	finished spinach			food	1
+validation	Salmonella	floor mat	Equus caballus		animal	1
+validation	Salmonella	fresh water head on shrimp			food	1
+validation	Salmonella	frozen barramundi fish			food	1
+validation	Salmonella	frozen lotia fish			food	1
+validation	Salmonella	frozen pealed deveined shrimp			food	1
+validation	Salmonella	frozen raw shrimp			food	1
+validation	Salmonella	frozen red drum fish			food	1
+validation	Salmonella	frozen scallop			food	1
+validation	Salmonella	frozen shell on shrimp			food	1
+validation	Salmonella	ground beef			food	1
+validation	Salmonella	ground component turkey			food	1
+validation	Salmonella	ground laurel leaves			food	1
+validation	Salmonella	grouper fish			food	1
+validation	Salmonella	guinea pig meat			food	1
+validation	Salmonella	heart	Meleagris gallopavo	Incidental Finding	animal	1
+validation	Salmonella	heart	Sus scrofa domesticus		animal	1
+validation	Salmonella	intestine	Bos taurus	Salmonellosis	animal	1
+validation	Salmonella	intestine	Felis silvestris catus		animal	1
+validation	Salmonella	intestine	Gallus gallus domesticus	"Crusts\, Flakes"	animal	1
+validation	Salmonella	intestine	Ovis aries	enteritis	animal	1
+validation	Salmonella	intestine	Sus scrofa domesticus	Colitis	animal	1
+validation	Salmonella	intestine	Sus scrofa domesticus	Incidental Finding	animal	1
+validation	Salmonella	irrigation water			environmental	1
+validation	Salmonella	kashmiri chilli powder			food	1
+validation	Salmonella	kelp meal for animal			food	1
+validation	Salmonella	liquid enrichment			food	1
+validation	Salmonella	liver	Bos taurus	bronchopneumonia, enteritis, cholangiohepatitis	animal	1
+validation	Salmonella	liver	Gallus gallus	Yolk sac infection	animal	1
+validation	Salmonella	lung	Bos taurus	Open	animal	1
+validation	Salmonella	lung	Bos taurus	Salmonella Dublin septicemia	animal	1
+validation	Salmonella	lymph node	Bos taurus	aspiration pneumonia	animal	1
+validation	Salmonella	meat feed			environmental	1
+validation	Salmonella	meat feed			food	1
+validation	Salmonella	meat trim			food	1
+validation	Salmonella	mung bean			food	1
+validation	Salmonella	not provided	Homo sapiens		human	1
+validation	Salmonella	nut almond			food	1
+validation	Salmonella	other			food	1
+validation	Salmonella	pepper packet			food	1
+validation	Salmonella	pet treat			food	1
+validation	Salmonella	pistachio kernel			food	1
+validation	Salmonella	pond water applied to tomato plant			environmental	1
+validation	Salmonella	pooled ileum	Sus scrofa domesticus		animal	1
+validation	Salmonella	porcine liver			food	1
+validation	Salmonella	raw pork			food	1
+validation	Salmonella	raw poultry			food	1
+validation	Salmonella	rectal	Sus scrofa domesticus	Enteritis	animal	1
+validation	Salmonella	sausage meat			food	1
+validation	Salmonella	sesame seed			food	1
+validation	Salmonella	shell on shrimp			food	1
+validation	Salmonella	soy protein			food	1
+validation	Salmonella	spleen			animal	1
+validation	Salmonella	stool			animal	1
+validation	Salmonella	stool (Bos taurus)			animal	1
+validation	Salmonella	strip carcass			environmental	1
+validation	Salmonella	swab			animal	1
+validation	Salmonella	swab	Homo sapiens		human	1
+validation	Salmonella	swab	Homo sapiens	gastroenteritis	human	1
+validation	Salmonella	swab	Pogona		animal	1
+validation	Salmonella	swab swine carcass	swine		animal	1
+validation	Salmonella	swine feed			food	1
+validation	Salmonella	tissue swab	Canis lupus familiaris	Colic	animal	1
+validation	Salmonella	turmeric			food	1
+validation	Salmonella	water filter			environmental	1
+validation	Salmonella	whole hilsa fish			food	1
+validation	Salmonella	whole squid			food	1
+validation	Salmonella	wound			human	1
+validation	Salmonella	wound	Canis lupus familiaris	Wound Infection	animal	1
+validation	Escherichia_coli_Shigella	stool	Homo sapiens	not provided	human	871
+validation	Escherichia_coli_Shigella	stool	Homo sapiens		human	754
+validation	Escherichia_coli_Shigella	Pig feces			animal	130
+validation	Escherichia_coli_Shigella	ground turkey			food	122
+validation	Escherichia_coli_Shigella	stool			human	98
+validation	Escherichia_coli_Shigella	water			environmental	75
+validation	Escherichia_coli_Shigella		pig		animal	54
+validation	Escherichia_coli_Shigella	bovine			environmental	53
+validation	Escherichia_coli_Shigella	soil			environmental	47
+validation	Escherichia_coli_Shigella		bovine		animal	46
+validation	Escherichia_coli_Shigella	chicken			food	46
+validation	Escherichia_coli_Shigella	blood	Homo sapiens		human	38
+validation	Escherichia_coli_Shigella	human			human	35
+validation	Escherichia_coli_Shigella	turkey			food	33
+validation	Escherichia_coli_Shigella	wastewater			environmental	32
+validation	Escherichia_coli_Shigella	rectal swab	Felis catus		animal	29
+validation	Escherichia_coli_Shigella	chicken breast			food	28
+validation	Escherichia_coli_Shigella	Pork meat			food	26
+validation	Escherichia_coli_Shigella	cow paddock straw bedding bovine dairy			environmental	25
+validation	Escherichia_coli_Shigella	Ground Beef			food	24
+validation	Escherichia_coli_Shigella	not provided	feral pig		environmental	24
+validation	Escherichia_coli_Shigella		Homo sapiens	not provided	human	21
+validation	Escherichia_coli_Shigella	feral pig			environmental	20
+validation	Escherichia_coli_Shigella	not provided	bovine		environmental	19
+validation	Escherichia_coli_Shigella	Dust			environmental	18
+validation	Escherichia_coli_Shigella	ground beef			food	18
+validation	Escherichia_coli_Shigella	urine	Homo sapiens		human	18
+validation	Escherichia_coli_Shigella	Tank milk			food	16
+validation	Escherichia_coli_Shigella	feces	bovine		animal	16
+validation	Escherichia_coli_Shigella	Chicken Thighs			food	15
+validation	Escherichia_coli_Shigella	environmental swab sponge			environmental	15
+validation	Escherichia_coli_Shigella	feces	Capra aegagrus hircus		animal	15
+validation	Escherichia_coli_Shigella	not provided	bovine		animal	15
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris		animal	15
+validation	Escherichia_coli_Shigella	Chicken Liver			food	14
+validation	Escherichia_coli_Shigella	Fecal material from pig cecum			animal	14
+validation	Escherichia_coli_Shigella	cow	bovine	Mastitis	animal	13
+validation	Escherichia_coli_Shigella	respiratory	Homo sapiens		human	13
+validation	Escherichia_coli_Shigella	stool	not collected		animal	13
+validation	Escherichia_coli_Shigella	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	12
+validation	Escherichia_coli_Shigella	beef cattle feces	Bos taurus		animal	12
+validation	Escherichia_coli_Shigella		deer		animal	11
+validation	Escherichia_coli_Shigella	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	11
+validation	Escherichia_coli_Shigella	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	11
+validation	Escherichia_coli_Shigella	Chicken Gizzard			food	11
+validation	Escherichia_coli_Shigella	Chicken Heart			food	10
+validation	Escherichia_coli_Shigella	sediment			environmental	10
+validation	Escherichia_coli_Shigella	feces			animal	9
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Cystitis	animal	9
+validation	Escherichia_coli_Shigella	Ground Pork			food	8
+validation	Escherichia_coli_Shigella	ground turkey	not provided	not provided	food	8
+validation	Escherichia_coli_Shigella	sediment	not provided	not provided	environmental	8
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	UTI	animal	8
+validation	Escherichia_coli_Shigella	water and sediment			environmental	8
+validation	Escherichia_coli_Shigella	bovine	cow		animal	7
+validation	Escherichia_coli_Shigella	feces	Gallus gallus		animal	7
+validation	Escherichia_coli_Shigella	feces	cat		animal	7
+validation	Escherichia_coli_Shigella	feces calf	Bos taurus		animal	7
+validation	Escherichia_coli_Shigella	pork			food	7
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Urinary tract infection	animal	7
+validation	Escherichia_coli_Shigella	Marina area for ships			environmental	6
+validation	Escherichia_coli_Shigella	Turkey Ground Turkey	not provided	not provided	food	6
+validation	Escherichia_coli_Shigella	comminuted beef			food	6
+validation	Escherichia_coli_Shigella	feces	Canis lupus familiaris		animal	6
+validation	Escherichia_coli_Shigella	food			food	6
+validation	Escherichia_coli_Shigella	local raw chicken			food	6
+validation	Escherichia_coli_Shigella	water	not provided	not provided	environmental	6
+validation	Escherichia_coli_Shigella		cow		animal	5
+validation	Escherichia_coli_Shigella	Animal-Swine-Sow (cecal)	Sus scrofa		animal	5
+validation	Escherichia_coli_Shigella	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	5
+validation	Escherichia_coli_Shigella	beef			food	5
+validation	Escherichia_coli_Shigella	blood	Homo sapiens	not provided	human	5
+validation	Escherichia_coli_Shigella	compost			environmental	5
+validation	Escherichia_coli_Shigella	foreign imported raw beef			food	5
+validation	Escherichia_coli_Shigella	ground beef mixed with produce for dog food			food	5
+validation	Escherichia_coli_Shigella	not provided	crow		environmental	5
+validation	Escherichia_coli_Shigella	produce			food	5
+validation	Escherichia_coli_Shigella	product-raw-intact-beef			food	5
+validation	Escherichia_coli_Shigella	urine	Felis catus	UTI	animal	5
+validation	Escherichia_coli_Shigella		Homo sapiens		human	4
+validation	Escherichia_coli_Shigella	Animal-Cattle-Heifer (cecal)	Bovine		animal	4
+validation	Escherichia_coli_Shigella	Beach with few bathers (danger of cliff collapse)			environmental	4
+validation	Escherichia_coli_Shigella	Chicken thighs			food	4
+validation	Escherichia_coli_Shigella	crow	Corvus		animal	4
+validation	Escherichia_coli_Shigella	environmental			environmental	4
+validation	Escherichia_coli_Shigella	foreign imported raw pork			food	4
+validation	Escherichia_coli_Shigella	local raw beef			food	4
+validation	Escherichia_coli_Shigella	not provided	brown-headed cowbird		animal	4
+validation	Escherichia_coli_Shigella	spinach			food	4
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Urinary Tract Infection	animal	4
+validation	Escherichia_coli_Shigella	urine	Felis catus	Cystitis	animal	4
+validation	Escherichia_coli_Shigella	BEEF TRIM			food	3
+validation	Escherichia_coli_Shigella	Chicken Chicken Breast	not provided	not provided	food	3
+validation	Escherichia_coli_Shigella	Chicken Wing			food	3
+validation	Escherichia_coli_Shigella	Grouind Pork			food	3
+validation	Escherichia_coli_Shigella	Ground beef			food	3
+validation	Escherichia_coli_Shigella	Ground pork			food	3
+validation	Escherichia_coli_Shigella	Lab			human	3
+validation	Escherichia_coli_Shigella	Pork Chop			food	3
+validation	Escherichia_coli_Shigella	Waterer swab			environmental	3
+validation	Escherichia_coli_Shigella	calf feces	bovine		animal	3
+validation	Escherichia_coli_Shigella	ear	Canis lupus familiaris	Otitis	animal	3
+validation	Escherichia_coli_Shigella	fecal beef calf	Bos taurus		animal	3
+validation	Escherichia_coli_Shigella	feces	Rhesus monkey		animal	3
+validation	Escherichia_coli_Shigella	local raw pork			food	3
+validation	Escherichia_coli_Shigella	lung	Bos taurus	pneumonia	animal	3
+validation	Escherichia_coli_Shigella	not provided	coyote		environmental	3
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	not provided	animal	3
+validation	Escherichia_coli_Shigella		not provided	not provided	food	2
+validation	Escherichia_coli_Shigella		not provided	not provided	human	2
+validation	Escherichia_coli_Shigella		rabbit		animal	2
+validation	Escherichia_coli_Shigella	Animal-Cattle-Steer (cecal)	Bovine		animal	2
+validation	Escherichia_coli_Shigella	Beach where the Constitucin stormwater drain discharges			environmental	2
+validation	Escherichia_coli_Shigella	Beef trim			food	2
+validation	Escherichia_coli_Shigella	CSF	Homo sapiens		human	2
+validation	Escherichia_coli_Shigella	Chicken Breasts			food	2
+validation	Escherichia_coli_Shigella	Chicken Thigh			food	2
+validation	Escherichia_coli_Shigella	Cilantro	not provided	not provided	food	2
+validation	Escherichia_coli_Shigella	Fecal Swab	Homo sapiens	not provided	human	2
+validation	Escherichia_coli_Shigella	Ground Beef			animal	2
+validation	Escherichia_coli_Shigella	Ground Beef	not provided	not provided	food	2
+validation	Escherichia_coli_Shigella	Turkey Ground Turkey			food	2
+validation	Escherichia_coli_Shigella	Whole chicken with giblets			food	2
+validation	Escherichia_coli_Shigella	dairy product			food	2
+validation	Escherichia_coli_Shigella	feces	not provided		animal	2
+validation	Escherichia_coli_Shigella	feral pig	porcine		animal	2
+validation	Escherichia_coli_Shigella	other	Homo sapiens		human	2
+validation	Escherichia_coli_Shigella	peritoneum	chicken		animal	2
+validation	Escherichia_coli_Shigella	urine-cysto	Felis catus	cystitis	animal	2
+validation	Escherichia_coli_Shigella		Calf		animal	1
+validation	Escherichia_coli_Shigella		Sheep		animal	1
+validation	Escherichia_coli_Shigella		avian		animal	1
+validation	Escherichia_coli_Shigella		chicken		animal	1
+validation	Escherichia_coli_Shigella	Abscess	Canis lupus familiaris	Infection	animal	1
+validation	Escherichia_coli_Shigella	Anal Bag	Canis lupus familiaris	Anal sacculitis	animal	1
+validation	Escherichia_coli_Shigella	Anal Gland	Canis lupus familiaris	not provided	animal	1
+validation	Escherichia_coli_Shigella	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	1
+validation	Escherichia_coli_Shigella	Bronchial Wash	Canis lupus familiaris	Respiratory	animal	1
+validation	Escherichia_coli_Shigella	Chicken Chicken Breast			food	1
+validation	Escherichia_coli_Shigella	Chicken Drumstick			food	1
+validation	Escherichia_coli_Shigella	Chicken Giblets			food	1
+validation	Escherichia_coli_Shigella	Chicken Gizzard			animal	1
+validation	Escherichia_coli_Shigella	Chicken Gizzard	not provided	not provided	food	1
+validation	Escherichia_coli_Shigella	Chicken Heart			animal	1
+validation	Escherichia_coli_Shigella	Chicken Heart	not provided	not provided	food	1
+validation	Escherichia_coli_Shigella	Chicken Legs			food	1
+validation	Escherichia_coli_Shigella	Chicken Livers			food	1
+validation	Escherichia_coli_Shigella	Chicken Midex Parts			food	1
+validation	Escherichia_coli_Shigella	Chicken Thighs	not provided	not provided	food	1
+validation	Escherichia_coli_Shigella	Chicken Wings			food	1
+validation	Escherichia_coli_Shigella	Direct hospital wastewater discharge			environmental	1
+validation	Escherichia_coli_Shigella	Draining tract tissue	Canis lupus familiaris	Cellulitis	animal	1
+validation	Escherichia_coli_Shigella	Ground Turkey Breasts			food	1
+validation	Escherichia_coli_Shigella	Ground pork	not provided	not provided	food	1
+validation	Escherichia_coli_Shigella	Incision	Canis lupus familiaris	cellulitis	animal	1
+validation	Escherichia_coli_Shigella	Incision Site	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	Intestinal Swab	Sus scrofa	Enteritis	animal	1
+validation	Escherichia_coli_Shigella	Intestinal content	Bos taurus	intestinal twist with hemorrhagis infarction	animal	1
+validation	Escherichia_coli_Shigella	Intraorbital sinus swab	Gallus gallus	Sinusitis	animal	1
+validation	Escherichia_coli_Shigella	Joint Swab	Sus scrofa	Sepsis	animal	1
+validation	Escherichia_coli_Shigella	Knee	Canis lupus familiaris	cellulitis	animal	1
+validation	Escherichia_coli_Shigella	LUNG 1	Meleagris gallopavo	SEPTICEMIA/COLIBACILLOSIS	animal	1
+validation	Escherichia_coli_Shigella	Lagoon formed by the waters of La Tapera stream after crossing the northern part of the city and before flowing into the sea			environmental	1
+validation	Escherichia_coli_Shigella	Lamb	not provided	not provided	food	1
+validation	Escherichia_coli_Shigella	Lung Swab	Bos taurus	pneumonia	animal	1
+validation	Escherichia_coli_Shigella	Lung Swab	Gallus gallus	Bronchopneumonia	animal	1
+validation	Escherichia_coli_Shigella	Lung Swab	Gallus gallus	Pneumonia	animal	1
+validation	Escherichia_coli_Shigella	Mouth of the stream flowing into the sea			environmental	1
+validation	Escherichia_coli_Shigella	Pericardium	Gallus gallus	Pericarditis	animal	1
+validation	Escherichia_coli_Shigella	Peritoneum	Gallus gallus	Infeciton	animal	1
+validation	Escherichia_coli_Shigella	Peritoneum	Gallus gallus	Peritonitis	animal	1
+validation	Escherichia_coli_Shigella	Placenta swab	Equus caballus	Favor placentitis with vascular insufficiency	animal	1
+validation	Escherichia_coli_Shigella	Pork			food	1
+validation	Escherichia_coli_Shigella	Pork Chops			food	1
+validation	Escherichia_coli_Shigella	Pork Ground pork			food	1
+validation	Escherichia_coli_Shigella	Rectal Swab	Homo sapiens	not provided	human	1
+validation	Escherichia_coli_Shigella	Skin Swab	Canis lupus familiaris	Dermatitis	animal	1
+validation	Escherichia_coli_Shigella	Small Intestinal Contents	Bos taurus	septicemia	animal	1
+validation	Escherichia_coli_Shigella	Small Intestine	Bos taurus	Enterocolitis	animal	1
+validation	Escherichia_coli_Shigella	Small Intestine	Bos taurus	stx-1, eae, and K88	animal	1
+validation	Escherichia_coli_Shigella	Source of the stream in Laguna de los Padres			environmental	1
+validation	Escherichia_coli_Shigella	Spleen 1	Meleagris gallopavo	Colibacillosis	animal	1
+validation	Escherichia_coli_Shigella	Stream course passing through a neighborhood in the northern part of the city			environmental	1
+validation	Escherichia_coli_Shigella	Surgical site	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	Thoracic Fluid	Equus caballus	Infection	animal	1
+validation	Escherichia_coli_Shigella	Umbilicus	Equus caballus	Septicemia	animal	1
+validation	Escherichia_coli_Shigella	Unkown	Homo sapiens	not provided	human	1
+validation	Escherichia_coli_Shigella	Uterine	Canis lupus familiaris	Pyometra	animal	1
+validation	Escherichia_coli_Shigella	Uterine Swab	Equus caballus	Pelvic Inflamatory Disease	animal	1
+validation	Escherichia_coli_Shigella	Uterine Swab	Equus caballus	Vaginitis	animal	1
+validation	Escherichia_coli_Shigella	Uterine swab	Equus caballus	Endometritis	animal	1
+validation	Escherichia_coli_Shigella	Uterus	Bos taurus	Endometritis/placentitits	animal	1
+validation	Escherichia_coli_Shigella	Uterus	Equus caballus	Infection	animal	1
+validation	Escherichia_coli_Shigella	Uterus	Equus caballus	N.A.	animal	1
+validation	Escherichia_coli_Shigella	Uterus swab	Equus caballus	N.A.	animal	1
+validation	Escherichia_coli_Shigella	Vagina	Canis lupus familiaris	Vaginitis	animal	1
+validation	Escherichia_coli_Shigella	Wipes			environmental	1
+validation	Escherichia_coli_Shigella	Wound swab	Canis lupus familiaris	N.A.	animal	1
+validation	Escherichia_coli_Shigella	Yolk Sac Swab	Gallus gallus	Yolk sac infection	animal	1
+validation	Escherichia_coli_Shigella	Yolk sac swab	Gallus gallus	Yolk sac infection	animal	1
+validation	Escherichia_coli_Shigella	basil			food	1
+validation	Escherichia_coli_Shigella	bile	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	bile	Felis catus	Cholangitis	animal	1
+validation	Escherichia_coli_Shigella	bladder	Canis lupus familiaris	cystitis	animal	1
+validation	Escherichia_coli_Shigella	blueberries			food	1
+validation	Escherichia_coli_Shigella	bone	Bos taurus	osteomyelitis	animal	1
+validation	Escherichia_coli_Shigella	brown headed cowbird	Molothrus ater		animal	1
+validation	Escherichia_coli_Shigella	chicken gizzards			food	1
+validation	Escherichia_coli_Shigella	chicken litter			environmental	1
+validation	Escherichia_coli_Shigella	chicken thighs, bone-in skin-on			food	1
+validation	Escherichia_coli_Shigella	cow with mastitis			animal	1
+validation	Escherichia_coli_Shigella	coyote			environmental	1
+validation	Escherichia_coli_Shigella	ear	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	ear	Canis lupus familiaris	not provided	animal	1
+validation	Escherichia_coli_Shigella	environmental swab			environmental	1
+validation	Escherichia_coli_Shigella	fecal steer	Bos taurus		animal	1
+validation	Escherichia_coli_Shigella	feces			environmental	1
+validation	Escherichia_coli_Shigella	feces	Canis lupus familiaris	Previously test positive for having E. coli in his GI	animal	1
+validation	Escherichia_coli_Shigella	feces	Felis catus		animal	1
+validation	Escherichia_coli_Shigella	feces	Felis catus	Enteritis	animal	1
+validation	Escherichia_coli_Shigella	feces	Homo sapiens	diarrhea	human	1
+validation	Escherichia_coli_Shigella	feces	canine		animal	1
+validation	Escherichia_coli_Shigella	feces	cow		animal	1
+validation	Escherichia_coli_Shigella	feces	not collected		animal	1
+validation	Escherichia_coli_Shigella	foreign imported raw chicken			food	1
+validation	Escherichia_coli_Shigella	horse equine	horse		animal	1
+validation	Escherichia_coli_Shigella	ileum	rabbit		animal	1
+validation	Escherichia_coli_Shigella	incision swab	Canis lupus familiaris	surgical site infection	animal	1
+validation	Escherichia_coli_Shigella	intestine	Bos taurus	Sepsis by E. coli	animal	1
+validation	Escherichia_coli_Shigella	intestine	Sus scrofa	ENTERITIS	animal	1
+validation	Escherichia_coli_Shigella	intestine	Sus scrofa	ETEC	animal	1
+validation	Escherichia_coli_Shigella	intestine	Sus scrofa	Enteric colibacillosis	animal	1
+validation	Escherichia_coli_Shigella	intestine	Sus scrofa	SEPTICEMIA	animal	1
+validation	Escherichia_coli_Shigella	intestine	Sus scrofa	enterocolitis	animal	1
+validation	Escherichia_coli_Shigella	jejunum	cow		animal	1
+validation	Escherichia_coli_Shigella	kidney	Felis catus	Septicemia	animal	1
+validation	Escherichia_coli_Shigella	liver	Gallus gallus domesticus		animal	1
+validation	Escherichia_coli_Shigella	liver	Meleagris gallopavo	Colisepticemia	animal	1
+validation	Escherichia_coli_Shigella	liver pool	Meleagris gallopavo	sepsis	animal	1
+validation	Escherichia_coli_Shigella	liver swab pool	Gallus gallus	sepsis	animal	1
+validation	Escherichia_coli_Shigella	lung	Bos taurus	colisepticemia	animal	1
+validation	Escherichia_coli_Shigella	lung	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	lung	Canis lupus familiaris	Sepsis	animal	1
+validation	Escherichia_coli_Shigella	lung	Felis catus	Pneumonia	animal	1
+validation	Escherichia_coli_Shigella	lung	Gallus gallus	Intra-abdominal neoplasm	animal	1
+validation	Escherichia_coli_Shigella	lung	Meleagris gallopavo	SEPTICEMIA	animal	1
+validation	Escherichia_coli_Shigella	lung	Sus scrofa	Infection	animal	1
+validation	Escherichia_coli_Shigella	lymph node	Felis catus	Soft tissue infection	animal	1
+validation	Escherichia_coli_Shigella	milk	Canis lupus familiaris	Mastitis	animal	1
+validation	Escherichia_coli_Shigella	nasal swab	Felis catus	N.A.	animal	1
+validation	Escherichia_coli_Shigella	nasal swab	Sus scrofa	Pneumonia (Pasteurella multocida, PRRS-2, Porcine epidemic diarrhea virus detected Mycoplasma hypopneumoniae)	animal	1
+validation	Escherichia_coli_Shigella	not provided	feral pig		animal	1
+validation	Escherichia_coli_Shigella	other	Homo sapiens	not provided	human	1
+validation	Escherichia_coli_Shigella	ovary	Gallus gallus	Systemic bacterial infection: E. coli	animal	1
+validation	Escherichia_coli_Shigella	parsley			food	1
+validation	Escherichia_coli_Shigella	peritoneal swab	Gallus gallus domesticus		animal	1
+validation	Escherichia_coli_Shigella	pooled tissue	Gallus gallus domesticus		animal	1
+validation	Escherichia_coli_Shigella	skin	Canis lupus familiaris		animal	1
+validation	Escherichia_coli_Shigella	skin biopsy	Felis catus	Pyoderma	animal	1
+validation	Escherichia_coli_Shigella	small intestine	cow		animal	1
+validation	Escherichia_coli_Shigella	spleen	Bos taurus	Bacterial sepsis	animal	1
+validation	Escherichia_coli_Shigella	stool		not provided	animal	1
+validation	Escherichia_coli_Shigella	stool	not provided	not provided	human	1
+validation	Escherichia_coli_Shigella	transtracheal wash	Bos taurus	pneumonia	animal	1
+validation	Escherichia_coli_Shigella	urine	Canis lupus familiaris	cushing syndrome	animal	1
+validation	Escherichia_coli_Shigella	urine	Equus caballus	Cystitis	animal	1
+validation	Escherichia_coli_Shigella	urine	Equus caballus	UTI	animal	1
+validation	Escherichia_coli_Shigella	urine	Equus caballus	cystitis	animal	1
+validation	Escherichia_coli_Shigella	urine	Felis catus		animal	1
+validation	Escherichia_coli_Shigella	urine	Felis catus	N.A.	animal	1
+validation	Escherichia_coli_Shigella	urine	Felis catus	Urinary tract infection	animal	1
+validation	Escherichia_coli_Shigella	urine HUM3			human	1
+validation	Escherichia_coli_Shigella	urine VET1			animal	1
+validation	Escherichia_coli_Shigella	urine VET3			animal	1
+validation	Escherichia_coli_Shigella	urine-clean catheter collection	Sus scrofa	pyelonephritis	animal	1
+validation	Escherichia_coli_Shigella	uterine fluid	Canis lupus familiaris	Endometritis	animal	1
+validation	Escherichia_coli_Shigella	uterine swab	Canis lupus familiaris	pyometra	animal	1
+validation	Escherichia_coli_Shigella	vegetable			food	1
+validation	Escherichia_coli_Shigella	water	Odocoileus virginianus		environmental	1
+validation	Escherichia_coli_Shigella	water influent			environmental	1
+validation	Escherichia_coli_Shigella	wound	Equus caballus	infection	animal	1
+validation	Escherichia_coli_Shigella	wound	Homo sapiens	not provided	human	1
+validation	Escherichia_coli_Shigella	wound fluid	Equus caballus	abscess	animal	1
+validation	Escherichia_coli_Shigella	wound swab	Equus caballus	Soft tissue infection	animal	1
+validation	Listeria		Homo sapiens		human	784
+validation	Listeria	environmental swab			environmental	586
+validation	Listeria	blood			human	481
+validation	Listeria	environmental swab sponge			environmental	448
+validation	Listeria	blood	Homo sapiens	not provided	human	183
+validation	Listeria	blood	Homo sapiens		human	174
+validation	Listeria	food			food	144
+validation	Listeria	environmental			environmental	77
+validation	Listeria	potato			food	65
+validation	Listeria	canal water			environmental	63
+validation	Listeria	surface water			environmental	49
+validation	Listeria	feces	bovine		animal	46
+validation	Listeria	CSF			human	37
+validation	Listeria	not provided	Homo sapiens		human	33
+validation	Listeria	surface wipe			environmental	32
+validation	Listeria	environment			environmental	28
+validation	Listeria	market deli			environmental	28
+validation	Listeria	cheese			food	25
+validation	Listeria	Raw pet food	Bovine	not collected	environmental	24
+validation	Listeria	animal feces	not provided		animal	24
+validation	Listeria	Fresh cheese			food	23
+validation	Listeria	river water			environmental	23
+validation	Listeria	environmental sponge swab: market deli			environmental	22
+validation	Listeria	rectal swab	Ursus americanus		animal	22
+validation	Listeria	cuban sandwich			food	21
+validation	Listeria	animal rectal swab	not provided		animal	20
+validation	Listeria	chicken			food	20
+validation	Listeria	ice cream			food	20
+validation	Listeria	soil			environmental	20
+validation	Listeria	Wastewater influent			environmental	19
+validation	Listeria	environmental swab and sponge stick			environmental	19
+validation	Listeria	creek water			environmental	18
+validation	Listeria	ready to eat food			food	18
+validation	Listeria	feces	Ursus americanus		animal	17
+validation	Listeria	water filter			environmental	17
+validation	Listeria	Pork			food	16
+validation	Listeria	drain-deli			environmental	15
+validation	Listeria	CSF	Homo sapiens		human	14
+validation	Listeria	Environmental sponge			environmental	14
+validation	Listeria	human			human	14
+validation	Listeria	water			environmental	14
+validation	Listeria	Avocado			food	13
+validation	Listeria	environmental swab sponge food processing environment floor drain			environmental	13
+validation	Listeria	nasal swab	Ursus americanus		animal	13
+validation	Listeria	RTE Product			food	12
+validation	Listeria	butter			food	12
+validation	Listeria	peaches			food	12
+validation	Listeria	smoked salmon			food	11
+validation	Listeria	CSF	Homo sapiens	not provided	human	10
+validation	Listeria	Cerebral spinal fluid			human	10
+validation	Listeria	apple slice			food	10
+validation	Listeria	dairy manure			environmental	10
+validation	Listeria	environmental swab sponge food processing environment			environmental	10
+validation	Listeria	environmental: non-food-contact surface			environmental	10
+validation	Listeria	manure			environmental	10
+validation	Listeria	cold-smoked fish			food	9
+validation	Listeria	drain-seafood			environmental	9
+validation	Listeria	individually quick frozen dark sweet cherry			food	9
+validation	Listeria	milk filter			environmental	9
+validation	Listeria	multiple food contact			environmental	9
+validation	Listeria	pork			food	9
+validation	Listeria	sink interior			environmental	9
+validation	Listeria	sponge			environmental	9
+validation	Listeria	Beet			food	8
+validation	Listeria	Raw milk			food	8
+validation	Listeria	environmental sponge			environmental	8
+validation	Listeria	ham and cheese sandwich			food	8
+validation	Listeria	milk-raw bovine			food	8
+validation	Listeria	peach			food	8
+validation	Listeria	Pasteurized Milk			food	7
+validation	Listeria	Raw Milk			food	7
+validation	Listeria	blood	Homo sapiens	gastroenteritis	human	7
+validation	Listeria	bovine brain			animal	7
+validation	Listeria	cabbage			food	7
+validation	Listeria	cantaloupe			food	7
+validation	Listeria	deli meat			food	7
+validation	Listeria	drain			environmental	7
+validation	Listeria	enoki mushroom			food	7
+validation	Listeria	environmental sponge			food	7
+validation	Listeria	ham cheese sandwich			food	7
+validation	Listeria	hot dog			food	7
+validation	Listeria	lettuce			food	7
+validation	Listeria	milk			food	7
+validation	Listeria	other			human	7
+validation	Listeria	poboy sandwich			food	7
+validation	Listeria	smoked nova salmon			food	7
+validation	Listeria	turkey			food	7
+validation	Listeria	white cheese			food	7
+validation	Listeria	Lettuce			food	6
+validation	Listeria	body fluid	Homo sapiens		human	6
+validation	Listeria	cerebrospinal fluid	Homo sapiens		human	6
+validation	Listeria	environmental: non-food-contact surface			food	6
+validation	Listeria	meat slicer for turkey			environmental	6
+validation	Listeria	other	Homo sapiens	not provided	human	6
+validation	Listeria	raw dog food			food	6
+validation	Listeria	sausage			food	6
+validation	Listeria	swab			environmental	6
+validation	Listeria	Drain			environmental	5
+validation	Listeria	Food Raw Cow Milk	not provided	not provided	food	5
+validation	Listeria	Fresh Squash			food	5
+validation	Listeria	broccosprout blend broccoli clover mustard sprout			food	5
+validation	Listeria	camembert cheese croquettes			food	5
+validation	Listeria	environmental swab sponge food processing environment raw product			environmental	5
+validation	Listeria	frozen cooked shrimp			food	5
+validation	Listeria	frozen food			food	5
+validation	Listeria	ground beef			food	5
+validation	Listeria	guacamole			food	5
+validation	Listeria	parsley			food	5
+validation	Listeria	pepper			food	5
+validation	Listeria	plastic clam shell of fresh cut butternut squash noodle			food	5
+validation	Listeria	raw milk			food	5
+validation	Listeria	salmon			food	5
+validation	Listeria	smoked atlantic salmon			food	5
+validation	Listeria	turkey sandwich			food	5
+validation	Listeria	Environmental: food-contact surface			environmental	4
+validation	Listeria	Peritoneal fluid acites			human	4
+validation	Listeria	alfalfa sprouts			food	4
+validation	Listeria	animal feed bovine farm			food	4
+validation	Listeria	apple			food	4
+validation	Listeria	blood	Homo sapiens	Listeriosis	human	4
+validation	Listeria	bovine			animal	4
+validation	Listeria	burrata soft cheese			food	4
+validation	Listeria	canal connection with creek water			environmental	4
+validation	Listeria	chicken salad			food	4
+validation	Listeria	environmental swab sponge floor			environmental	4
+validation	Listeria	frozen raw shrimp			food	4
+validation	Listeria	other	Homo sapiens		human	4
+validation	Listeria	ovine			animal	4
+validation	Listeria	pasteurized soft cheese mexican style			food	4
+validation	Listeria	placenta	Homo sapiens		human	4
+validation	Listeria	raw bovine milk			food	4
+validation	Listeria	ricotta salata			food	4
+validation	Listeria	roasted beef			food	4
+validation	Listeria	silage			environmental	4
+validation	Listeria	spinach			food	4
+validation	Listeria	turkey breast			food	4
+validation	Listeria	Frozen Carrots and Peas Mix	not provided	not provided	food	3
+validation	Listeria	Frozen Green Peas	not provided	not provided	food	3
+validation	Listeria	Frozen squid			food	3
+validation	Listeria	Frozen yogurt mix			food	3
+validation	Listeria	Zucchini			food	3
+validation	Listeria	animal nasal swab	not provided		animal	3
+validation	Listeria	beet			food	3
+validation	Listeria	body fluid			human	3
+validation	Listeria	caprine			animal	3
+validation	Listeria	chicken fajita sandwich			food	3
+validation	Listeria	clean plastic tote			environmental	3
+validation	Listeria	environmental swab sponge food processing environment drain			environmental	3
+validation	Listeria	environmental swab sponge food processing environment floor			environmental	3
+validation	Listeria	feces non-clinical	bovine		animal	3
+validation	Listeria	fresh mexican style cheese			food	3
+validation	Listeria	frozen crawfish			food	3
+validation	Listeria	ground chicken dog food			food	3
+validation	Listeria	individually quick frozen green bean			food	3
+validation	Listeria	individually quick frozen sliced strawberry			food	3
+validation	Listeria	jalapeno egg salad sandwich			food	3
+validation	Listeria	jalapeno peppers			food	3
+validation	Listeria	lemon alfredo fettuccine			food	3
+validation	Listeria	macaroni salad			food	3
+validation	Listeria	mexican cheese			food	3
+validation	Listeria	nectarine			food	3
+validation	Listeria	placenta			human	3
+validation	Listeria	potato salad			food	3
+validation	Listeria	raw cow milk hard cheese			food	3
+validation	Listeria	smoked ham			food	3
+validation	Listeria	smoked sable			food	3
+validation	Listeria	soybean sprouts			food	3
+validation	Listeria	sponge	not provided	not provided	environmental	3
+validation	Listeria	total mixed ration bovine farm			environmental	3
+validation	Listeria	turkey and cheese sandwich			food	3
+validation	Listeria	turkey swiss sandwich			food	3
+validation	Listeria	urine	Homo sapiens		human	3
+validation	Listeria	zucchini			food	3
+validation	Listeria		Homo sapiens	not provided	human	2
+validation	Listeria	Abscess			human	2
+validation	Listeria	Abscess	Homo sapiens	not provided	human	2
+validation	Listeria	Ascites Fluid			human	2
+validation	Listeria	Drain swab			environmental	2
+validation	Listeria	Enokitake Mushrooms, Fresh			food	2
+validation	Listeria	Environmental swab sponge			environmental	2
+validation	Listeria	Environmental: food-contact surface			food	2
+validation	Listeria	Fish-Smoked Fish (Salmon)			food	2
+validation	Listeria	Fish-Smoked Fish (Salmon, Halibut, and Trout)			food	2
+validation	Listeria	Floor	not provided	not provided	environmental	2
+validation	Listeria	Floor Drain			environmental	2
+validation	Listeria	Fluid Pleural			human	2
+validation	Listeria	Frozen Mixed Vegetables	not provided	not provided	food	2
+validation	Listeria	Milk-raw bovine			food	2
+validation	Listeria	Raw Cheese			food	2
+validation	Listeria	Raw Milk Cheese			food	2
+validation	Listeria	Raw Pet Food			food	2
+validation	Listeria	Smoked Whitefish Dip	not provided	not provided	food	2
+validation	Listeria	avocado pulp			food	2
+validation	Listeria	beef stick			food	2
+validation	Listeria	boiled ham			food	2
+validation	Listeria	brain	Capra hircus		animal	2
+validation	Listeria	breaded crab claw with real pincer			food	2
+validation	Listeria	caprine brain	caprine		animal	2
+validation	Listeria	carved ham off the bone			food	2
+validation	Listeria	chard			food	2
+validation	Listeria	chicken sandwich			food	2
+validation	Listeria	chunk meat raw pet food			food	2
+validation	Listeria	club sandwich			food	2
+validation	Listeria	cold smoked salmon			food	2
+validation	Listeria	dairy case			environmental	2
+validation	Listeria	egg salad			food	2
+validation	Listeria	egg salad sandwich			food	2
+validation	Listeria	environmental swab from a smoked fish plant			environmental	2
+validation	Listeria	environmental swab from rag for prepping cow			food	2
+validation	Listeria	environmental swab sponge floor drain in raw meat area			environmental	2
+validation	Listeria	environmental swab sponge food processing environment boots			environmental	2
+validation	Listeria	environmental swab sponge food processing environment cart			environmental	2
+validation	Listeria	environmental swab sponge food processing environment table			environmental	2
+validation	Listeria	environmental swab sponge meat slicing machine			environmental	2
+validation	Listeria	environmental swab sponge meat slicing machine during production			environmental	2
+validation	Listeria	environmental swab sponge refrigerated storage			environmental	2
+validation	Listeria	fish			food	2
+validation	Listeria	fish ball bulk			food	2
+validation	Listeria	floor in front of meat cooler in food establishment			environmental	2
+validation	Listeria	frozen breaded oyster			food	2
+validation	Listeria	frozen cooked peeled langostino			food	2
+validation	Listeria	frozen guacamole			food	2
+validation	Listeria	frozen mixed vegatable			food	2
+validation	Listeria	frozen pork bulk patty pet food			food	2
+validation	Listeria	frozen salmon trim			food	2
+validation	Listeria	frozen seasoned squid			food	2
+validation	Listeria	frozen smoked salmon snack bites			food	2
+validation	Listeria	gorgonzola cheese			food	2
+validation	Listeria	gorgonzola dolce cheese			food	2
+validation	Listeria	gouda cheese			food	2
+validation	Listeria	ground lamb dog food			food	2
+validation	Listeria	ground turkey cat food			food	2
+validation	Listeria	ham			food	2
+validation	Listeria	ham sandwich			food	2
+validation	Listeria	hash brown			food	2
+validation	Listeria	kiwi			food	2
+validation	Listeria	lamb			food	2
+validation	Listeria	mexican white cheese			food	2
+validation	Listeria	moliterno al tartufo cheese			food	2
+validation	Listeria	mortadella sausage			food	2
+validation	Listeria	not provided	Homo sapiens	outbreak	human	2
+validation	Listeria	nova salmon			food	2
+validation	Listeria	oyster mushroom			food	2
+validation	Listeria	pet dog food raw			food	2
+validation	Listeria	popped cheese popcorn			food	2
+validation	Listeria	pre cow prepared pail			food	2
+validation	Listeria	queso mahon cheese			food	2
+validation	Listeria	raw cow milk vermeer hard cheese			food	2
+validation	Listeria	ricotta			food	2
+validation	Listeria	ricotta cheese			food	2
+validation	Listeria	roast beef sandwich			food	2
+validation	Listeria	semi soft cheese quesco fresco			food	2
+validation	Listeria	sheep milk cheese			food	2
+validation	Listeria	sliced turkey			food	2
+validation	Listeria	smoked fish			food	2
+validation	Listeria	smoked fish dip cajun style			food	2
+validation	Listeria	smoked scottish salmon			food	2
+validation	Listeria	smoked sliced nova salmon			food	2
+validation	Listeria	smoked sliced salmon			food	2
+validation	Listeria	smoked trout dip and ground smoked trout			food	2
+validation	Listeria	soft cheese queso fresco			food	2
+validation	Listeria	sprout			food	2
+validation	Listeria	stir fried eel hagfish			food	2
+validation	Listeria	stool			human	2
+validation	Listeria	submarine sandwich			food	2
+validation	Listeria	total mixed ration sheep farm			environmental	2
+validation	Listeria	turkey ham			food	2
+validation	Listeria	turkey ranch sandwich			food	2
+validation	Listeria	wastewater			environmental	2
+validation	Listeria	water sediment			environmental	2
+validation	Listeria	white cheese en hoja de platano			food	2
+validation	Listeria	white hard cheese			food	2
+validation	Listeria	wound			human	2
+validation	Listeria		not provided	not provided	human	1
+validation	Listeria	"SWAB, BASE FLOOR METAL SUPPORT COVEYOR BTWN MACHINE 3&4"			environmental	1
+validation	Listeria	"SWAB, CONVEYOR CROSS BEAM INSIDE BETWEEN MACHINE 2 AND 3"			environmental	1
+validation	Listeria	"SWAB, CONVEYOR CROSS BEAM INSIDE BETWEEN MACHINE 3 AND 4"			environmental	1
+validation	Listeria	"SWAB, FLOOR DRAIN END BETWEEN MACHINES 3 AND 4"			environmental	1
+validation	Listeria	"SWAB, FLOOR DRAIN UNDER 3 COMPARTMENT SINK"			environmental	1
+validation	Listeria	"SWAB, INSIDE TRANSFER PIPE FROM PRE MIX TO ICE CREAM MACHINE"			environmental	1
+validation	Listeria	"SWAB, REDUCER COUP TRANSF PIPE PREMIX TO ICE CREAM MACHINES"			environmental	1
+validation	Listeria	"SWAB, SMALL SQUEEGEE ON THREE COMPARTMENT SINK"			environmental	1
+validation	Listeria	"SWAB, TRANSFER PUMP OUTLET ON PASTEURIZED ICE CREAM COOLER"			environmental	1
+validation	Listeria	"SWAB, plastic clear chocolate cookie scoop"			environmental	1
+validation	Listeria	Abscess	Homo sapiens		human	1
+validation	Listeria	Anterior eye			human	1
+validation	Listeria	Ascites fluid			human	1
+validation	Listeria	Bile fluid			human	1
+validation	Listeria	Blood, NOS			human	1
+validation	Listeria	Brat Dogs			environmental	1
+validation	Listeria	Butternut squash			food	1
+validation	Listeria	CSF	Homo sapiens	gastroenteritis	human	1
+validation	Listeria	Cantaloupe chunks			food	1
+validation	Listeria	Cerebrospinal fluid, NOS			human	1
+validation	Listeria	Cojita Aged Mexican Grating Cheese			food	1
+validation	Listeria	Deli meat-MORTADELLA with PISTACHIOS			food	1
+validation	Listeria	Door handles			environmental	1
+validation	Listeria	ENVIRONMENTAL ISOLATE			environmental	1
+validation	Listeria	Enoki Mushrooms			food	1
+validation	Listeria	Environmental Sponge	not provided	not provided	environmental	1
+validation	Listeria	Environmental sponge (Blackcart wheels)			environmental	1
+validation	Listeria	Environmental swab #1 Floor meat department			environmental	1
+validation	Listeria	Environmental swab #2 Floor meat department			environmental	1
+validation	Listeria	Environmental swab #3 Floor meat department			environmental	1
+validation	Listeria	Environmental swab #4 Floor meat department			environmental	1
+validation	Listeria	Fluid			human	1
+validation	Listeria	Fluid Synovial			human	1
+validation	Listeria	Fresh Enokitake Mushrooms			food	1
+validation	Listeria	Frozen Mixed Vegetable	not provided	not provided	food	1
+validation	Listeria	GARLIC SNACK STICKS			food	1
+validation	Listeria	HALLWAY FLOOR			environmental	1
+validation	Listeria	HAM STEAK			food	1
+validation	Listeria	Imitation Lobster			food	1
+validation	Listeria	Joint Fluid			human	1
+validation	Listeria	MEAT STICKS			food	1
+validation	Listeria	Milk- Raw Bovine Milk - Raw Bovine	not provided	not provided	food	1
+validation	Listeria	Mortadella deli meat			food	1
+validation	Listeria	NFC DRAIN IN OVEN ROOM			environmental	1
+validation	Listeria	Nectarine			food	1
+validation	Listeria	Packaged food product			food	1
+validation	Listeria	Pasteurized String Cheese			food	1
+validation	Listeria	Pelvic Fluid Abscess			human	1
+validation	Listeria	Peritoneal Fluid			human	1
+validation	Listeria	Peritoneal Fluid	Homo sapiens	not provided	human	1
+validation	Listeria	Peritoneal fluid /ascites			human	1
+validation	Listeria	Pleural Fluid			human	1
+validation	Listeria	Pleural Fluid	Homo sapiens	not provided	human	1
+validation	Listeria	Product-RTE-Fully Cooked, Meat/Nonmeat Combination-Chicken			food	1
+validation	Listeria	Product-RTE-Other Fully Cooked, Sliced			food	1
+validation	Listeria	Pus			human	1
+validation	Listeria	RTE			food	1
+validation	Listeria	Raw Dog Food (Chicken Medley)			food	1
+validation	Listeria	Raw Dog Food (Pork)			food	1
+validation	Listeria	Raw Dog Food (Salmon)			food	1
+validation	Listeria	Referred Culture			human	1
+validation	Listeria	SMOKEHOUSE ROOM DRAIN			environmental	1
+validation	Listeria	SYNOVIAL FLUID (JOINT FLUID)			human	1
+validation	Listeria	Salad			food	1
+validation	Listeria	Snack sticks	not provided	not provided	food	1
+validation	Listeria	Synovial fluid			human	1
+validation	Listeria	Synovial fluid/Joint Fluid	Homo sapiens		human	1
+validation	Listeria	Tissue			human	1
+validation	Listeria	Tissue	Homo sapiens		human	1
+validation	Listeria	Tissue	Homo sapiens	not provided	human	1
+validation	Listeria	Vaginal	Homo sapiens		human	1
+validation	Listeria	alfalfa clover sprout in line			food	1
+validation	Listeria	amniotic fluid			human	1
+validation	Listeria	animal	not provided		animal	1
+validation	Listeria	animal feed			environmental	1
+validation	Listeria	animal feed plant material sheep farm			food	1
+validation	Listeria	antelope (Oryx leucoryx)	Oryx leucoryx		animal	1
+validation	Listeria	avocado salsa			food	1
+validation	Listeria	baby clams frozen			food	1
+validation	Listeria	baby pit ham			food	1
+validation	Listeria	bagged lettuce			food	1
+validation	Listeria	baked salmon salad			food	1
+validation	Listeria	barbeque chicken sandwich			food	1
+validation	Listeria	bean curd cake			food	1
+validation	Listeria	beef			food	1
+validation	Listeria	beef and pork sausage			food	1
+validation	Listeria	beef beans rice cheese burrito			food	1
+validation	Listeria	beef bologna			food	1
+validation	Listeria	beef sausage link			food	1
+validation	Listeria	beef slider			food	1
+validation	Listeria	beef smoked stick			food	1
+validation	Listeria	beef top sirloin steak			food	1
+validation	Listeria	bianco brie style cheese			food	1
+validation	Listeria	block water			environmental	1
+validation	Listeria	blood	not provided	not provided	human	1
+validation	Listeria	body fluid	Homo sapiens	gastroenteritis	human	1
+validation	Listeria	bologna			food	1
+validation	Listeria	bovine (Bos taurus)			animal	1
+validation	Listeria	bovine 14 day old female liver			animal	1
+validation	Listeria	bovine 14 month old female brain			animal	1
+validation	Listeria	bovine 5 year old female brain			animal	1
+validation	Listeria	bovine 8 year old female brain			animal	1
+validation	Listeria	bovine lung liver and spleen			animal	1
+validation	Listeria	bovine lung liver kidney and intestine			animal	1
+validation	Listeria	bovine milk			food	1
+validation	Listeria	bovine old calf liver			animal	1
+validation	Listeria	bread storage cover in food establishment			environmental	1
+validation	Listeria	breakfast sausage			food	1
+validation	Listeria	brie cheese			food	1
+validation	Listeria	broccosprout blend			food	1
+validation	Listeria	butternut squash			food	1
+validation	Listeria	canine tonsil	canine		animal	1
+validation	Listeria	caprine 13 week old female brain	caprine		animal	1
+validation	Listeria	caprine 3 year old female brain	caprine		animal	1
+validation	Listeria	caprine 4 month old female brain	caprine		animal	1
+validation	Listeria	caprine 7 month old female brain	caprine		animal	1
+validation	Listeria	cheddar pear cheese			food	1
+validation	Listeria	cheese curd			food	1
+validation	Listeria	cheese queso cotija			food	1
+validation	Listeria	cheese spread			food	1
+validation	Listeria	chicken cordon bleu wrap			food	1
+validation	Listeria	chicken parmesan sandwich			food	1
+validation	Listeria	chicken salad sandwich			food	1
+validation	Listeria	chicken taco			food	1
+validation	Listeria	chihuahua cheese			food	1
+validation	Listeria	cold salmon			food	1
+validation	Listeria	cold smoked atlantic salmon			food	1
+validation	Listeria	cold smoked sockeye salmon			food	1
+validation	Listeria	concrete pipe - sediment			environmental	1
+validation	Listeria	cooked and peeled shrimp			food	1
+validation	Listeria	cooked shrimp meat			food	1
+validation	Listeria	cooked whole mussel			food	1
+validation	Listeria	corregated pipe - water			environmental	1
+validation	Listeria	crawfish tailmeat			food	1
+validation	Listeria	crunchy sprout blend			food	1
+validation	Listeria	dairy product			food	1
+validation	Listeria	deli area entry in food establishment			environmental	1
+validation	Listeria	deli display cooler in food establishment			environmental	1
+validation	Listeria	deli floor under rotisserie in food estabishment			environmental	1
+validation	Listeria	deli salad tuna			food	1
+validation	Listeria	deli turkey breast			food	1
+validation	Listeria	diced ham			food	1
+validation	Listeria	diced pea and carrot			food	1
+validation	Listeria	dog food frozen beef patties raw			food	1
+validation	Listeria	drain in front of meat cooler in food establishment			environmental	1
+validation	Listeria	drain in meat area in food establishment			environmental	1
+validation	Listeria	dried pollack fish			food	1
+validation	Listeria	duck stream - sediment			environmental	1
+validation	Listeria	duck stream -sediment			environmental	1
+validation	Listeria	entrance of retail area in food establishment			environmental	1
+validation	Listeria	environmental swab forklift wheel			environmental	1
+validation	Listeria	environmental swab near Pepsi cooler of food establishment			environmental	1
+validation	Listeria	environmental swab of Baxter proofer inside door in food establishment			environmental	1
+validation	Listeria	environmental swab of Baxter proofer lower door gasket of food establishment			environmental	1
+validation	Listeria	environmental swab of bakery floor in food establishment			environmental	1
+validation	Listeria	environmental swab of broken floor around conduit in food establishment			environmental	1
+validation	Listeria	environmental swab of cart in food establishment			environmental	1
+validation	Listeria	environmental swab of convection oven in food establishment			environmental	1
+validation	Listeria	environmental swab of deli floor drain in food establishment			environmental	1
+validation	Listeria	environmental swab of door near proofer in food establishment			environmental	1
+validation	Listeria	environmental swab of drain near cracked floor in food establishment			environmental	1
+validation	Listeria	environmental swab of drain under table with rice streamers in food establishment			environmental	1
+validation	Listeria	environmental swab of floor drain in food establishment			environmental	1
+validation	Listeria	environmental swab of floor drain near deli walk-in cooler in food establishment			environmental	1
+validation	Listeria	environmental swab of floor drain near fryer in food establishment			environmental	1
+validation	Listeria	environmental swab of floor grout and tile near table with steamers in food establishment			environmental	1
+validation	Listeria	environmental swab of floor next to juicer at food establishment			environmental	1
+validation	Listeria	environmental swab of floor tile crack under prep table in food establishment			environmental	1
+validation	Listeria	environmental swab of garbage can pedal and area near proofers in food establishment			environmental	1
+validation	Listeria	environmental swab of inside drain behind proofers in food establishment			environmental	1
+validation	Listeria	environmental swab of kitchen entrance metal floor plate in food establishment			environmental	1
+validation	Listeria	environmental swab of kitchen floor scrub brush in food establishment			environmental	1
+validation	Listeria	environmental swab of kitchen floor squeegee in food establishment			environmental	1
+validation	Listeria	environmental swab of kitchen metal floor plate in food establishment			environmental	1
+validation	Listeria	environmental swab of rolling cart in food establishment			environmental	1
+validation	Listeria	environmental swab of underside of table with rice steamers in food establishment			environmental	1
+validation	Listeria	environmental swab of walk-in freezer door flap in food establishment			environmental	1
+validation	Listeria	environmental swab sponge beef slicer			environmental	1
+validation	Listeria	environmental swab sponge compactor hall			environmental	1
+validation	Listeria	environmental swab sponge composite floor and drain			environmental	1
+validation	Listeria	environmental swab sponge dairy case			environmental	1
+validation	Listeria	environmental swab sponge deli slicer			environmental	1
+validation	Listeria	environmental swab sponge door			environmental	1
+validation	Listeria	environmental swab sponge drain			environmental	1
+validation	Listeria	environmental swab sponge floor drain in deli area			environmental	1
+validation	Listeria	environmental swab sponge floor drain in produce area			environmental	1
+validation	Listeria	environmental swab sponge floor produce area			environmental	1
+validation	Listeria	environmental swab sponge food processing environment air conditioning			environmental	1
+validation	Listeria	environmental swab sponge food processing environment cage dumper slide			environmental	1
+validation	Listeria	environmental swab sponge food processing environment cages live birds			food	1
+validation	Listeria	environmental swab sponge food processing environment carcass before wash			environmental	1
+validation	Listeria	environmental swab sponge food processing environment cart wheels			environmental	1
+validation	Listeria	environmental swab sponge food processing environment chiller			environmental	1
+validation	Listeria	environmental swab sponge food processing environment chiller rework drain			environmental	1
+validation	Listeria	environmental swab sponge food processing environment conveyor belt			environmental	1
+validation	Listeria	environmental swab sponge food processing environment dip tank			environmental	1
+validation	Listeria	environmental swab sponge food processing environment floor fecal			environmental	1
+validation	Listeria	environmental swab sponge food processing environment live hang sink			environmental	1
+validation	Listeria	environmental swab sponge food processing environment overhead pipe			environmental	1
+validation	Listeria	environmental swab sponge food processing environment rehang catwalk			environmental	1
+validation	Listeria	environmental swab sponge food processing environment roast drain			environmental	1
+validation	Listeria	environmental swab sponge food processing environment sink and hose			environmental	1
+validation	Listeria	environmental swab sponge ham slicer			environmental	1
+validation	Listeria	environmental swab sponge meat slicing machine before production			environmental	1
+validation	Listeria	environmental swab sponge metal basket inside the main processing room			environmental	1
+validation	Listeria	environmental swab sponge sink interior			environmental	1
+validation	Listeria	environmental swab sponge zone 2			environmental	1
+validation	Listeria	environmental swab underside of rice steamer table in food establishment			environmental	1
+validation	Listeria	feces	Bos taurus		animal	1
+validation	Listeria	feces dry cow	bovine		animal	1
+validation	Listeria	feces milking cow	bovine		animal	1
+validation	Listeria	floor by sandwich prep table in food establishment			environmental	1
+validation	Listeria	floor in front of mop sink in food establishment			environmental	1
+validation	Listeria	floor in front of prep table in food establishment			environmental	1
+validation	Listeria	floor in front of proofer in food estabishment			environmental	1
+validation	Listeria	floor in front of seafood display in food establishment			environmental	1
+validation	Listeria	floor in meat area in food establishment			environmental	1
+validation	Listeria	floor near bakery cooler in food establishment			environmental	1
+validation	Listeria	floor next to register in food establishment			environmental	1
+validation	Listeria	floor of cafe entrance in food establishment			environmental	1
+validation	Listeria	floor of kitchen entrance in food estabishment			environmental	1
+validation	Listeria	floor of kitchen entrance in food establishment			environmental	1
+validation	Listeria	floor of receiving area in food establishment			environmental	1
+validation	Listeria	floor tiles of kitchen in food estabishment			environmental	1
+validation	Listeria	floor under can opener in food estabishment			environmental	1
+validation	Listeria	floor under hood vent			environmental	1
+validation	Listeria	fresh cooked lobster meat			food	1
+validation	Listeria	fresh white cheese			food	1
+validation	Listeria	fried fish cake			food	1
+validation	Listeria	frozen avocado pulp			food	1
+validation	Listeria	frozen battered squid			food	1
+validation	Listeria	frozen cedar planked atlantic salmon			food	1
+validation	Listeria	frozen chunked duck dog food			food	1
+validation	Listeria	frozen cooked crawfish			food	1
+validation	Listeria	frozen cooked crayfish			food	1
+validation	Listeria	frozen cooked mussel			food	1
+validation	Listeria	frozen corn			food	1
+validation	Listeria	frozen crinkle cut potato			food	1
+validation	Listeria	frozen hash brown			food	1
+validation	Listeria	frozen lobster salad			food	1
+validation	Listeria	frozen snow crab			food	1
+validation	Listeria	frozen whole blueberry			food	1
+validation	Listeria	frozen yellowfin tuna poke cube			food	1
+validation	Listeria	gelato			food	1
+validation	Listeria	german sausage weiner			food	1
+validation	Listeria	grass fed burger meat			food	1
+validation	Listeria	green chili			food	1
+validation	Listeria	ground chicken cat food			food	1
+validation	Listeria	ground pork			food	1
+validation	Listeria	ground turkey			food	1
+validation	Listeria	ham egg cheese sandwich			food	1
+validation	Listeria	ham salad			food	1
+validation	Listeria	ham salami sandwich			food	1
+validation	Listeria	herring fillet in oil			food	1
+validation	Listeria	herring in oil			food	1
+validation	Listeria	honey glazed turkey breast			food	1
+validation	Listeria	hot smoked salmon			food	1
+validation	Listeria	ice cream freezer machine ext sponge			environmental	1
+validation	Listeria	ice cream product			food	1
+validation	Listeria	iceberg lettuce shredded			food	1
+validation	Listeria	italian roast beef			food	1
+validation	Listeria	italian salad			food	1
+validation	Listeria	italian sandwich			food	1
+validation	Listeria	king crab			food	1
+validation	Listeria	king salmon			food	1
+validation	Listeria	kitchen entrance in food establishment			environmental	1
+validation	Listeria	kitchen flood drain in food estabishment			environmental	1
+validation	Listeria	kitchen floor near proofer in food establishment			environmental	1
+validation	Listeria	kitchen floor tiles in food estabishment			environmental	1
+validation	Listeria	kitchen proofer floor in food establishment			environmental	1
+validation	Listeria	large intestine	Ursus americanus		animal	1
+validation	Listeria	lightly salted edamame			food	1
+validation	Listeria	liver			animal	1
+validation	Listeria	maple sausage			food	1
+validation	Listeria	metal covering of proofer in food estabishment			environmental	1
+validation	Listeria	missing;SourceSite			human	1
+validation	Listeria	monkey placenta			animal	1
+validation	Listeria	morbier cheese aged			food	1
+validation	Listeria	mung bean sprout			food	1
+validation	Listeria	nova smoked salmon			food	1
+validation	Listeria	oaxaca string cheese			food	1
+validation	Listeria	old fashioned wiener			food	1
+validation	Listeria	orange			food	1
+validation	Listeria	organic baby spinach			food	1
+validation	Listeria	ovine 3 year old female brain	ovine		animal	1
+validation	Listeria	ovine adult female liver	ovine		animal	1
+validation	Listeria	ovine brain stem	ovine		animal	1
+validation	Listeria	ovine lung liver and heart	ovine		animal	1
+validation	Listeria	pastrami sandwich			food	1
+validation	Listeria	pastuerized soft ripen cheese			food	1
+validation	Listeria	pea			food	1
+validation	Listeria	peaches, whole			food	1
+validation	Listeria	pear			food	1
+validation	Listeria	pepperoni stick			food	1
+validation	Listeria	pesto chicken with provolon sandwich			food	1
+validation	Listeria	placenta	Homo sapiens	not provided	human	1
+validation	Listeria	plastic tote			environmental	1
+validation	Listeria	plastic tote with meat broth			food	1
+validation	Listeria	polish sausage			food	1
+validation	Listeria	pollack roe			food	1
+validation	Listeria	pre-cooked crabmeat lump			food	1
+validation	Listeria	proofer door gasket in food establishment			environmental	1
+validation	Listeria	queso seco cheese			food	1
+validation	Listeria	rabbit			animal	1
+validation	Listeria	rack			environmental	1
+validation	Listeria	radish			food	1
+validation	Listeria	raw cow milk			food	1
+validation	Listeria	raw milk cheese			food	1
+validation	Listeria	raw pet food beef dinner bar			food	1
+validation	Listeria	raw pet food chicken diet			food	1
+validation	Listeria	raw pet food chicken dinner bar			food	1
+validation	Listeria	raw pet food chicken patties			food	1
+validation	Listeria	raw pet food juicy combo recipe			food	1
+validation	Listeria	raw pet food ostrich diet			food	1
+validation	Listeria	raw refrigerated nonflex plastic squash			food	1
+validation	Listeria	red apple slice			food	1
+validation	Listeria	roast beef			food	1
+validation	Listeria	roast beef and cheese sandwich			food	1
+validation	Listeria	roast beef on wheat sandwich			food	1
+validation	Listeria	roasted turkey sandwich			food	1
+validation	Listeria	romaine lettuce			food	1
+validation	Listeria	salmon wrap			food	1
+validation	Listeria	salted belt fish			food	1
+validation	Listeria	salvadorian string cheese			food	1
+validation	Listeria	sandwich			food	1
+validation	Listeria	sandwich spread			food	1
+validation	Listeria	sausage egg cheese sandwich			food	1
+validation	Listeria	scrap swiss and cheddar cheese			food	1
+validation	Listeria	seafood mixture			food	1
+validation	Listeria	seafood salad			food	1
+validation	Listeria	seafood salad sandwich			food	1
+validation	Listeria	seasoned flying fish roe			food	1
+validation	Listeria	seasoned pollack roe			food	1
+validation	Listeria	sheep milk ricotta cheese			food	1
+validation	Listeria	shredded mozzarella cheese			food	1
+validation	Listeria	shrimp			food	1
+validation	Listeria	side of proofer in food estabishment			environmental	1
+validation	Listeria	simulated crab ball			food	1
+validation	Listeria	skim tank drain sponge			environmental	1
+validation	Listeria	sliced beef			food	1
+validation	Listeria	sliced mushroom			food	1
+validation	Listeria	sliced smoked lox			food	1
+validation	Listeria	smocked boneless ham			food	1
+validation	Listeria	smoked halibut			food	1
+validation	Listeria	smoked salmon red sockeye			food	1
+validation	Listeria	smoked trout fish			food	1
+validation	Listeria	smoked turkey breast			food	1
+validation	Listeria	smoked turkey sandwich			food	1
+validation	Listeria	snow crab			food	1
+validation	Listeria	sockeye salmon			food	1
+validation	Listeria	soft white cheese			food	1
+validation	Listeria	soft white mexican cheese			food	1
+validation	Listeria	soy bean sprout			food	1
+validation	Listeria	soy bean sprouts			food	1
+validation	Listeria	soybean			food	1
+validation	Listeria	step pedal of garbage can in food estabishment			environmental	1
+validation	Listeria	stir fried mixture			food	1
+validation	Listeria	stool	Homo sapiens		human	1
+validation	Listeria	stool	Homo sapiens	not provided	human	1
+validation	Listeria	stool	not provided		animal	1
+validation	Listeria	stuffed salmon			food	1
+validation	Listeria	submarine sandwich turkey cheese			food	1
+validation	Listeria	sugar glider liver	Petaurus breviceps		animal	1
+validation	Listeria	sunflower seed			food	1
+validation	Listeria	swab	Homo sapiens	not provided	human	1
+validation	Listeria	swab in front of bakery freezer in food establishment			environmental	1
+validation	Listeria	swab of floor in front of prep table in food establishment			environmental	1
+validation	Listeria	swab of kitchen floor in food establishment			environmental	1
+validation	Listeria	swab of produce storage rack in food establishment			environmental	1
+validation	Listeria	swab processing room			environmental	1
+validation	Listeria	swab under convection oven in food establishment			environmental	1
+validation	Listeria	sweet peas			food	1
+validation	Listeria	sweet sausage			food	1
+validation	Listeria	testicular fluid			human	1
+validation	Listeria	threshold by entrance door in food establishment			environmental	1
+validation	Listeria	tile in deli entry area in food establishment			environmental	1
+validation	Listeria	tile in front of meat cooler in food establishment			environmental	1
+validation	Listeria	tiles in front of cooler in food establishment			environmental	1
+validation	Listeria	tissue	Homo sapiens		human	1
+validation	Listeria	total mixed ration			food	1
+validation	Listeria	total mixed ration high milk group			food	1
+validation	Listeria	tuna salad			food	1
+validation	Listeria	turkey hot dog meal			food	1
+validation	Listeria	urine	Homo sapiens	not provided	human	1
+validation	Listeria	variety pack luncheon meat turkey and ham			food	1
+validation	Listeria	vegetation			environmental	1
+validation	Listeria	water farm			environmental	1
+validation	Listeria	whitefish salad			food	1
+validation	Listeria	whole blood			human	1
+validation	Listeria	whole blood	Homo sapiens		human	1
+validation	Listeria	wound	Homo sapiens	not provided	human	1
+validation	Campylobacter	raw intact chicken			food	2751
+validation	Campylobacter	chicken - young chicken carcass rinse (post-chill)			food	1502
+validation	Campylobacter	stool			human	1442
+validation	Campylobacter	stool	Homo sapiens		human	1097
+validation	Campylobacter	chicken carcass			food	1018
+validation	Campylobacter	stool	Homo sapiens	not provided	human	1012
+validation	Campylobacter	poultry cecal sample	Poultry		animal	609
+validation	Campylobacter	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	393
+validation	Campylobacter	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	366
+validation	Campylobacter	feces	porcine		animal	350
+validation	Campylobacter	feces	Homo sapiens		human	342
+validation	Campylobacter	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	332
+validation	Campylobacter	comminuted chicken			food	296
+validation	Campylobacter	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	212
+validation	Campylobacter	organic meat chicken farm	Gallus gallus		animal	186
+validation	Campylobacter	Nonintact Chicken			food	180
+validation	Campylobacter	Animal-Cattle-Steer (cecal)	Bovine		animal	134
+validation	Campylobacter	Animal-Cattle-Heifer (cecal)	Bovine		animal	132
+validation	Campylobacter	Animal-Swine-Sow (cecal)	Sus scrofa		animal	126
+validation	Campylobacter	animal-swine-market swine	Sus scrofa		animal	119
+validation	Campylobacter	Animal-Sheep-Lamb (cecal)	Ovine		animal	88
+validation	Campylobacter	Chicken neck cute			food	88
+validation	Campylobacter	Animal-Chicken-Heavy Fowl			food	78
+validation	Campylobacter	feces	Gallus gallus		animal	76
+validation	Campylobacter	manure	Animal		environmental	75
+validation	Campylobacter	chicken			food	73
+validation	Campylobacter	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	70
+validation	Campylobacter	Comminuted Turkey			food	59
+validation	Campylobacter	Animal-Sheep-Mature Sheep (cecal)	Ovine		animal	58
+validation	Campylobacter	fecal stool	Gallus gallus		human	54
+validation	Campylobacter	fecal stool	Homo sapiens		human	54
+validation	Campylobacter	Animal-Turkey-Young Turkey	Meleagris gallopavo		animal	51
+validation	Campylobacter	cattle	Bos taurus		animal	51
+validation	Campylobacter	animal-chicken-young chicken	Gallus gallus		food	49
+validation	Campylobacter	animal-cattle-dairy cow	Bovine		food	48
+validation	Campylobacter	animal-cattle-steer	Bovine		food	46
+validation	Campylobacter	animal-swine-sow	Sus scrofa		animal	42
+validation	Campylobacter	Internal tissue liver			animal	39
+validation	Campylobacter	carcass swab	porcine		animal	36
+validation	Campylobacter	water			environmental	33
+validation	Campylobacter	chicken breast			food	31
+validation	Campylobacter	cecal content	Porcine		animal	29
+validation	Campylobacter	Bovine Stool	Bovine		animal	27
+validation	Campylobacter	environmental swab sponge			environmental	25
+validation	Campylobacter	blood	Homo sapiens		human	24
+validation	Campylobacter	chicken meat	Gallus gallus		food	21
+validation	Campylobacter	animal-cattle-heifer	Bovine		food	19
+validation	Campylobacter	feces sow	porcine		animal	19
+validation	Campylobacter	Chicken Meat	Gallus gallus		food	18
+validation	Campylobacter	cloacal swab			animal	18
+validation	Campylobacter	internal tissue liver			animal	18
+validation	Campylobacter	Raw oysters			food	17
+validation	Campylobacter	blood	Homo sapiens	not provided	human	17
+validation	Campylobacter		Homo sapiens		human	16
+validation	Campylobacter	Animal-Turkey-Turkey Carcass Sponge			food	16
+validation	Campylobacter	feces	Capra hircus		animal	16
+validation	Campylobacter	blood			human	15
+validation	Campylobacter	Chicken Liver			food	14
+validation	Campylobacter	Chicken Livers	not provided	not provided	food	14
+validation	Campylobacter	Chicken Gizzard			food	12
+validation	Campylobacter	lagoon			environmental	12
+validation	Campylobacter	placenta	Ovis aries	Aborted fetus	animal	12
+validation	Campylobacter	Animal-Goat (cecal)	Caprine		animal	11
+validation	Campylobacter	Bovine Small Intestine	Bovine		animal	11
+validation	Campylobacter	Bovine Small intestine	Bovine		animal	11
+validation	Campylobacter	animal-cattle-beef cow	Bovine		food	11
+validation	Campylobacter	meat			food	11
+validation	Campylobacter	Animal-Calf-Non Formula-fed Veal (cecal)	Bovine		animal	10
+validation	Campylobacter	Carcass			food	10
+validation	Campylobacter	feces	Bos indicus		animal	10
+validation	Campylobacter	animal-chicken-young chicken	Gallus gallus		animal	9
+validation	Campylobacter	mesenteric lymph node	porcine		animal	9
+validation	Campylobacter	Animal-Calf-Bob Veal (cecal)	Bovine		animal	8
+validation	Campylobacter	Chicken livers	not provided	not provided	food	8
+validation	Campylobacter	animal-cattle-heifer	Bovine		animal	8
+validation	Campylobacter	chicken breast	not provided	not provided	food	8
+validation	Campylobacter	chicken thigh			food	8
+validation	Campylobacter	feces	Bovine		animal	8
+validation	Campylobacter	Consumer prepared liver pate			food	7
+validation	Campylobacter	animal-cattle-steer	Bovine		animal	7
+validation	Campylobacter	chicken	not provided	not provided	food	7
+validation	Campylobacter	monkey anal swab	Leontopithecus rosalia		animal	7
+validation	Campylobacter	Chicken Giblets			food	6
+validation	Campylobacter	Chicken Heart			food	6
+validation	Campylobacter	Chicken Hearts	not provided	not provided	food	6
+validation	Campylobacter	Chicken Livers			food	6
+validation	Campylobacter	Food; Poultry Rinse			food	6
+validation	Campylobacter	carcass swab	not provided		animal	6
+validation	Campylobacter	raw milk holding tank			food	6
+validation	Campylobacter	stool	Bovine		animal	6
+validation	Campylobacter	Caecum			animal	5
+validation	Campylobacter	Canine Feces	Canine		animal	5
+validation	Campylobacter	Chicken Gizzard	not provided	not provided	food	5
+validation	Campylobacter	Chicken Liver (Giblets)			food	5
+validation	Campylobacter	Chicken gizzards			food	5
+validation	Campylobacter	Chicken liver			food	5
+validation	Campylobacter	Dog stool			animal	5
+validation	Campylobacter	FOOD (POULTRY RINSE)			food	5
+validation	Campylobacter	Poultry carcass rinse	not provided	not provided	food	5
+validation	Campylobacter	a zoological facility			animal	5
+validation	Campylobacter	animal-cattle-dairy cow	Bovine		animal	5
+validation	Campylobacter	caecum	chicken		animal	5
+validation	Campylobacter	chicken cloacal swab	Gallus gallus		animal	5
+validation	Campylobacter	feces			animal	5
+validation	Campylobacter	feces	Canis lupus familiaris		animal	5
+validation	Campylobacter	rectal swab			animal	5
+validation	Campylobacter	whole chicken			food	5
+validation	Campylobacter		Porcine		animal	4
+validation	Campylobacter	Bovine Intestine	Bovine		animal	4
+validation	Campylobacter	CHICKEN GIZZARD			food	4
+validation	Campylobacter	CHICKEN LIVER			food	4
+validation	Campylobacter	Cecal contents			animal	4
+validation	Campylobacter	Chicken Gizzards			food	4
+validation	Campylobacter	Chicken Heart (Giblets)			food	4
+validation	Campylobacter	Chicken Hearts			food	4
+validation	Campylobacter	Chicken Thigh			food	4
+validation	Campylobacter	Chicken livers			food	4
+validation	Campylobacter	Gallus domesticus			animal	4
+validation	Campylobacter	Raw Milk			food	4
+validation	Campylobacter	Whole chicken			food	4
+validation	Campylobacter	food	not provided	not provided	food	4
+validation	Campylobacter	food [POULTRY RINSE]			food	4
+validation	Campylobacter	pig swab	porcine		animal	4
+validation	Campylobacter	pond water			environmental	4
+validation	Campylobacter	soil			environmental	4
+validation	Campylobacter	stool	Canine		animal	4
+validation	Campylobacter	water pond			environmental	4
+validation	Campylobacter		Avian		animal	3
+validation	Campylobacter		Canine		animal	3
+validation	Campylobacter	CHICKEN HEART			food	3
+validation	Campylobacter	Canine Stool	Canine		animal	3
+validation	Campylobacter	Chicken Feces	Gallus gallus		animal	3
+validation	Campylobacter	Chicken Heart			animal	3
+validation	Campylobacter	Chicken Legs	not provided	not provided	food	3
+validation	Campylobacter	Chicken Thighs			food	3
+validation	Campylobacter	Chicken gizzards	not provided	not provided	food	3
+validation	Campylobacter	Chicken thighs			food	3
+validation	Campylobacter	Chicken thighs	not provided	not provided	food	3
+validation	Campylobacter	FOOD; POULTRY RINSE			food	3
+validation	Campylobacter	Human Unknown			human	3
+validation	Campylobacter	Poultry Rinse			food	3
+validation	Campylobacter	Raw Chicken Liver			food	3
+validation	Campylobacter	Rectal Swab			human	3
+validation	Campylobacter	Rectum	Homo sapiens		human	3
+validation	Campylobacter	Rectum	Homo sapiens	not provided	human	3
+validation	Campylobacter	bovine	Bovine		animal	3
+validation	Campylobacter	bovine feces	Bovine		animal	3
+validation	Campylobacter	chicken heart	Gallus gallus		animal	3
+validation	Campylobacter	chicken leg			food	3
+validation	Campylobacter	chicken wing			food	3
+validation	Campylobacter	feces	Ovis aries		animal	3
+validation	Campylobacter	food			food	3
+validation	Campylobacter	stool	Homo sapiens	diarrhea	human	3
+validation	Campylobacter		Homo sapiens	not provided	human	2
+validation	Campylobacter	Caniine Stool	Canine		animal	2
+validation	Campylobacter	Chicken Gizzard (Giblets)			food	2
+validation	Campylobacter	Chicken Hearts (Giblets)			food	2
+validation	Campylobacter	Chicken Wings			food	2
+validation	Campylobacter	Chicken heart (giblets)			food	2
+validation	Campylobacter	Chicken hearts			food	2
+validation	Campylobacter	Chicken wings			food	2
+validation	Campylobacter	Chicken wings	not provided	not provided	food	2
+validation	Campylobacter	FOOD; POULTRY PARTS RINSE			food	2
+validation	Campylobacter	Fresh meat			food	2
+validation	Campylobacter	Ground Pork	not provided	not provided	food	2
+validation	Campylobacter	Poultry:Chicken Breast			food	2
+validation	Campylobacter	Raw Cow Milk			food	2
+validation	Campylobacter	Small Intestine			animal	2
+validation	Campylobacter	Small Intestine	Bovine		animal	2
+validation	Campylobacter	Small Intestine	Canine		animal	2
+validation	Campylobacter	Waste-water			environmental	2
+validation	Campylobacter	Whole Chicken			food	2
+validation	Campylobacter	Whole Chicken Breast			food	2
+validation	Campylobacter	animal feed			food	2
+validation	Campylobacter	animal-cattle-beef cow	Bovine		animal	2
+validation	Campylobacter	chicken breast			animal	2
+validation	Campylobacter	chicken breasts			food	2
+validation	Campylobacter	chicken gizzard			food	2
+validation	Campylobacter	chicken gizzard	not provided	not provided	food	2
+validation	Campylobacter	chicken liver	not provided	not provided	food	2
+validation	Campylobacter	chicken thighs			food	2
+validation	Campylobacter	cloacal swab	animal		animal	2
+validation	Campylobacter	dog feces	Canis lupus		animal	2
+validation	Campylobacter	feces	Canis lupus familiaris	Enteritis	animal	2
+validation	Campylobacter	feces	canine		animal	2
+validation	Campylobacter	ground turkey			food	2
+validation	Campylobacter	liver	Bos taurus		animal	2
+validation	Campylobacter	milk-raw bovine			food	2
+validation	Campylobacter	retail raw cow milk			food	2
+validation	Campylobacter		Feline		animal	1
+validation	Campylobacter		Moose		animal	1
+validation	Campylobacter	Animal-Calf-Formula-fed Veal (cecal)	Bovine		animal	1
+validation	Campylobacter	Assorted Chicken Parts			food	1
+validation	Campylobacter	Avian Small Intestine	Avian		animal	1
+validation	Campylobacter	Bison Wy State Vet lab	Bison		animal	1
+validation	Campylobacter	Boivine Small intestine	Bovine		animal	1
+validation	Campylobacter	Bovine Stool			animal	1
+validation	Campylobacter	CHICKEN GIZZARD (GIBLETS)			food	1
+validation	Campylobacter	CHICKEN HEART (GIBLETS)			food	1
+validation	Campylobacter	CHICKEN LEGS			food	1
+validation	Campylobacter	CHICKEN MIXED PARTS			food	1
+validation	Campylobacter	CHICKEN WINGS			food	1
+validation	Campylobacter	Caprine Small intestine	Caprine		animal	1
+validation	Campylobacter	Carcass Rinse			environmental	1
+validation	Campylobacter	Chicken Chicken Breast			food	1
+validation	Campylobacter	Chicken Gizzards	not provided	not provided	food	1
+validation	Campylobacter	Chicken Gizzards (Giblets)			food	1
+validation	Campylobacter	Chicken Leg			animal	1
+validation	Campylobacter	Chicken Legs			food	1
+validation	Campylobacter	Chicken Liver			animal	1
+validation	Campylobacter	Chicken Thighs	not provided	not provided	food	1
+validation	Campylobacter	Chicken Wing			animal	1
+validation	Campylobacter	Chicken Wing			food	1
+validation	Campylobacter	Chicken chicken gizzard			food	1
+validation	Campylobacter	Chicken chicken liver			food	1
+validation	Campylobacter	Chicken gizzard			food	1
+validation	Campylobacter	Chicken heart			food	1
+validation	Campylobacter	Chicken hearts	not provided	not provided	food	1
+validation	Campylobacter	Chicken liver (giblets)			food	1
+validation	Campylobacter	Chicken-Mixed Parts			food	1
+validation	Campylobacter	FOOD (POULTRY CARCASS RINSE)			food	1
+validation	Campylobacter	FOOD; POULTRY CARCASS RINSE			food	1
+validation	Campylobacter	Feline Feces	Feline		animal	1
+validation	Campylobacter	Intesine (sm)	Bovine		animal	1
+validation	Campylobacter	Intestine (Gallus gallus domesticus)	Gallus gallus domesticus	No History	animal	1
+validation	Campylobacter	Intestine (sm)	Bovine		animal	1
+validation	Campylobacter	Isolate	Homo sapiens		human	1
+validation	Campylobacter	Liver/Lung pool	Capra hircus		animal	1
+validation	Campylobacter	Milk Milk-raw bovine			food	1
+validation	Campylobacter	Mountain Lion Small intestine	Mountain Lion		animal	1
+validation	Campylobacter	Ovine Placenta	Ovine		animal	1
+validation	Campylobacter	Porcine Intestine	Porcine		animal	1
+validation	Campylobacter	Poultry			food	1
+validation	Campylobacter	Poultry carcass rinse			food	1
+validation	Campylobacter	Poultry:Chicken Thighs			food	1
+validation	Campylobacter	Prepared meats			food	1
+validation	Campylobacter	Preputial wash	Bos taurus	No History	animal	1
+validation	Campylobacter	Product-Rinse-Chicken			food	1
+validation	Campylobacter	Product-Rinse-Other Poultry			food	1
+validation	Campylobacter	Raw Cow Milk	not provided	not provided	food	1
+validation	Campylobacter	Rectal swab			human	1
+validation	Campylobacter	Rectal swab	Homo sapiens	not provided	human	1
+validation	Campylobacter	Small Intestine	Equine	not provided	animal	1
+validation	Campylobacter	Small intestine			animal	1
+validation	Campylobacter	Small intestine	Porcine		animal	1
+validation	Campylobacter	Small intestine	Raccoon		animal	1
+validation	Campylobacter	Synovial Fluid			human	1
+validation	Campylobacter	Wy State Vet lab	Bison		animal	1
+validation	Campylobacter	blood	Canis lupus familiaris	Septicemia	animal	1
+validation	Campylobacter	bovine liver	Bos taurus		food	1
+validation	Campylobacter	broth			food	1
+validation	Campylobacter	chicken			animal	1
+validation	Campylobacter	chicken			human	1
+validation	Campylobacter	chicken chicken heart			food	1
+validation	Campylobacter	chicken chicken liver			food	1
+validation	Campylobacter	chicken feces	Gallus gallus		animal	1
+validation	Campylobacter	chicken wings			food	1
+validation	Campylobacter	comminuted beef			food	1
+validation	Campylobacter	feces	Felis catus	Campylobacteriosis	animal	1
+validation	Campylobacter	feces	Procyon lotor		animal	1
+validation	Campylobacter	feces	SIAMESE		animal	1
+validation	Campylobacter	feces (Canis lupus familiaris)			animal	1
+validation	Campylobacter	fetal lung	Ovis aries	Aborted fetus	animal	1
+validation	Campylobacter	fetus	Bos taurus		animal	1
+validation	Campylobacter	intestine	Bovine		animal	1
+validation	Campylobacter	intestine	Felis catus		animal	1
+validation	Campylobacter	intestine	Gallus gallus domesticus	No History	animal	1
+validation	Campylobacter	intestine	Ovis aries	Colitis	animal	1
+validation	Campylobacter	lake water			environmental	1
+validation	Campylobacter	live pig swab	porcine		animal	1
+validation	Campylobacter	liver	Ovis aries		animal	1
+validation	Campylobacter	lung	Ovis aries	Incidental Finding	animal	1
+validation	Campylobacter	lung	Ovis aries	Pneumonia	animal	1
+validation	Campylobacter	lung and stomach contents	Capra aegagrus hircus		animal	1
+validation	Campylobacter	milk			food	1
+validation	Campylobacter	milk	Bos taurus	Mastitis	animal	1
+validation	Campylobacter	other			human	1
+validation	Campylobacter	pig feed			food	1
+validation	Campylobacter	placenta	Bos taurus	Aborted fetus	animal	1
+validation	Campylobacter	placenta	Bovine		animal	1
+validation	Campylobacter	placenta	Ovine		animal	1
+validation	Campylobacter	placenta	Ovis aries	spontaneous abortion	animal	1
+validation	Campylobacter	poultry			animal	1
+validation	Campylobacter	raw milk			food	1
+validation	Campylobacter	retail raw whole milk cow			food	1
+validation	Campylobacter	sediment			environmental	1
+validation	Campylobacter	serum			human	1
+validation	Campylobacter	small intestine	Canis lupus familiaris		animal	1
+validation	Campylobacter	stomach contents	Capra aegagrus hircus		animal	1
+validation	Campylobacter	stool			animal	1
+validation	Campylobacter	swine anal swab	Sus scrofa		animal	1
+validation	Campylobacter	turkey			food	1
+validation	Campylobacter	urine	Canis lupus familiaris	Cystitis	animal	1
+validation	Campylobacter	urine	Canis lupus familiaris	urinary tract infection	animal	1
+validation	Campylobacter	wound, left leg			human	1
+validation	Klebsiella	Community	Homo sapiens		human	72
+validation	Klebsiella	wastewater			environmental	61
+validation	Klebsiella	Human blood	Homo sapiens		human	47
+validation	Klebsiella	Surface Water Isolate			environmental	32
+validation	Klebsiella	not collected	Homo sapiens		human	19
+validation	Klebsiella	Raw Milk			food	16
+validation	Klebsiella	Human urine	Homo sapiens		human	15
+validation	Klebsiella	Feces [UBERON:0001988]	Sus scrofa domesticus [NCBITaxon:9825]		animal	13
+validation	Klebsiella	clinical isolate	Homo sapiens		human	12
+validation	Klebsiella	sewage			environmental	11
+validation	Klebsiella	Farm	Homo sapiens		human	9
+validation	Klebsiella	feces			human	8
+validation	Klebsiella	clinical	Homo sapiens		human	7
+validation	Klebsiella	manure			animal	7
+validation	Klebsiella	WTP - Sedimentation Tank			environmental	6
+validation	Klebsiella	Wastewater influent			environmental	6
+validation	Klebsiella	chicken			animal	6
+validation	Klebsiella	farmers oral swabs	Homo sapiens		human	6
+validation	Klebsiella	Blood culture	Homo sapiens		human	5
+validation	Klebsiella	WTP - Sewage Sludge			environmental	5
+validation	Klebsiella	feces	Sus scrofa		animal	5
+validation	Klebsiella	Human respiratory	Homo sapiens		human	4
+validation	Klebsiella	River (surface water)			environmental	4
+validation	Klebsiella	WTP - Influent			environmental	4
+validation	Klebsiella	Wastewater effluent			environmental	4
+validation	Klebsiella	environmental swab			environmental	4
+validation	Klebsiella	farmers feces	Homo sapiens		human	4
+validation	Klebsiella	rectal swab	Felis catus		animal	4
+validation	Klebsiella	wild animals feces			animal	4
+validation	Klebsiella	WTP - Effluent			environmental	3
+validation	Klebsiella	tissue	Canis lupus familiaris		animal	3
+validation	Klebsiella	urine	Canis lupus familiaris	Urinary Tract Infection [Doid:0080784]	animal	3
+validation	Klebsiella	blood	Homo sapiens		human	2
+validation	Klebsiella	Abdominal swab	Canis lupus familiaris	Peritonitis	animal	1
+validation	Klebsiella	Bulk tank milk			food	1
+validation	Klebsiella	Carcass swab			environmental	1
+validation	Klebsiella	Feed			food	1
+validation	Klebsiella	Foot/Hoof	Equus caballus	suspensory desmitis	animal	1
+validation	Klebsiella	Meadow soil			environmental	1
+validation	Klebsiella	Pork			food	1
+validation	Klebsiella	River			environmental	1
+validation	Klebsiella	Sewage			environmental	1
+validation	Klebsiella	Urine (Canis lupus familiaris)			animal	1
+validation	Klebsiella	Urine Cystocentesis	Canis lupus familiaris		animal	1
+validation	Klebsiella	WTP - Effluent (prior to dischAirge into receiving waters)			environmental	1
+validation	Klebsiella	Wound (Canis lupus familiaris)			animal	1
+validation	Klebsiella	Yaque del Sur River			environmental	1
+validation	Klebsiella	blood			human	1
+validation	Klebsiella	blood	Canis lupus familiaris		animal	1
+validation	Klebsiella	grass cutter meat	Thryonomys swinderianus		food	1
+validation	Klebsiella	lung	Equus caballus	Bronchopneumonia	animal	1
+validation	Klebsiella	other	Homo sapiens		human	1
+validation	Klebsiella	saliva	Homo sapiens		human	1
+validation	Klebsiella	skin	Felis catus	Chronic Kidney Disease	animal	1
+validation	Klebsiella	soil			environmental	1
+validation	Klebsiella	urine	Canis lupus familiaris		animal	1
+validation	Klebsiella	urine	Canis lupus familiaris	"Hematuria, Hindlimb paralysis"	animal	1
+validation	Klebsiella	urine	Canis lupus familiaris	Urinary Tract Infections	animal	1
+validation	Klebsiella	urine	Felis catus	Bacteriuria	animal	1
+validation	Klebsiella	wound	Canis lupus familiaris		animal	1
+validation	Klebsiella	wound	Equus caballus	Wound	animal	1
+validation	Acinetobacter	wound			human	9
+validation	Acinetobacter	sputum			human	8
+validation	Acinetobacter	soil			environmental	6
+validation	Acinetobacter	Tissue			human	2
+validation	Acinetobacter	blood			human	2
+validation	Acinetobacter	tracheal aspirate			human	2
+validation	Acinetobacter	wastewater			environmental	2
+validation	Acinetobacter	Bronchial Wash			human	1
+validation	Acinetobacter	Drain			human	1
+validation	Acinetobacter	raw pet food			environmental	1
+validation	Acinetobacter	urine			human	1
+validation	Clostridium_perfringens	Stool swab	swine		animal	849
+validation	Clostridium_perfringens	Stool swab	Homo sapiens		human	425
+validation	Clostridium_perfringens	Stool swab	pets		animal	180
+validation	Clostridium_perfringens	Stool swab	sheep		animal	97
+validation	Clostridium_perfringens	stool	Homo sapiens		human	81
+validation	Clostridium_perfringens	Stool swab	cow		animal	57
+validation	Clostridium_perfringens	Stool swab	chicken		animal	55
+validation	Clostridium_perfringens	feces	Bos taurus		animal	41
+validation	Clostridium_perfringens	blood	Homo sapiens		human	31
+validation	Clostridium_perfringens	sewage			environmental	29
+validation	Clostridium_perfringens	Stool swab	camel		animal	19
+validation	Clostridium_perfringens	sludge			environmental	15
+validation	Clostridium_perfringens	stool			human	14
+validation	Clostridium_perfringens		Homo sapiens		human	12
+validation	Clostridium_perfringens	Stool swab	animal		animal	9
+validation	Clostridium_perfringens	intestine	Bos taurus		animal	9
+validation	Clostridium_perfringens	feces	not provided		animal	8
+validation	Clostridium_perfringens	Stool swab	Chicken		animal	7
+validation	Clostridium_perfringens	abscess	Homo sapiens		human	7
+validation	Clostridium_perfringens	steamship prime rib			food	7
+validation	Clostridium_perfringens	Stool swab	Crested Ibis		animal	6
+validation	Clostridium_perfringens	powdered infant formula			food	6
+validation	Clostridium_perfringens	Beans			food	5
+validation	Clostridium_perfringens	blood	Homo sapiens	not provided	human	5
+validation	Clostridium_perfringens	feces	Felis catus		animal	5
+validation	Clostridium_perfringens	gravy			food	5
+validation	Clostridium_perfringens	intestine	chicken		animal	5
+validation	Clostridium_perfringens	Animal Intestine	Ovis aries	Watery mouth	animal	4
+validation	Clostridium_perfringens	Canis lupus familiaris feces	Canis lupus familiaris		animal	4
+validation	Clostridium_perfringens	Peritoneal Fluid	Homo sapiens		human	4
+validation	Clostridium_perfringens	Stool swab	Crested ibis		animal	4
+validation	Clostridium_perfringens	Stool swab	panda		animal	4
+validation	Clostridium_perfringens	bile	Homo sapiens		human	4
+validation	Clostridium_perfringens	chicken			food	4
+validation	Clostridium_perfringens	chicken, rice, veggie mix			food	4
+validation	Clostridium_perfringens	feces	Canis lupus familiaris	Diarrhea	animal	4
+validation	Clostridium_perfringens	small intestine	Bos taurus		animal	4
+validation	Clostridium_perfringens	feces (Canis lupus familaris)			animal	3
+validation	Clostridium_perfringens	intestine	Canis lupus familiaris		animal	3
+validation	Clostridium_perfringens	jejunum	Bos taurus		animal	3
+validation	Clostridium_perfringens	lung	Homo sapiens		human	3
+validation	Clostridium_perfringens	wound	Homo sapiens		human	3
+validation	Clostridium_perfringens	Bile duct stent - catheter tip	Homo sapiens		human	2
+validation	Clostridium_perfringens	Fistula	Homo sapiens	not provided	human	2
+validation	Clostridium_perfringens	Ground Beef			food	2
+validation	Clostridium_perfringens	Pork sandwich			food	2
+validation	Clostridium_perfringens	Small Intestine	Bos taurus		animal	2
+validation	Clostridium_perfringens	Small Intestine	Canis lupus familiaris		animal	2
+validation	Clostridium_perfringens	Stool swab	Forest musk deer		animal	2
+validation	Clostridium_perfringens	Taco meat			food	2
+validation	Clostridium_perfringens	abdominal fluid	Homo sapiens		human	2
+validation	Clostridium_perfringens	beef chili			food	2
+validation	Clostridium_perfringens	chicken burrito			food	2
+validation	Clostridium_perfringens	feces	Capra hircus		animal	2
+validation	Clostridium_perfringens	feces (Felis catus)			animal	2
+validation	Clostridium_perfringens	freeze dried raspberries			food	2
+validation	Clostridium_perfringens	intestine	Capra hircus		animal	2
+validation	Clostridium_perfringens	peritoneal fluid	Homo sapiens		human	2
+validation	Clostridium_perfringens		elk		animal	1
+validation	Clostridium_perfringens	Abcess Fluid	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abdominal (drain aspirate)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abdominal (ostomy bag)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abdominal Wound	Homo sapiens	not provided	human	1
+validation	Clostridium_perfringens	Abdominal drain	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abdominal drain fluid	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abscess	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abscess (drained by IR)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abscess (liver abscess)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abscess (site 2)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Abscess Fluid	Homo sapiens	not provided	human	1
+validation	Clostridium_perfringens	Aspirate Right pelvic sidewall	Homo sapiens		human	1
+validation	Clostridium_perfringens	Beef stew	Bos taurus		food	1
+validation	Clostridium_perfringens	Bile Fluid	Homo sapiens	not provided	human	1
+validation	Clostridium_perfringens	Cecal Tonsil	Meleagris gallopavo		animal	1
+validation	Clostridium_perfringens	Fluid (Bile-swab)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Fluid (bile)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Food (mixed)			food	1
+validation	Clostridium_perfringens	Ileum	Bos taurus		animal	1
+validation	Clostridium_perfringens	Pleural Fluid	Homo sapiens		human	1
+validation	Clostridium_perfringens	Pooled Tissue	Bos taurus		animal	1
+validation	Clostridium_perfringens	Refried Beans			food	1
+validation	Clostridium_perfringens	Small Intestine	Capra hircus		animal	1
+validation	Clostridium_perfringens	Small Intestine	Cervus canadensis		animal	1
+validation	Clostridium_perfringens	Stool swab	Homo sapiens		animal	1
+validation	Clostridium_perfringens	Stool swab	rabbit		animal	1
+validation	Clostridium_perfringens	Tissue (right elbow)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Tissue - lower extremity	Homo sapiens	not provided	human	1
+validation	Clostridium_perfringens	Wound (Bile duct stent)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Wound (right buttock)	Homo sapiens		human	1
+validation	Clostridium_perfringens	Wound - perineal hydradenitis	Homo sapiens		human	1
+validation	Clostridium_perfringens	Wound Biliary stent	Homo sapiens		human	1
+validation	Clostridium_perfringens	Wound bile duct	Homo sapiens		human	1
+validation	Clostridium_perfringens	abcess fluid	Homo sapiens		human	1
+validation	Clostridium_perfringens	ashwagandha capsules			food	1
+validation	Clostridium_perfringens	bbq beef brisket chili			food	1
+validation	Clostridium_perfringens	beef, rice, veggie mix			food	1
+validation	Clostridium_perfringens	bindii capsules			food	1
+validation	Clostridium_perfringens	blood bank component-RBC	Homo sapiens		human	1
+validation	Clostridium_perfringens	cabbage			food	1
+validation	Clostridium_perfringens	cecum	Ovis aries		animal	1
+validation	Clostridium_perfringens	chicken alfredo			food	1
+validation	Clostridium_perfringens	chicken chili			food	1
+validation	Clostridium_perfringens	chicken taco salad			food	1
+validation	Clostridium_perfringens	colon	Bos taurus		animal	1
+validation	Clostridium_perfringens	commercial dog food			environmental	1
+validation	Clostridium_perfringens	corn cup			food	1
+validation	Clostridium_perfringens	corned beef			food	1
+validation	Clostridium_perfringens	dog feces			animal	1
+validation	Clostridium_perfringens	environmental swab sponge tray			environmental	1
+validation	Clostridium_perfringens	fecal swab	Bos taurus		animal	1
+validation	Clostridium_perfringens	feces	Canis lupus familiaris		animal	1
+validation	Clostridium_perfringens	feces	Capra aegagrus hircus		animal	1
+validation	Clostridium_perfringens	feces	Lama glama		animal	1
+validation	Clostridium_perfringens	feces	Sus scrofa domesticus		animal	1
+validation	Clostridium_perfringens	feces (Canis lupus familiaris)			animal	1
+validation	Clostridium_perfringens	feces swab	Gallus gallus domesticus		animal	1
+validation	Clostridium_perfringens	feces/small intestine	Bos taurus		animal	1
+validation	Clostridium_perfringens	feine feces	Felis catus		animal	1
+validation	Clostridium_perfringens	halal chili			food	1
+validation	Clostridium_perfringens	heart	Ovis aries		animal	1
+validation	Clostridium_perfringens	intestine	Coturnix coturnix		animal	1
+validation	Clostridium_perfringens	intestine	Gallus gallus		animal	1
+validation	Clostridium_perfringens	intestine	Meleagris gallopavo		animal	1
+validation	Clostridium_perfringens	intestine	Sus scrofa domesticus		animal	1
+validation	Clostridium_perfringens	intestine swab	Gallus gallus domesticus		animal	1
+validation	Clostridium_perfringens	jejunum	Cervus canadensis		animal	1
+validation	Clostridium_perfringens	jejunum	Ovis aries		animal	1
+validation	Clostridium_perfringens	leftover prime rib			food	1
+validation	Clostridium_perfringens	lung	Odocoileus virginianus		animal	1
+validation	Clostridium_perfringens	mashed potato			food	1
+validation	Clostridium_perfringens	mexican corn			food	1
+validation	Clostridium_perfringens	pelvis	Homo sapiens		human	1
+validation	Clostridium_perfringens	pleural fluid	Homo sapiens		human	1
+validation	Clostridium_perfringens	pooled feces	Bos taurus		animal	1
+validation	Clostridium_perfringens	pooled feces	Sus scrofa domesticus		animal	1
+validation	Clostridium_perfringens	pooled tissue	Bison bison		animal	1
+validation	Clostridium_perfringens	potato			food	1
+validation	Clostridium_perfringens	prime rib			food	1
+validation	Clostridium_perfringens	pulled pork			food	1
+validation	Clostridium_perfringens	raw chicken patty			food	1
+validation	Clostridium_perfringens	rice, chicken, and chorizo			food	1
+validation	Clostridium_perfringens	roasted beef			food	1
+validation	Clostridium_perfringens	seasoned noodles			food	1
+validation	Clostridium_perfringens	skin lesion	Gallus gallus		animal	1
+validation	Clostridium_perfringens	small intestine	Canis lupus familiaris		animal	1
+validation	Clostridium_perfringens	small intestine	Capra hircus		animal	1
+validation	Clostridium_perfringens	small intestine	Gallus gallus domesticus		animal	1
+validation	Clostridium_perfringens	small intestine	Muntiacus sp.		animal	1
+validation	Clostridium_perfringens	thigh	Homo sapiens		human	1
+validation	Clostridium_perfringens	thoracic fluid swab	Felis catus		animal	1
+validation	Clostridium_perfringens	wedding food			food	1
+validation	Clostridium_perfringens	wound	Homo sapiens	not provided	human	1
+validation	Clostridium_perfringens	wound/bile	Homo sapiens		human	1
+validation	Clostridium_perfringens	yak			animal	1
+validation	Vibrio_cholerae	stool	Homo sapiens		human	191
+validation	Vibrio_cholerae	stool	Homo sapiens	not provided	human	88
+validation	Vibrio_cholerae	shrimp			food	30
+validation	Vibrio_cholerae	Water: Adjacent Shrimp farm			environmental	28
+validation	Vibrio_cholerae	stool			human	26
+validation	Vibrio_cholerae	stool	Homo sapiens	cholera	human	24
+validation	Vibrio_cholerae	blood	Homo sapiens		human	23
+validation	Vibrio_cholerae		Homo sapiens		human	16
+validation	Vibrio_cholerae	blood	Homo sapiens	not provided	human	14
+validation	Vibrio_cholerae	human			human	14
+validation	Vibrio_cholerae	freshwater			environmental	10
+validation	Vibrio_cholerae	urine	Homo sapiens		human	9
+validation	Vibrio_cholerae	water			environmental	9
+validation	Vibrio_cholerae	Water: Shrimp farm			environmental	8
+validation	Vibrio_cholerae	wound	Homo sapiens	not provided	human	8
+validation	Vibrio_cholerae	Water from shrimp farm			environmental	7
+validation	Vibrio_cholerae	clinic	Homo sapiens		human	7
+validation	Vibrio_cholerae	wound	Homo sapiens		human	7
+validation	Vibrio_cholerae	environment			environmental	6
+validation	Vibrio_cholerae	Prawns			food	5
+validation	Vibrio_cholerae	Stool, Clinical	Homo sapiens	Cholera	human	5
+validation	Vibrio_cholerae	urine	Homo sapiens	not provided	human	5
+validation	Vibrio_cholerae	utensil			environmental	5
+validation	Vibrio_cholerae		Homo sapiens	not provided	human	4
+validation	Vibrio_cholerae	ear	Homo sapiens		human	4
+validation	Vibrio_cholerae	fresh water tilapia tank			environmental	4
+validation	Vibrio_cholerae	seafood			food	4
+validation	Vibrio_cholerae	tilapia			food	4
+validation	Vibrio_cholerae	Creek downstream from shrimp farm			environmental	3
+validation	Vibrio_cholerae	Frozen Shrimp			food	3
+validation	Vibrio_cholerae	Shucked Oysters			food	3
+validation	Vibrio_cholerae	frozen tilapia			food	3
+validation	Vibrio_cholerae	not provided	Homo sapiens		human	3
+validation	Vibrio_cholerae	whole blood	Homo sapiens	not provided	human	3
+validation	Vibrio_cholerae	Caryblair	Homo sapiens		human	2
+validation	Vibrio_cholerae	PEELED DEVEINED SHRIMP			food	2
+validation	Vibrio_cholerae	River Water/Estuary			environmental	2
+validation	Vibrio_cholerae	SHELL ON INTACT-HEADLESS SHRIMP			food	2
+validation	Vibrio_cholerae	Shellfish			food	2
+validation	Vibrio_cholerae	clinical	Homo sapiens	Vibrio cholerae	human	2
+validation	Vibrio_cholerae	ice display			environmental	2
+validation	Vibrio_cholerae	other	Homo sapiens		human	2
+validation	Vibrio_cholerae		Homo sapiens	cholera	human	1
+validation	Vibrio_cholerae	Colon	Homo sapiens		human	1
+validation	Vibrio_cholerae	Cooked Prawns			food	1
+validation	Vibrio_cholerae	Fluid Abdomen	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	Fluid_Drainage	Homo sapiens		human	1
+validation	Vibrio_cholerae	Left upper extremity structure			human	1
+validation	Vibrio_cholerae	Leg	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	Lesion Swab	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	Lung tissue	Ovine		animal	1
+validation	Vibrio_cholerae	OTHER; Endotracheal	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	Oysters			food	1
+validation	Vibrio_cholerae	PEELED DEVEINED			food	1
+validation	Vibrio_cholerae	Peeled tail on Shrimp			food	1
+validation	Vibrio_cholerae	Pronghorn			animal	1
+validation	Vibrio_cholerae	Rectal Swab	Homo sapiens		human	1
+validation	Vibrio_cholerae	Rectal swab	Homo sapiens		human	1
+validation	Vibrio_cholerae	Referred Isolate			human	1
+validation	Vibrio_cholerae	Shell on Shrimp			food	1
+validation	Vibrio_cholerae	Stickleback fish			animal	1
+validation	Vibrio_cholerae	Tilapia			food	1
+validation	Vibrio_cholerae	Tissue	Homo sapiens		human	1
+validation	Vibrio_cholerae	USA			human	1
+validation	Vibrio_cholerae	Wastewater influent			environmental	1
+validation	Vibrio_cholerae	Water, Environment			environmental	1
+validation	Vibrio_cholerae	Wound swab	Homo sapiens		human	1
+validation	Vibrio_cholerae	blood			human	1
+validation	Vibrio_cholerae	brain	Osteogaster aenea	Urinary tract infection	animal	1
+validation	Vibrio_cholerae	cloaca	Chloroceryle americana (Gmelin, 1788)		animal	1
+validation	Vibrio_cholerae	ear			human	1
+validation	Vibrio_cholerae	ear	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	estuarine water			environmental	1
+validation	Vibrio_cholerae	fresh water sturgeon tank			environmental	1
+validation	Vibrio_cholerae	freshwater tilapia tank filter			environmental	1
+validation	Vibrio_cholerae	frozen raw shrimp peeled deveined			food	1
+validation	Vibrio_cholerae	lung	Bos taurus		animal	1
+validation	Vibrio_cholerae	other	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	pronghorn			animal	1
+validation	Vibrio_cholerae	river water			environmental	1
+validation	Vibrio_cholerae	salmon			food	1
+validation	Vibrio_cholerae	salt water crab tank			environmental	1
+validation	Vibrio_cholerae	seawater			environmental	1
+validation	Vibrio_cholerae	sputum	Homo sapiens	not provided	human	1
+validation	Vibrio_cholerae	wastewater			environmental	1
+validation	Vibrio_cholerae	wound			human	1
+validation	Yersinia_enterocolitica	stool	Homo sapiens		human	220
+validation	Yersinia_enterocolitica	stool	Homo sapiens	not provided	human	79
+validation	Yersinia_enterocolitica	pig farm	Sus scrofa domesticus		animal	60
+validation	Yersinia_enterocolitica	Wastewater influent			environmental	54
+validation	Yersinia_enterocolitica	stool			human	39
+validation	Yersinia_enterocolitica		not provided	not provided	human	15
+validation	Yersinia_enterocolitica	milk			food	9
+validation	Yersinia_enterocolitica	human	Homo sapiens		human	5
+validation	Yersinia_enterocolitica		Homo sapiens		human	3
+validation	Yersinia_enterocolitica	blood	Homo sapiens		human	3
+validation	Yersinia_enterocolitica	water			environmental	3
+validation	Yersinia_enterocolitica		Homo sapiens	not provided	human	2
+validation	Yersinia_enterocolitica	blood			human	2
+validation	Yersinia_enterocolitica	feces			environmental	2
+validation	Yersinia_enterocolitica	other	Homo sapiens		human	2
+validation	Yersinia_enterocolitica	sputum	Homo sapiens		human	2
+validation	Yersinia_enterocolitica		deer		animal	1
+validation	Yersinia_enterocolitica	Referred Isolate			human	1
+validation	Yersinia_enterocolitica	Referred Isolate-Stool			human	1
+validation	Yersinia_enterocolitica	anal swab			animal	1
+validation	Yersinia_enterocolitica	appendix	Homo sapiens		human	1
+validation	Yersinia_enterocolitica	blood	Homo sapiens	not provided	human	1
+validation	Yersinia_enterocolitica	chicken wing			food	1
+validation	Yersinia_enterocolitica	cow	bovine		animal	1
+validation	Yersinia_enterocolitica	dog	canine		animal	1
+validation	Yersinia_enterocolitica	gray fox feces			environmental	1
+validation	Yersinia_enterocolitica	sputum	Homo sapiens	not provided	human	1
+validation	Yersinia_enterocolitica	stool			environmental	1
+validation	Yersinia_enterocolitica	stool	not provided	not provided	human	1
+validation	Yersinia_enterocolitica	turkey sandwich			food	1
+validation	Yersinia_enterocolitica	urine	Homo sapiens		human	1
+validation	Yersinia_enterocolitica	white tail deer feces			environmental	1
+validation	Yersinia_enterocolitica	white-tailed deer	Odocoileus virginianus		animal	1
