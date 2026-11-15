@@ -147,7 +147,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 5, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `5-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 6, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `6-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 

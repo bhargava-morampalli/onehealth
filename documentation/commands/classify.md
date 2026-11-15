@@ -60,7 +60,7 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 - With a human host, it is **Human**.
 - If another field names food, an environment or a laboratory, such as `source_type` food, it goes to review as `host_source_conflict`. Words in the specimen's own text do not count: `stool from a food handler` is still Human.
 - With both, it goes to review as `host_source_conflict`.
-- With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`.
+- With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`. Any animal NCBI Taxonomy names is recognised, not only those on the lexicon's word list; see [Hosts by taxonomy](../guides/lexicon.md#hosts-by-taxonomy).
 - With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
 - With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
 

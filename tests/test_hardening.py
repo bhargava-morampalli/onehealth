@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from onehealth import __version__, cli, ncbi
+from onehealth.constants import SEED_LEXICON_VERSION as SEED
 from onehealth.io_tsv import read_distance_matrix, read_id_list, read_lineages, read_tsv, write_tsv
 from onehealth.lexicon import default_lexicon_path, load_lexicon
 from onehealth.ncbi import NCBIClient, attributes_from_biosample, parse_biosample_xml
@@ -294,14 +295,14 @@ def test_lexicon_version_tells_an_edited_or_unversioned_file_from_the_seed(tmp_p
 
     copy = tmp_path / "copy.yaml"
     copy.write_text(seed_text, encoding="utf-8")
-    assert load_lexicon(copy).version == seed.version == "5"
+    assert load_lexicon(copy).version == seed.version == SEED
     copy.write_bytes(seed_text.replace("\n", "\r\n").encode("utf-8"))  # the same file saved on Windows
-    assert load_lexicon(copy).version == "5"
+    assert load_lexicon(copy).version == SEED
 
     edited = tmp_path / "edited.yaml"
     edited.write_text(seed_text.replace("      - homo sapien\n", "      - martian\n"), encoding="utf-8")
     version = load_lexicon(edited).version
-    assert version.startswith("5-modified-") and len(version) == len("5-modified-") + 8
+    assert version.startswith(f"{SEED}-modified-") and len(version) == len(f"{SEED}-modified-") + 8
     assert load_lexicon(edited).version == version  # the same file, the same name
 
     unversioned = tmp_path / "mine.yaml"
@@ -326,5 +327,5 @@ def test_classify_reports_and_records_a_modified_lexicon(tmp_path: Path, capsys)
     out = tmp_path / "out.tsv"
     assert cli.main(["classify", str(table), "-o", str(out), "--lexicon", str(edited)]) == 0
     row = read_tsv(out)[0]
-    assert row["l1"] == "Human" and row["lexicon_version"].startswith("5-modified-")
-    assert f"lexicon {row['lexicon_version']} (seed v5)" in capsys.readouterr().err
+    assert row["l1"] == "Human" and row["lexicon_version"].startswith(f"{SEED}-modified-")
+    assert f"lexicon {row['lexicon_version']} (seed v{SEED})" in capsys.readouterr().err

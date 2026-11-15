@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from onehealth.classify import classify_record
+from onehealth.constants import SEED_LEXICON_VERSION as SEED
 from onehealth.lexicon import load_lexicon
 
 
@@ -110,9 +111,9 @@ def test_other_spellings_of_faeces_follow_the_host(lexicon, source):
 
 def test_one_lexicon_ships_and_an_older_version_number_says_where_to_find_it():
     """`--lexicon v3` used to select an older lexicon shipped next to the current one."""
-    assert load_lexicon(Path("v5")).version == load_lexicon(Path("5")).version == load_lexicon().version == "5"
+    assert load_lexicon(Path(f"v{SEED}")).version == load_lexicon(Path(SEED)).version == load_lexicon().version == SEED
     for old in ("v4", "v3", "2"):
-        with pytest.raises(ValueError, match="onehealth ships one lexicon, version 5, which is the default"):
+        with pytest.raises(ValueError, match=f"onehealth ships one lexicon, version {SEED}, which is the default"):
             load_lexicon(Path(old))
 
 
