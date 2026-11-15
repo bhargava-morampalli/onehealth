@@ -47,7 +47,7 @@ def test_the_fixture_is_what_the_readme_says(records):
     by_split = Counter()
     for row in records:
         by_split[row["split"]] += int(row["records"])
-    assert by_split == {"development": 33372, "heldout": 39722, "validation": 32208}
+    assert by_split == {"development": 33372, "heldout": 39722, "validation": 32208, "final": 34252}
     assert {row["ncbi_source_type"] for row in records} == set(LABEL)
     # Every record has something to classify from, and the answer is not in a column classify reads.
     assert all(row["isolation_source"] or row["host"] for row in records)
@@ -57,23 +57,43 @@ def test_the_fixture_is_what_the_readme_says(records):
         "Staphylococcus_aureus", "Vibrio_parahaemolyticus", "Bacillus_cereus_group", "Cronobacter"}
     assert groups["validation"] - groups["development"] - groups["heldout"] == {
         "Clostridium_perfringens", "Vibrio_cholerae", "Yersinia_enterocolitica"}
+    assert groups["final"] - groups["development"] - groups["heldout"] - groups["validation"] == {
+        "Vibrio_vulnificus", "Listeria_innocua", "Staphylococcus_pseudintermedius", "Clostridium_botulinum", "Aeromonas"}
+
+
+def test_final_baseline(records, lexicon):
+    """Floors just under lexicon v7 on the final split: 95.5% classified, 96.5% of those right.
+    This is the figure to quote for v7.
+
+    The final split was read once, after v7 was finished, and v7 was not changed afterwards.
+    Before v7 the same records scored 94.6% and 95.3% (Animal precision 88.2%, Environmental recall 78.7%).
+    """
+    result = _score([r for r in records if r["split"] == "final"], lexicon)
+    assert result["coverage"] >= 0.95
+    assert result["accuracy"] >= 0.96
+    assert result["precision"]["Human"] >= 0.985 and result["precision"]["Food"] >= 0.98
+    assert result["precision"]["Environmental"] >= 0.97
+    assert result["precision"]["Animal"] >= 0.91
+    assert result["recall"]["Animal"] >= 0.965
+    assert result["recall"]["Environmental"] >= 0.895
+    assert result["recall"]["Food"] >= 0.825
 
 
 def test_validation_baseline(records, lexicon):
-    """Floors just under lexicon v7 on records nobody looked at while it was written: 95.9% classified,
-    96.0% of those right. This is the figure to quote for v7.
+    """Floors just under lexicon v7 on the validation split: 96.7% classified, 96.2% of those right.
 
-    The validation split was read once, after v7 was finished, and v7 was not changed afterwards.
-    Before v7 the same records scored 95.5% and 94.8% (Animal precision 82.0%, Environmental recall 73.6%).
+    This split was meant to be read once. It showed that one v7 rule went against NCBI's records
+    (a farm with an animal host is the animal, not a conflict), and the rule was corrected, so it
+    is no longer unseen; the final split is.
     """
     result = _score([r for r in records if r["split"] == "validation"], lexicon)
-    assert result["coverage"] >= 0.955
+    assert result["coverage"] >= 0.96
     assert result["accuracy"] >= 0.955
     assert result["precision"]["Human"] >= 0.985 and result["precision"]["Environmental"] >= 0.985
-    assert result["precision"]["Food"] >= 0.98
-    assert result["precision"]["Animal"] >= 0.855
-    assert result["recall"]["Environmental"] >= 0.84
-    assert result["recall"]["Animal"] >= 0.895
+    assert result["precision"]["Food"] >= 0.985
+    assert result["precision"]["Animal"] >= 0.86
+    assert result["recall"]["Environmental"] >= 0.86
+    assert result["recall"]["Animal"] >= 0.93
 
 
 def test_heldout_baseline(records, lexicon):
@@ -95,7 +115,7 @@ def test_heldout_baseline(records, lexicon):
     assert result["precision"]["Animal"] >= 0.835
     assert result["recall"]["Animal"] >= 0.90
     assert result["recall"]["Food"] >= 0.73
-    assert result["recall"]["Environmental"] >= 0.86
+    assert result["recall"]["Environmental"] >= 0.865
 
 
 def test_development_baseline(records, lexicon):
