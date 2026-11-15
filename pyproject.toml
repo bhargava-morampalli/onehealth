@@ -3,6 +3,8 @@ name = "onehealth"
 version = "0.1.0"
 description = "Classify mixed NCBI isolate IDs into One Health source categories."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "bhargava-morampalli", email = "morampalli.b@northeastern.edu" }
 ]
