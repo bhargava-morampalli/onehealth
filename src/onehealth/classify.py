@@ -146,6 +146,12 @@ def _classify_with_lexicon(view: dict[str, str], lexicon: Lexicon) -> Classifica
     if all(hit.rule.host_dependent for hit in winners):
         return _classify_specimen(rule, hits, view, version)
 
+    if all(hit.rule.yields_to_host for hit in winners):
+        # A farm, a barn: with a host, the host is what was sampled there.
+        hosts = best_hits([hit for hit in plain if hit.field == "host" and hit.rule.l1 in {"Human", "Animal"}])
+        if len({hit.rule.l1 for hit in hosts}) == 1:
+            return _ok(hosts[0].rule.l1, HEALTHCARE_NO, f"{rule.rule_id}+{hosts[0].rule.rule_id}", version)
+
     conflict = _host_source_conflict(plain)
     if conflict:
         return _review("host_source_conflict", version, conflict)

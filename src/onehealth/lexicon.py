@@ -47,6 +47,9 @@ class LexiconRule:
     # "animal": the rule names a place where animals are kept (a barn, manure). An animal
     # host then names the animals kept there and is not a contradiction.
     setting_of: str = ""
+    # The rule names a place (a farm, a barn), not a sample. A human or animal host then
+    # says what was sampled there, and decides.
+    yields_to_host: bool = False
 
 
 @dataclass(frozen=True)
@@ -162,6 +165,7 @@ def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:
         specimen_only=bool(item.get("specimen_only", False)),
         no_host=bool(item.get("no_host", False)),
         setting_of=_setting_of(item.get("setting_of"), where),
+        yields_to_host=bool(item.get("yields_to_host", False)),
     )
 
 

@@ -36,8 +36,10 @@ description: >
 #   * specimen_only: true marks a rule that only says whose specimen it is. It decides
 #     Human or Animal for a specimen rule on the same row and is ignored otherwise.
 #   * no_host: true marks a rule that applies only to a row with no host.
-#   * setting_of: animal marks a place where animals are kept. An animal host there names
-#     the animals and is not a contradiction.
+#   * setting_of: animal marks what animals leave behind (manure). An animal host names
+#     the animals and is not a contradiction; the row stays Environmental.
+#   * yields_to_host: true marks a place (a farm, a barn). With a human or animal host,
+#     the host is what was sampled there, and decides.
 #   * NCBI's source_type, where a record has one, is not a matter for the lexicon: it is
 #     the class (classify.py). These rules read the free text of everything else.
 #   * The paper rollup is fixed in code (constants.derive_paper_rollup), not here.
@@ -362,6 +364,11 @@ rules:
       - cutting boards
       - factory
       - environmental surface
+      # v7: swabs of a poultry house. Until v7 the animal word made these Animal.
+      - drag swab
+      - drag swabs
+      - boot swab
+      - boot swabs
     l1: Environmental
     healthcare_environment: "no"
     priority: 78
@@ -424,7 +431,6 @@ rules:
       # ("comminuted chicken", "ground turkey"), which on its own still means the animal.
       - comminuted
       - nonintact
-      - farm raised
       - bottled water
       - raw intact
       - product raw
@@ -623,7 +629,8 @@ rules:
       - cloacal
     l1: Animal
     healthcare_environment: "no"
-    priority: 66
+    priority: 79
+    note: v7. Above the farm and food-premises rules, so "cloaca swab, farm" is the bird.
 
   # --- v7: what animals leave behind, and where they are kept ---
   - id: animal-waste
@@ -655,18 +662,28 @@ rules:
       - poultry shed
       - poultry house
       - chicken house
-      - drag swab
-      - drag swabs
-      - boot swab
-      - boot swabs
     l1: Environmental
     healthcare_environment: "no"
-    priority: 65
+    priority: 76
+    yields_to_host: true
     note: >
-      v7. A farm, a barn, a poultry shed and the swabs taken of them (drag swab, boot
-      swab) were Animal until v7. NCBI submitters record them as environmental. With an
-      animal host the row goes to review as host_source_conflict: "farm" with host Gallus
-      gallus may be a bird on the farm or a swab of it.
+      v7. A farm, a barn or a poultry shed was Animal until v7. In NCBI records it is a
+      place: with no host the sample is of the place and is environmental, and with a
+      host it is of the host ("pig farm", host Sus scrofa, is animal; "farm", host Homo
+      sapiens, is human). onehealth now follows that; the figures are in the
+      documentation (guides/definitions). yields_to_host is what makes the host decide.
+      Above the food words (75), so "water: shrimp farm" and "organic meat chicken farm"
+      are a farm, and below specimens (80), so "feces from pig farm" follows its host.
+
+  - id: farmed-food
+    fields: [isolation_source, sample_type]
+    phrases:
+      - farm raised
+      - farmed
+    l1: Food
+    healthcare_environment: "no"
+    priority: 77
+    note: v7. "frozen farm raised bass" is a food. Above farm-environment, which would call it a farm.
 
   # --- animal hosts ---
   - id: animal-hosts
