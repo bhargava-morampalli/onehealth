@@ -21,6 +21,9 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 
 `classify` prints how many rows were classified and which lexicon version was used.
 
+!!! warning "The classes follow NCBI"
+    A record's own `source_type` is its class, farm settings are Environmental, and `chicken` on its own with no host is Food. [Definitions](../guides/definitions.md) gives the numbers behind each of these and says how to choose differently for your study.
+
 ## The classes
 
 **L1** is one of `Human`, `Animal`, `Environmental`, `Food`, `Laboratory`, or `Unclassified` for rows sent to review.
@@ -48,7 +51,17 @@ The lexicon reads four fields of each row:
 | sample_type | `source_type`, `tissue`, `sample_type` |
 | host_disease | `host_disease`, `host disease` |
 
-NCBI's `source_type` (`human`, `animal`, `food`, `environmental`) is a One Health category, so it is read before `tissue` and `sample_type`. NCBI's material type (`whole organism`, `pure culture`) is never treated as evidence.
+NCBI's material type (`whole organism`, `pure culture`) is never treated as evidence.
+
+### `source_type` decides
+
+**When the `source_type` column of a row is `human`, `animal`, `food` or `environmental`, that is the row's class.** It is NCBI's controlled One Health category, chosen by the submitter, and the lexicon is not allowed to disagree with it or to send such a row to review. The reason says what happened:
+
+- the lexicon's own rule, when the free text is silent or agrees;
+- `source_type`, when the free text could not settle it (a host that conflicts with the source, a rule that sends to review);
+- `source_type_over_text`, when the free text said something else. `lexicon_suggestion` holds what the lexicon would have said.
+
+Any other value (`other`, `not provided`, empty) declares nothing, and the lexicon decides. Overrides and decisions still win. See [Definitions](../guides/definitions.md#1-a-records-own-source_type-is-its-class).
 
 One more column is read, but never by the lexicon: the BioSample package the record was submitted under, from the first non-empty of `package`, `attribute_package`, `biosample_package` and `epi_type`. [`resolve`](resolve.md) writes it as `package`, and NCBI Pathogen Detection tables have `attribute_package` and `epi_type`. It is used in one place only, for a specimen with no host (below).
 
@@ -60,8 +73,9 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 
 - With an animal host or an animal word (`pig faeces`, urine from *Canis lupus familiaris*), the row is **Animal**.
 - With a human host, or the word `human` in its own text (`human feces`, `Human, blood culture`), it is **Human**. The word counts only for a specimen: `human contact surface` is not a person.
-- If another field names food, an environment or a laboratory, such as `source_type` food, it goes to review as `host_source_conflict`. Words in the specimen's own text do not count: `stool from a food handler` is still Human.
-- With both, it goes to review as `host_source_conflict`.
+- If another field names food, an environment or a laboratory, it goes to review as `host_source_conflict`, unless that field is `source_type`, which decides (above). Words in the specimen's own text do not count: `stool from a food handler` is still Human.
+- With both an animal and a human, it goes to review as `host_source_conflict`.
+- With no host, and a food named in the same text (`pork blood sausage`), it goes to review as `specimen_or_food`: the specimen word is an ingredient as likely as a sample.
 - With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`. Any animal NCBI Taxonomy names is recognised, not only those on the lexicon's word list; see [Hosts by taxonomy](../guides/lexicon.md#hosts-by-taxonomy).
 - With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
 - With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
@@ -95,11 +109,16 @@ The input columns, followed by:
 | a rule id, e.g. `hospital-drain` | ok | That lexicon rule matched |
 | `<specimen rule>+<host rule>`, e.g. `specimens+human-host` | ok | A specimen, classed by its host |
 | `<specimen rule>+no_host` | ok | A specimen with no host, defaulted to Human |
+| `farm-environment+<host rule>` | ok | A farm or barn, classed by its host |
+| `meat-species-no-host` | ok | `chicken` or `turkey` on its own, with no host: Food |
+| `source_type` | ok | NCBI's `source_type` decided where the free text could not |
+| `source_type_over_text` | ok | NCBI's `source_type` decided although the free text said something else |
 | `override` | ok | An override for this isolate decided |
 | `decision` | ok | A decision for this source text decided |
 | `host_source_conflict` | review | Host and source point to different classes |
 | `host_unrecognised` | review | A specimen from a host the lexicon cannot place |
 | `no_host_env_package` | review | A specimen with no host, in a record filed as environmental, food or other |
+| `specimen_or_food` | review | A specimen word with no host, in a text that also names a food |
 | `rule_conflict:<rules>` | review | Rules of equal priority disagree |
 | `animal-feed`, `fixture-no-setting` | review | A rule that sends matches to review: animal feed, or a fixture such as a drain or sink named without its setting |
 | `taxon_only_source` | review | `isolation_source` is only a scientific name, and nothing else decides |
@@ -108,7 +127,13 @@ The input columns, followed by:
 | `unmatched` | review | No rule matched |
 | `override_empty`, `override_conflict`, `override_invalid_l1`, `override_invalid_healthcare`, `override_invalid_paper_rollup` | review | A problem with the override for this row |
 
-One exception to `host_source_conflict`: a healthcare-environment source with a human host is classified as healthcare environment, because submitters often record *Homo sapiens* as the host of hospital sink and surface swabs.
+Three things are not a `host_source_conflict`:
+
+- a healthcare-environment source with a human host is classified as healthcare environment, because submitters often record *Homo sapiens* as the host of hospital sink and surface swabs;
+- manure, litter or bedding with an animal host is Environmental: the host names the animals it came from;
+- a farm, barn or poultry shed with a host is classified by the host: the host is what was sampled there.
+
+The last two follow NCBI's records; see [Definitions](../guides/definitions.md#2-farm-settings).
 
 ## Overrides
 
@@ -156,7 +181,7 @@ The decisions file is the review-groups table that `classify` writes (below), wi
 `classify` writes the rows it would not guess twice:
 
 - `<out>.review.tsv` lists every row, with its reason.
-- `<out>.review_groups.tsv` lists every **distinct source text** once, with the number of rows that carry it, largest first. In a sample of 159,045 NCBI Pathogen Detection records, the 3,794 review rows that say anything hold 823 distinct texts, and the 100 most common cover 69% of them. This is the shorter table to work through.
+- `<out>.review_groups.tsv` lists every **distinct source text** once, with the number of rows that carry it, largest first. In a sample of 159,045 NCBI Pathogen Detection records, the 2,626 review rows that say anything hold 694 distinct texts, and the 100 most common cover 69% of them. This is the shorter table to work through.
 
 | Column | Contents |
 |---|---|

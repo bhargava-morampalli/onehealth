@@ -58,7 +58,7 @@ onehealth resolve pdts.txt -o work/resolved.tsv --email you@example.com --pd-org
 
 This reads the group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella, 900 MB for Salmonella, and reading stops once every PDT is found. Several groups can be given, comma-separated. Group names are as at <https://ftp.ncbi.nlm.nih.gov/pathogen/Results/>. An outdated PDT version gets the current one. Without `--pd-organism`, a PDT is found only if NCBI named its assembly after it, which few genomes are.
 
-Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`. `classify` also writes `<stem>.review_groups.tsv`: each distinct source text in the review queue once, with the number of rows that carry it and empty columns for a decision. Fill in `l1` for the texts you can place and pass the table back with `--decisions`; each decision then applies to every row with that text. In a sample of 159,045 NCBI records, the 3,794 review rows that say anything hold 823 distinct texts.
+Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`. `classify` also writes `<stem>.review_groups.tsv`: each distinct source text in the review queue once, with the number of rows that carry it and empty columns for a decision. Fill in `l1` for the texts you can place and pass the table back with `--decisions`; each decision then applies to every row with that text. In a sample of 159,045 NCBI records, the 2,626 review rows that say anything hold 694 distinct texts.
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
@@ -74,9 +74,9 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.8% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.9% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
-That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On its 39,722 held-out records the lexicon classifies 89.1%, and 93.9% of those match NCBI's label (v4, before this benchmark existed: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
+That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 139,554 NCBI Pathogen Detection records from 18 organism groups whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 34,252 records set aside until the current lexicon (v7) was finished, it classifies 95.5%, and 96.5% of those match NCBI's label. A Human call matches 99% of the time, Food 99%, Environmental 98% and Animal 92%. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
 
 ## Report
 
@@ -111,6 +111,14 @@ onehealth report work/demo/classified.tsv -o work/demo/report \
 
 ## Classification
 
+> **The classes follow NCBI.** A One Health class is a definition, and definitions decide how many isolates are in each group. Where NCBI's records show a convention, `onehealth` follows it:
+>
+> 1. **A record's own `source_type` is its class.** Where the submitter gave NCBI the One Health category (`human`, `animal`, `food`, `environmental`), it is used as it is. The lexicon reads free text and is not allowed to disagree with it. A third of NCBI records have one.
+> 2. **Farm settings are Environmental.** Manure, litter, a barn and a farm were Animal until lexicon v7. NCBI submitters record manure as environmental in 646 records of 747, and a farm with no host in 141 of 187. A farm *with* a host is the host: `pig farm`, host *Sus scrofa*, is Animal.
+> 3. **`chicken` or `turkey` on its own, with no host, is Food.** They were Animal until v7. NCBI submitters record a bare `chicken` with no host as food in 810 records of 867.
+>
+> [documentation/guides/definitions.md](documentation/guides/definitions.md) has the figures behind each and what is still `onehealth`'s own judgement. If your study defines a source differently, one line in a `--decisions` file changes it for every row with that text.
+
 Default **L1**: `Human | Animal | Environmental | Food | Laboratory | Unclassified`.
 
 `healthcare_environment` is `yes` or `no` for classified rows and empty for `Unclassified` rows. Hospital fixtures and `clinical environment` labels are healthcare-environment, not Human.
@@ -131,11 +139,11 @@ Unknown, empty, or conflicting evidence stays `Unclassified` and goes to the rev
 
 **Any animal is a host.** The lexicon's word list names the hosts seen most often (`chicken`, `Bos taurus`, `dog`). A host it does not name is recognised by the names NCBI Taxonomy gives to animals: a scientific name of a chordate at any rank (`Larus dominicanus`, `Macaca`, `Cervidae`), or the common name of any animal (`gull`, `sika deer`). Only a whole name counts, never a word inside a longer value, and plants and bacteria are not placed. The names ship with the package (`src/onehealth/data/animal_names.tsv.gz`), so `classify` still works offline.
 
-**Meat is food, the animal is not.** A species on its own (`chicken`, `turkey`) means the animal. How meat is sold or processed means Food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. An organ (`chicken liver`) stays Animal, since it can be a necropsy sample. A swab of a surface or of food premises is Environmental even when its text names the food (`environmental swab sponge non food contact surface`, `poultry processing plant`), and a `food handler` is Human.
+**Meat is food, the animal is not.** A species word (`pig`, `duck`, `live chicken`) means the animal; `chicken` and `turkey` on their own with no host are the exception above. How meat is sold or processed means Food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. An organ (`chicken liver`) stays Animal, since it can be a necropsy sample. A swab of a surface or of food premises is Environmental even when its text names the food (`environmental swab sponge non food contact surface`, `poultry processing plant`), and a `food handler` is Human.
 
 Bare `clinical` / `clinical isolate` is a patient sample, as in the NCBI `Pathogen.cl` package ("clinical or host-associated"). It is not an environmental swab, and it follows the host like any specimen.
 
-NCBI `source_type` (`human`, `animal`, `food`, `environmental`) is read into `sample_type` before `tissue` and the NCBI material type (`whole organism`, `pure culture`). The material type is never treated as source evidence.
+NCBI `source_type` (`human`, `animal`, `food`, `environmental`) is the class of a row that has one; `classify_reason` is `source_type` where the free text could not settle it and `source_type_over_text` where the text said something else. `resolve` writes it in a column of its own. The `tissue` and the NCBI material type (`whole organism`, `pure culture`) are only text, and the material type is never treated as source evidence.
 
 KlebNET `Animal - food producing` is Animal, not Food. `animal feed` is not retail Food and has no L1 here, so it goes to review (`animal-feed`). A taxon-only `isolation_source` (`Escherichia coli`, `Bos taurus`) or an unknown marker (`unknown`, `missing: lab stock`) is ignored. Taxon-only is a guess from word shape, so a lexicon rule written for source text (one that does not read `host`) always wins over it: add `bedpan washer` to such a rule and it is classified. The host or `source_type` then decides, and with nothing else the row goes to review (`taxon_only_source` / `unknown_source`). Bare `sink` or `faucet` is not a hospital fixture; `hospital sink` / `hospital faucet` are. A fixture without its setting (`Rm 14 Drain`, `Sink swab`) goes to review (`fixture-no-setting`), even with host *Homo sapiens*.
 
@@ -149,7 +157,7 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 
 ## Lexicon
 
-`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 6, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `6-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
+`onehealth` ships one lexicon, `src/onehealth/data/lexicon.yaml`, now version 7, and every classified row records `lexicon_version`. When the lexicon changes its version goes up and the changelog says what changed; earlier versions are in the repository history, not in the package. Pass `--lexicon` to use a YAML of your own. It is recorded under its own `version`; one with no version is `custom-<digest>`, and an edited copy that keeps the shipped version is `7-modified-<digest>`, so a table never claims the shipped lexicon when something else made it. The file header explains `priority`, `exact` vs `phrases`, `host_dependent: true` (specimen rules), and `l1: Unclassified` (send to review). This is a small maintained table, not a wrapper of an external R notebook.
 
 ## Tests
 
@@ -158,7 +166,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results, and 73,094 Pathogen Detection records from ten organism groups that carry NCBI's `source_type`. Provenance and the rebuild scripts are in `tests/data/ncbi_pd_klebsiella/` and `tests/data/ncbi_pd_source_types/`.
+Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results, and 139,554 Pathogen Detection records from 18 organism groups that carry NCBI's `source_type`. Provenance and the rebuild scripts are in `tests/data/ncbi_pd_klebsiella/` and `tests/data/ncbi_pd_source_types/`.
 
 GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull request (`.github/workflows/tests.yml`).
 

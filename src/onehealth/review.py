@@ -1,8 +1,8 @@
 """The review queue by distinct source text, and a curator's decisions on it.
 
 `classify` lists every row it would not guess in the review queue. Many of those rows
-say the same thing: in 159,045 NCBI Pathogen Detection records, the 3,794 review rows
-with any text hold 823 distinct texts, and the 100 most common cover 69% of them. Here
+say the same thing: in 159,045 NCBI Pathogen Detection records, the 2,626 review rows
+with any text hold 694 distinct texts, and the 100 most common cover 69% of them. Here
 the queue is grouped, one line per distinct text with the number of rows that carry
 it, and with empty columns for a decision. Filled in, the same table is what
 `classify --decisions` reads: each decision applies to every row with that text.

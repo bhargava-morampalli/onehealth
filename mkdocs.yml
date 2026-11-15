@@ -65,6 +65,7 @@ nav:
       - validate: commands/validate.md
       - report: commands/report.md
   - Guides:
+      - Definitions (read first): guides/definitions.md
       - Input files: guides/input-files.md
       - The lexicon: guides/lexicon.md
   - Benchmarks: benchmarks.md

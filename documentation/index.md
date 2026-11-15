@@ -9,6 +9,9 @@ NCBI IDs or local metadata ──► resolve ──► classify ──► report
                                               └──► validate (against labels you trust)
 ```
 
+!!! warning "The classes follow NCBI"
+    Where NCBI's records show a convention, `onehealth` follows it: a record's own `source_type` is its class, farm settings (manure, a barn) are Environmental, and `chicken` on its own with no host is Food. These definitions decide how many isolates are in each group. Read [Definitions](guides/definitions.md) before you compare sources.
+
 ## What it does
 
 | Command | What it does |

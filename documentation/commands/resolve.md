@@ -67,7 +67,9 @@ This streams the group's current metadata table from NCBI's FTP site, which list
 
 `resolve` writes one row per input ID, in the input order:
 
-`query_id`, `id_type`, `biosample`, `assembly`, `sra`, `pdt`, `organism`, `host`, `isolation_source`, `host_disease`, `sample_type`, `package`, `geo_loc_name`, `collection_date`, `strain`, `isolate`, `resolve_status`, `resolve_reason`, then any extra columns from `--metadata`.
+`query_id`, `id_type`, `biosample`, `assembly`, `sra`, `pdt`, `organism`, `host`, `isolation_source`, `host_disease`, `sample_type`, `source_type`, `package`, `geo_loc_name`, `collection_date`, `strain`, `isolate`, `resolve_status`, `resolve_reason`, then any extra columns from `--metadata`.
+
+`source_type` is NCBI's One Health category of the record (`human`, `animal`, `food`, `environmental`), where the submitter gave one. `classify` uses it as the class; see [Definitions](../guides/definitions.md#1-a-records-own-source_type-is-its-class). `sample_type` holds the same value when there is one, and otherwise the `tissue` or NCBI's material type, which are only text.
 
 `package` is the BioSample package the record was submitted under, such as `Pathogen.cl.1.0` (clinical or host-associated) or `Pathogen.env.1.0` (environmental, food or other). [`classify`](classify.md#specimens-follow-the-host) uses it for specimens that have no host.
 
