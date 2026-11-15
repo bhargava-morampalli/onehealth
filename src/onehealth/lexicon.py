@@ -37,6 +37,10 @@ class LexiconRule:
     # "animal" or "human": the rule also matches a field whose whole value is a name
     # NCBI Taxonomy gives to an animal, or to people (onehealth.taxonomy).
     taxonomy: str = ""
+    # The rule says whose specimen it is ("human feces") and nothing else: it decides
+    # Human or Animal for a specimen rule that matched the same row, and is ignored
+    # everywhere else ("human contact surface" is not a person).
+    specimen_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -149,6 +153,7 @@ def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:
         host_dependent=bool(item.get("host_dependent", False)),
         note=str(item.get("note") or ""),
         taxonomy=_taxonomy(item.get("taxonomy"), where),
+        specimen_only=bool(item.get("specimen_only", False)),
     )
 
 

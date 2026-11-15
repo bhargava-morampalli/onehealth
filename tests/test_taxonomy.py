@@ -161,3 +161,31 @@ def test_imp_benchmark_animal_hosts_are_all_found(lexicon):
     result = validate(classify_rows(read_tsv(IMP), lexicon), read_truth(IMP, "truth", "paper_rollup"))
     assert result.count(truth="Animal") == result.count("Animal", "Animal") == 51
     assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8485, 0.9976)
+
+
+# --- "human" in a specimen's own text ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "source, host, more, l1, reason",
+    [
+        ("human feces", "", {}, "Human", "specimens+human-word"),  # was specimens+no_host
+        ("Human, blood culture", "", {}, "Human", "specimens+human-word"),
+        # Filed as environmental, food or other: the text still says whose specimen it is.
+        ("human feces", "", {"package": "Pathogen.env.1.0"}, "Human", "specimens+human-word"),
+        ("feces", "", {"package": "Pathogen.env.1.0"}, "Unclassified", "no_host_env_package"),
+        ("human feces", "Homo sapiens", {}, "Human", "specimens+human-host"),
+        ("human stool", "Sus scrofa", {}, "Unclassified", "host_source_conflict"),
+        ("pig farm worker human stool", "", {}, "Unclassified", "host_source_conflict"),
+        # On its own the word decides nothing.
+        ("human contact surface", "", {}, "Environmental", "environmental-sampling"),
+        ("human listeriosis", "", {}, "Unclassified", "unmatched"),
+        ("human sewage", "", {}, "Environmental", "environment-outdoor"),
+        ("human food", "", {}, "Food", "food-products"),
+        # A veterinary record has patients too, so "patient" is not read this way.
+        ("patient feces", "", {"package": "Pathogen.env.1.0"}, "Unclassified", "no_host_env_package"),
+    ],
+)
+def test_human_in_a_specimens_text_says_whose_it_is(lexicon, source, host, more, l1, reason):
+    result = _classify(lexicon, source, host, **more)
+    assert (result.l1, result.classify_reason) == (l1, reason)

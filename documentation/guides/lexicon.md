@@ -37,6 +37,7 @@ This is part of a rule, shortened.
 | `priority` | no | A whole number; higher wins (default 0). |
 | `host_dependent` | no | `true` for a body site or specimen that occurs in any host; see below. |
 | `taxonomy` | no | `animal` or `human`: the rule also matches a field whose whole value is a name NCBI Taxonomy gives to an animal, or to people; see [Hosts by taxonomy](#hosts-by-taxonomy). |
+| `specimen_only` | no | `true` for a rule that only says whose specimen it is (`human`). It decides Human or Animal for a specimen rule on the same row, and is ignored otherwise. |
 | `note` | no | Why the rule exists, for the next reader. |
 
 A rule with a missing `id` or `l1`, or an unknown class or field, stops with an error naming the rule. So does a phrase YAML reads as true or false, such as an unquoted `yes`, `no`, `on` or `off`: put it in quotes.
@@ -84,6 +85,7 @@ The paper rollup is not part of the lexicon. It follows from `l1` and `healthcar
 | 30 | `fixture-no-setting` | review | isolation source, sample type |
 | 20 | `human-host` | Human | host, sample type |
 | 20 | `host-taxonomy-human` | Human, by NCBI Taxonomy | host |
+| 20 | `human-word` | Human, for a specimen only | isolation source |
 | 20 | `human-source` | Human | isolation source |
 
 The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). What each version added is marked `v3`, `v4`, `v5` or `v6` there.
@@ -101,6 +103,12 @@ The host must be a name as a whole. A word inside a longer value is never used, 
 `host-taxonomy-human` does the same for the genus *Homo* however it is written (`Homo`, `Homo sapiens sapiens`). Both rules come after the word-list rule of the same priority, so a host that rule knows keeps its reason (`animal-hosts`, `human-host`).
 
 The names are in `src/onehealth/data/animal_names.tsv.gz`: 82,711 scientific and 35,780 common names from the NCBI Taxonomy dump of 14 November 2026. `tools/build_animal_names.py` rebuilds it. A lexicon of your own gets the same behaviour by giving a rule `taxonomy: animal`, and loses it by leaving the rule out.
+
+### Whose specimen
+
+A specimen follows its host, and an animal word in the specimen's own text counts as a host: `pig feces` is Animal. `human-word` does the same for people: `human feces` and `Human, blood culture` are Human, with the reason `specimens+human-word`. Before v6 they were Human only by the no-host default, and went to review in a record filed as environmental, food or other.
+
+The rule is `specimen_only`, because the word decides nothing on its own: `human contact surface` is a surface and `human listeriosis` names no sample. `patient` is not listed, since a veterinary record has patients too.
 
 **Meat is food, the animal is not.** A species word on its own (`chicken`, `turkey`, `pig`) means the animal. How meat is sold or processed means food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. Before v5 all of these were Animal. `food-items` lists such words and the foods that NCBI records name most often; because it reads source text only, two-word foods such as `peanut butter` are not taken for species names. Three kinds of word are left out on purpose:
 

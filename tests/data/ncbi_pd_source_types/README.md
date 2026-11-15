@@ -39,16 +39,27 @@ The held-out records are different records, but many use the same wording as the
 
 ## Baseline
 
-Coverage is the share of records classified and not sent to review. Accuracy is the share of classified records whose L1 class matches the label. v5 is the lexicon that ships, and the tests hold it to its columns. The v4 columns are what the lexicon scored before this benchmark existed, measured before v4 was replaced.
+Coverage is the share of records classified and not sent to review. Accuracy is the share of classified records whose L1 class matches the label. v6 is the lexicon that ships, and the tests hold it to its columns. The v4 and v5 columns are what the lexicon scored when each was current.
 
-| | v4 development | v5 development | v4 held-out | v5 held-out |
-|---|---|---|---|---|
-| Coverage | 83.9% | 93.9% | 76.9% | 88.7% |
-| Accuracy | 78.5% | 94.9% | 80.9% | 93.9% |
-| Human precision / recall | 99.4% / 98.2% | 99.4% / 98.2% | 98.0% / 98.6% | 98.0% / 98.6% |
-| Animal precision / recall | 39.2% / 85.8% | 73.6% / 87.4% | 45.4% / 89.0% | 73.7% / 88.3% |
-| Food precision / recall | 85.9% / 30.8% | 98.0% / 87.0% | 92.6% / 30.0% | 97.2% / 70.6% |
-| Environmental precision / recall | 98.9% / 59.1% | 98.8% / 79.3% | 99.6% / 43.8% | 99.0% / 77.6% |
+| Held out | v4 | v5 | v6 |
+|---|---|---|---|
+| Coverage | 76.9% | 88.7% | 89.1% |
+| Accuracy | 80.9% | 93.9% | 93.9% |
+| Human precision / recall | 98.0% / 98.6% | 98.0% / 98.6% | 98.0% / 98.6% |
+| Animal precision / recall | 45.4% / 89.0% | 73.7% / 88.3% | 74.3% / 91.7% |
+| Food precision / recall | 92.6% / 30.0% | 97.2% / 70.6% | 97.3% / 70.6% |
+| Environmental precision / recall | 99.6% / 43.8% | 99.0% / 77.6% | 99.0% / 77.6% |
+
+| Development | v4 | v5 | v6 |
+|---|---|---|---|
+| Coverage | 83.9% | 93.9% | 94.3% |
+| Accuracy | 78.5% | 94.9% | 95.0% |
+| Human precision / recall | 99.4% / 98.2% | 99.4% / 98.2% | 99.4% / 98.2% |
+| Animal precision / recall | 39.2% / 85.8% | 73.6% / 87.4% | 74.6% / 92.3% |
+| Food precision / recall | 85.9% / 30.8% | 98.0% / 87.0% | 98.0% / 87.0% |
+| Environmental precision / recall | 98.9% / 59.1% | 98.8% / 79.3% | 99.4% / 79.3% |
+
+v5 was written from the development split and never saw the held-out split. v6's rules are general (any animal NCBI Taxonomy names) and were not written from either split, but by then the held-out figures for v5 had been read once, so the held-out split is no longer unseen in the strict sense.
 
 ## What the label is and is not
 

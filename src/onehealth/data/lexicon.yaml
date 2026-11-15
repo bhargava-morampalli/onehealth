@@ -13,7 +13,7 @@ description: >
   own source_type (tests/data/ncbi_pd_source_types). See CHANGELOG.md.
   v6 (November 2026) recognises a host the word lists do not name, by the names NCBI
   Taxonomy gives to animals ("gull", "Macaca mulatta", "Bubalus bubalis"); changes are
-  marked "v6".
+  marked "v6". It also reads "human" in a specimen's own text ("human feces").
   This is the only lexicon that ships. Earlier versions are in the repository history;
   when this file changes, raise `version` here and SEED_LEXICON_VERSION in constants.py.
 
@@ -29,6 +29,8 @@ description: >
 #   * l1: Unclassified sends a match to review (e.g. animal feed).
 #   * taxonomy: animal (or human) makes a rule match a field whose whole value is a
 #     name NCBI Taxonomy gives to an animal (or to people), as well as its phrases.
+#   * specimen_only: true marks a rule that only says whose specimen it is. It decides
+#     Human or Animal for a specimen rule on the same row and is ignored otherwise.
 #   * The paper rollup is fixed in code (constants.derive_paper_rollup), not here.
 #   * A bare scientific name in isolation_source ("Bos taurus") is ignored. The
 #     guess is by word shape, so a rule that does not read `host` still matches a
@@ -664,6 +666,23 @@ rules:
     note: >
       v6. The genus Homo however it is written: "Homo", "Homo sapiens sapiens". After
       human-host and with the same priority, so "Homo sapiens" keeps the reason human-host.
+
+  - id: human-word
+    fields: [isolation_source]
+    phrases:
+      - human
+      - humans
+    l1: Human
+    healthcare_environment: "no"
+    priority: 20
+    specimen_only: true
+    note: >
+      v6. "human feces" and "human, blood culture" say whose specimen it is, as "pig
+      feces" does. Before, only an animal word in a specimen's text counted, so these
+      were Human by the no-host default, and went to review in a record filed as
+      environmental. specimen_only, because on its own the word decides nothing: "human
+      contact surface" and "human listeriosis" are not specimens. "patient" is not
+      listed: a veterinary record has patients too.
 
   - id: human-source
     fields: [isolation_source]

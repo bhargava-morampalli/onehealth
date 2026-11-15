@@ -4,7 +4,7 @@ Python CLI that resolves mixed public NCBI isolate IDs and classifies isolation-
 
 v1 does **not** download genomes, assemble, run SKA/PopPUNK/MOB-suite, or start a database. Cluster or plasmid overlap is reported only when those columns are already in the input table.
 
-The full documentation, with a tutorial and a page for each command, is in [`documentation/`](documentation/index.md). Once the repository is public it is also published at <https://bhargava-morampalli.github.io/onehealth/>.
+The full documentation, with a tutorial and a page for each command, is published at <https://bhargava-morampalli.github.io/onehealth/>. Its source is in [`documentation/`](documentation/index.md).
 
 ## Install
 
@@ -58,7 +58,7 @@ onehealth resolve pdts.txt -o work/resolved.tsv --email you@example.com --pd-org
 
 This reads the group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella, 900 MB for Salmonella, and reading stops once every PDT is found. Several groups can be given, comma-separated. Group names are as at <https://ftp.ncbi.nlm.nih.gov/pathogen/Results/>. An outdated PDT version gets the current one. Without `--pd-organism`, a PDT is found only if NCBI named its assembly after it, which few genomes are.
 
-Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`.
+Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`. `classify` also writes `<stem>.review_groups.tsv`: each distinct source text in the review queue once, with the number of rows that carry it and empty columns for a decision. Fill in `l1` for the texts you can place and pass the table back with `--decisions`; each decision then applies to every row with that text. In a sample of 159,045 NCBI records, the 3,794 review rows that say anything hold 823 distinct texts.
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
@@ -74,9 +74,9 @@ onehealth validate work/classified.tsv --truth curated.tsv --truth-column truth 
 
 It writes a summary (coverage, accuracy, agreement), per-class recall and precision, a confusion matrix, and a list of every disagreement with the host, source and rule involved.
 
-Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.5% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
+Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.8% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
-That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 39,722 records held out while the current lexicon (v5) was written, it classifies 88.7% and 93.9% of those match NCBI's label (the previous version: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
+That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 73,094 NCBI Pathogen Detection records whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On its 39,722 held-out records the lexicon classifies 89.1%, and 93.9% of those match NCBI's label (v4, before this benchmark existed: 76.9% and 80.9%). A Human or Environmental call matches 98% and 99% of the time; an Animal call 74%, because a bare `chicken` or `turkey` is read as the animal and is often meat. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
 
 ## Report
 
@@ -127,7 +127,9 @@ Default **L1**: `Human | Animal | Environmental | Food | Laboratory | Unclassifi
 
 Unknown, empty, or conflicting evidence stays `Unclassified` and goes to the review queue. `unknown` is never mapped to Environmental.
 
-**Specimens follow the host.** Body sites and specimens (`blood`, `urine`, `faeces`, `wound`, `tissue`) occur in any host. A recognised animal host or animal word makes them Animal (`pig faeces`, `urine` + `Canis lupus familiaris`). A human host makes them Human. Both at once is a `host_source_conflict`. A host the lexicon does not recognise, such as a plant, goes to review as `host_unrecognised`. With no host at all they default to Human. The reason then ends in `+no_host`, so you can count those calls. The default does not apply to a record its submitter filed as environmental, food or other (BioSample package `Pathogen.env`, or `epi_type` `environmental/other`): there `feces` or `wound` is often an animal's, so it goes to review as `no_host_env_package`. `resolve` writes the package to the `package` column.
+**Specimens follow the host.** Body sites and specimens (`blood`, `urine`, `faeces`, `wound`, `tissue`) occur in any host. A recognised animal host or animal word makes them Animal (`pig faeces`, `urine` + `Canis lupus familiaris`). A human host makes them Human. Both at once is a `host_source_conflict`. The word `human` in the specimen's own text makes them Human too (`human feces`). A host the lexicon does not recognise, such as a plant, goes to review as `host_unrecognised`. With no host at all they default to Human. The reason then ends in `+no_host`, so you can count those calls. The default does not apply to a record its submitter filed as environmental, food or other (BioSample package `Pathogen.env`, or `epi_type` `environmental/other`): there `feces` or `wound` is often an animal's, so it goes to review as `no_host_env_package`. `resolve` writes the package to the `package` column.
+
+**Any animal is a host.** The lexicon's word list names the hosts seen most often (`chicken`, `Bos taurus`, `dog`). A host it does not name is recognised by the names NCBI Taxonomy gives to animals: a scientific name of a chordate at any rank (`Larus dominicanus`, `Macaca`, `Cervidae`), or the common name of any animal (`gull`, `sika deer`). Only a whole name counts, never a word inside a longer value, and plants and bacteria are not placed. The names ship with the package (`src/onehealth/data/animal_names.tsv.gz`), so `classify` still works offline.
 
 **Meat is food, the animal is not.** A species on its own (`chicken`, `turkey`) means the animal. How meat is sold or processed means Food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. An organ (`chicken liver`) stays Animal, since it can be a necropsy sample. A swab of a surface or of food premises is Environmental even when its text names the food (`environmental swab sponge non food contact surface`, `poultry processing plant`), and a `food handler` is Human.
 
@@ -159,3 +161,7 @@ pytest
 Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results, and 73,094 Pathogen Detection records from ten organism groups that carry NCBI's `source_type`. Provenance and the rebuild scripts are in `tests/data/ncbi_pd_klebsiella/` and `tests/data/ncbi_pd_source_types/`.
 
 GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull request (`.github/workflows/tests.yml`).
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). The NCBI data under `tests/data/` and the names in `src/onehealth/data/animal_names.tsv.gz` come from NCBI, which places no restrictions on the use or distribution of its molecular and taxonomy databases ([policy](https://www.ncbi.nlm.nih.gov/home/about/policies/)).
