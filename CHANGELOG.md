@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: lint and type checks in CI, and a monthly refresh of the animal names (branch `lint-typecheck-ci-and-taxonomy-refresh`)
+## 16 November 2026: lint and type checks in CI, and a monthly refresh of the animal names ([#19](https://github.com/bhargava-morampalli/onehealth/pull/19))
 
 No result changes: the lexicon is still version 8, and the table of animal names holds the same names.
 
