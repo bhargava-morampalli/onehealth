@@ -34,6 +34,7 @@ import os
 import sys
 import tempfile
 from collections import Counter
+from datetime import datetime
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -178,7 +179,8 @@ def changelog_entry(old_date: str, new_date: str, names: dict[str, tuple[list[st
     added = sum(len(a) for a, _ in names.values())
     removed = sum(len(r) for _, r in names.values())
     moved = sum(sum(result["changes"].values()) for result in changes)
-    lines = [f"## {new_date}: animal names from NCBI Taxonomy of {new_date}", "",
+    day = datetime.strptime(new_date, "%Y-%m-%d")
+    lines = [f"## {day.day} {day:%B %Y}: animal names from NCBI Taxonomy of {new_date}", "",
              f"The table of animal names is rebuilt from NCBI Taxonomy of {new_date} (was {old_date or 'not recorded'}), "
              f"by the monthly refresh: {added:,} names added and {removed:,} removed."]
     if moved:

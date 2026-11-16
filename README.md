@@ -4,23 +4,23 @@ Python CLI that resolves mixed public NCBI isolate IDs and classifies isolation-
 
 v1 does **not** download genomes, assemble, run SKA/PopPUNK/MOB-suite, or start a database. Cluster or plasmid overlap is reported only when those columns are already in the input table.
 
-The full documentation, with a tutorial and a page for each command, is published at <https://bhargava-morampalli.github.io/onehealth/>. Its source is in [`documentation/`](documentation/index.md).
+The full documentation, with a tutorial and a page for each command, is published at <https://bhargava-morampalli.github.io/onehealth/>. Its source is in [`documentation/`](https://github.com/bhargava-morampalli/onehealth/blob/main/documentation/index.md).
 
 ## Install
 
-Python 3.10 or newer. No clone is needed:
+Python 3.10 or newer:
 
 ```bash
-pip install "git+https://github.com/bhargava-morampalli/onehealth.git"
+pip install onehealth
 ```
 
-For a study, install one release and name it in your methods. Add `@` and a tag from the [tags page](https://github.com/bhargava-morampalli/onehealth/tags):
+For a study, install one version and name it in your methods, so that the same command gives the same classes later:
 
 ```bash
-pip install "git+https://github.com/bhargava-morampalli/onehealth.git@v0.2.0"
+pip install onehealth==0.4.0
 ```
 
-`uv tool install` and `pipx install` take the same address and give `onehealth` an environment of its own. `onehealth --version` prints what is installed.
+`uv tool install onehealth` and `pipx install onehealth` give `onehealth` an environment of its own. `onehealth --version` prints what is installed. The newest code, before it is released, installs from GitHub: `pip install "git+https://github.com/bhargava-morampalli/onehealth.git"`.
 
 To change the code or run the tests, clone the repository:
 
@@ -88,7 +88,7 @@ Rows that cannot be resolved or classified are written next to the output as `<s
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
 
-Input tables are tab-separated UTF-8 text with a header row; a byte-order mark is fine, and cells may contain quote characters. NCBI Pathogen Detection metadata tables work as downloaded, although their header starts with `#`. A column name that appears twice stops with an error rather than letting the second column replace the first. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error rather than being misread. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](CHANGELOG.md).
+Input tables are tab-separated UTF-8 text with a header row; a byte-order mark is fine, and cells may contain quote characters. NCBI Pathogen Detection metadata tables work as downloaded, although their header starts with `#`. A column name that appears twice stops with an error rather than letting the second column replace the first. A comma- or semicolon-separated file, such as Excel's CSV export, stops with an error rather than being misread. A problem with an input file or option is reported in one line, and the command exits with status 1. Changes between versions are listed in [CHANGELOG.md](https://github.com/bhargava-morampalli/onehealth/blob/main/CHANGELOG.md).
 
 ## Validate
 
@@ -102,7 +102,7 @@ It writes a summary (coverage, accuracy, agreement), per-class recall and precis
 
 Against the manually curated source labels of 4,351 public BioSamples from the IMP carbapenemase study (Vezina, Morampalli et al. 2025), the lexicon classifies 84.9% of isolates, and 99.8% of those agree with the curation. Most of the rest have no isolation source or host in their BioSample. The benchmark lives in `tests/data/imp_carbapenemase_sources/`.
 
-That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 166,158 NCBI Pathogen Detection records from 26 organism groups whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 26,604 records drawn after the current lexicon (v8) was finished, and read once, it classifies 97.8%, and 96.7% of those match NCBI's label. A Human call matches 99% of the time, Food 98% and Animal 97%. Environmental matched 81%, because of one description (`healthcare facility`) that has since been corrected; without it, 94%. Both benchmarks are described in [documentation/benchmarks.md](documentation/benchmarks.md).
+That study is almost all patient isolates, and the lexicon was tuned on it. For food, animal and environmental sources there is a second benchmark, `tests/data/ncbi_pd_source_types/`: 166,158 NCBI Pathogen Detection records from 26 organism groups whose submitters filled in NCBI's own `source_type`, which is hidden from the classifier and used as the answer. On the 26,604 records drawn after the current lexicon (v8) was finished, and read once, it classifies 97.8%, and 96.7% of those match NCBI's label. A Human call matches 99% of the time, Food 98% and Animal 97%. Environmental matched 81%, because of one description (`healthcare facility`) that has since been corrected; without it, 94%. Both benchmarks are described in [documentation/benchmarks.md](https://github.com/bhargava-morampalli/onehealth/blob/main/documentation/benchmarks.md).
 
 ## Report
 
@@ -126,7 +126,7 @@ Add `--dereplicate` (with `--distances`) to run the lineage and feature analyses
 
 The SNP threshold defaults to 21, the published *K. pneumoniae* value. Choose one for your organism and pipeline; the report always shows a sweep from 0 to 100 SNPs. Tests use 9,999 permutations with a fixed `--seed`, so results reproduce exactly. `--permutations 0` skips them for a quick look: p-values are left blank and the observed-vs-expected section is omitted.
 
-Every statistic in the report is compared with R, the vegan package or scipy, or with the exact answer, each time the tests run. [documentation/guides/statistics.md](documentation/guides/statistics.md) shows the comparison.
+Every statistic in the report is compared with R, the vegan package or scipy, or with the exact answer, each time the tests run. [documentation/guides/statistics.md](https://github.com/bhargava-morampalli/onehealth/blob/main/documentation/guides/statistics.md) shows the comparison.
 
 Try it on synthetic data:
 
@@ -146,7 +146,7 @@ onehealth report work/demo/classified.tsv -o work/demo/report \
 > 3. **A meat species with no host is Food.** `chicken`, `turkey`, `fish`, `poultry`, `salmon`, `beef` or `lamb` in the text, with no host, is the meat: food in 3,079 NCBI records of 3,190 (96.5%). Until v7 these were Animal; v7 changed the whole values `chicken` and `turkey`, v8 the rest (`fish`, `chicken liver`). With a host, the host decides.
 > 4. **A specimen with no host is Human.** `blood` or `stool` with no host named is a person's in 14,982 NCBI records of 15,290 (98.0%). This default is older than v7; it was measured afterwards and kept.
 >
-> [documentation/guides/definitions.md](documentation/guides/definitions.md) has the figures behind each and what is still `onehealth`'s own judgement. If your study defines a source differently, one line in a `--decisions` file changes it for every row with that text.
+> [documentation/guides/definitions.md](https://github.com/bhargava-morampalli/onehealth/blob/main/documentation/guides/definitions.md) has the figures behind each and what is still `onehealth`'s own judgement. If your study defines a source differently, one line in a `--decisions` file changes it for every row with that text.
 
 Default **L1**: `Human | Animal | Environmental | Food | Laboratory | Unclassified`.
 
@@ -205,4 +205,4 @@ GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull reques
 
 ## Licence
 
-MIT; see [LICENSE](LICENSE). The NCBI data under `tests/data/` and the names in `src/onehealth/data/animal_names.tsv.gz` come from NCBI, which places no restrictions on the use or distribution of its molecular and taxonomy databases ([policy](https://www.ncbi.nlm.nih.gov/home/about/policies/)).
+MIT; see [LICENSE](https://github.com/bhargava-morampalli/onehealth/blob/main/LICENSE). The NCBI data under `tests/data/` and the names in `src/onehealth/data/animal_names.tsv.gz` come from NCBI, which places no restrictions on the use or distribution of its molecular and taxonomy databases ([policy](https://www.ncbi.nlm.nih.gov/home/about/policies/)).
