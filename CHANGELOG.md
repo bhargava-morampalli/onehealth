@@ -27,6 +27,7 @@ The table of animal names was a snapshot of NCBI Taxonomy from 14 November 2026,
 ### Also
 
 - `REVIEW.md`, `ROADMAP.md` and the working notes in `docs/` are removed. They described the tool as of October 2026 (lexicon v2); their findings were fixed, and what changed since is in this changelog.
+- The package metadata names its author without an email address.
 - **Known limitation, documented:** an animal named alone in `isolation_source` with no host (`gull`, `fox`) goes to review, not to Animal. The `classify` page says why and how to settle such rows with a decision.
 
 ## 16 November 2026: install without a clone; the linkage test is about a hundred times faster on close relatives ([#18](https://github.com/bhargava-morampalli/onehealth/pull/18))
