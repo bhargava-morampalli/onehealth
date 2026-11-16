@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 
 from onehealth.constants import (
     CLASSIFY_EXTRA_FIELDS,
@@ -57,13 +57,32 @@ def classify_record(
     free text.
     """
     view = metadata_view(record)
-    auto = _follow_source_type(view, _classify_with_lexicon(view, lexicon))
+    auto = _unresolved(record, _follow_source_type(view, _classify_with_lexicon(view, lexicon)))
     override = lookup_override(record, overrides or {})
     if override is None and decisions:
         override = lookup_decision(view, decisions)
     if override is None:
         return auto
     return _apply_override(override, auto.lexicon_suggestion, lexicon.version)
+
+
+UNRESOLVED = "unresolved"
+
+
+def _unresolved(record: dict[str, str], auto: Classification) -> Classification:
+    """A row `resolve` could not get a record for is not a record with no source.
+
+    `resolve` sends an ID to review when NCBI gave an error, the run was stopped, there
+    was no network, or NCBI has no such record. Such a row has no isolation source and no
+    host, so the lexicon would call it `missing_source`, the reason for a BioSample whose
+    submitter gave neither. The two must not be counted together: one is a property of
+    the record, the other of the lookup, and a rerun of `resolve` may change it. The
+    reason becomes `unresolved:` and what `resolve` said (`unresolved:ncbi_error`).
+    """
+    if auto.classify_reason != "missing_source" or (record.get("resolve_status") or "").strip().lower() != "review":
+        return auto
+    kind = (record.get("resolve_reason") or "").split(":", 1)[0].strip() or "review"
+    return replace(auto, classify_reason=f"{UNRESOLVED}:{kind}")
 
 
 def classify_rows(

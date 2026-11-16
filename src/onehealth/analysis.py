@@ -87,6 +87,7 @@ class Dataset:
     unnamed: int = 0  # rows with no identifier; counted, but never matched to other files
     untyped_keys: set[str] = field(default_factory=set)  # isolates whose only lineage is a "not typed" word
     unread_dates: int = 0  # isolates whose collection_date is in a format decimal_year cannot read
+    unresolved: int = 0  # unclassified isolates that resolve could not get a record for (classify_reason unresolved:...)
 
     @property
     def untyped_placeholders(self) -> int:
@@ -112,6 +113,7 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
     isolates: dict[str, Isolate] = {}
     unnamed = unread_dates = 0
     untyped: set[str] = set()
+    unresolved: set[str] = set()
     sequence_types = is_sequence_type_column(lineage_col)
     for number, row in enumerate(rows, start=1):
         key = isolate_key(row)
@@ -119,6 +121,8 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
             # No identifier to match on: still an isolate, just never a duplicate.
             unnamed += 1
             key = f"(row {number})"
+        if (row.get("classify_reason") or "").startswith("unresolved:") and not _source_group(row, by):
+            unresolved.add(key)
         if key in isolates:
             # Same BioSample (e.g. two assemblies): keep the first row's values, but every
             # identifier, so distances or genes keyed by either assembly still match.
@@ -151,6 +155,7 @@ def build_dataset(rows: list[dict[str, str]], by: str = "source", lineage_column
         unnamed=unnamed,
         untyped_keys=untyped,
         unread_dates=unread_dates,
+        unresolved=sum(1 for iso in records if iso.key in unresolved and not iso.source),
     )
 
 
@@ -1060,6 +1065,7 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
         unnamed=dataset.unnamed,
         untyped_keys=set(dataset.untyped_keys),
         unread_dates=dataset.unread_dates,
+        unresolved=dataset.unresolved,
     )
     summary = Dereplication(
         threshold=threshold,

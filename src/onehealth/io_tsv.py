@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import re
 from array import array
 from pathlib import Path
@@ -159,13 +160,28 @@ def _unquote(cell: str) -> str:
 
 
 def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str]) -> None:
+    """Write the table whole or not at all.
+
+    The rows go to a temporary file beside `path`, which then takes its place. A run that
+    is killed while writing leaves the earlier file as it was: `resolve --resume` reads
+    its own earlier output, and must never find half of it.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     names = list(fieldnames)
-    with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=names, delimiter="\t", extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({name: _one_line(row.get(name, "")) for name in names})
+    # A device or a pipe (/dev/stdout) cannot be replaced; it is written to directly.
+    replace = not path.exists() or path.is_file()
+    target = path.with_name(f".{path.name}.partial") if replace else path
+    try:
+        with target.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=names, delimiter="\t", extrasaction="ignore")
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({name: _one_line(row.get(name, "")) for name in names})
+        if replace:
+            os.replace(target, path)
+    finally:
+        if replace:
+            target.unlink(missing_ok=True)
 
 
 def _one_line(value: object) -> object:
