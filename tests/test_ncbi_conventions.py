@@ -1,9 +1,9 @@
 """Where onehealth follows NCBI (lexicon v7 and classify): documentation/guides/definitions.md.
 
-Three conventions, each measured in NCBI Pathogen Detection records whose submitters filled in
+Four conventions, each measured in NCBI Pathogen Detection records whose submitters filled in
 NCBI's own source_type (tests/data/ncbi_pd_source_types): a record's source_type is its class;
-what animals leave behind and where they are kept is environmental; and a species that is also
-the name of its meat is the meat when there is no host.
+what animals leave behind and where they are kept is environmental; a species that is also
+the name of its meat is the meat when there is no host; and a specimen with no host is a person's.
 """
 
 from collections import Counter
@@ -19,6 +19,7 @@ from onehealth.ncbi import attributes_from_biosample
 from onehealth.overrides import OverrideRow
 from onehealth.resolve import resolve_ids
 from onehealth.review import load_decisions
+from onehealth.taxonomy import taxon_kind
 from onehealth.text import contains_phrase, is_unknown_value, tokenize
 
 RECORDS = Path(__file__).parent / "data" / "ncbi_pd_source_types" / "records.tsv"
@@ -178,6 +179,30 @@ def test_ncbi_records_a_bare_chicken_or_turkey_as_food():
 
 
 # --- other v7 changes ------------------------------------------------------------------------------
+
+
+# --- 4. a specimen with no host is a person's -----------------------------------------------------
+
+
+def test_ncbi_records_a_specimen_with_no_host_as_human(lexicon):
+    """The default is older than v7. It was measured against NCBI's categories in November 2026 and kept."""
+    labels, named_animal, shellfish = Counter(), 0, 0
+    for row in read_tsv(RECORDS):
+        result = classify_record({k: row[k] for k in ("isolation_source", "host", "host_disease")}, lexicon)
+        if result.classify_reason.endswith("+no_host"):
+            assert result.l1 == "Human"
+            n = int(row["records"])
+            labels[row["ncbi_source_type"]] += n
+            words = tokenize(row["isolation_source"])
+            shellfish += n if {"oyster", "catfish"} & set(words) else 0
+            named_animal += n if any(
+                taxon_kind(" ".join(words[i:j])) == "animal" for i in range(len(words)) for j in range(i + 1, min(i + 4, len(words)) + 1)
+            ) and row["ncbi_source_type"] == "animal" else 0
+    assert sum(labels.values()) == 15235
+    assert labels == {"human": 14735, "animal": 345, "environmental": 117, "food": 38}
+    assert round(100 * labels["human"] / 15235, 1) == 96.7
+    # The two kinds of exception a text could settle, listed in the documentation as not yet handled.
+    assert named_animal == 78 and shellfish == 120
 
 
 @pytest.mark.parametrize(

@@ -22,7 +22,7 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 `classify` prints how many rows were classified and which lexicon version was used.
 
 !!! warning "The classes follow NCBI"
-    A record's own `source_type` is its class, farm settings are Environmental, and `chicken` on its own with no host is Food. [Definitions](../guides/definitions.md) gives the numbers behind each of these and says how to choose differently for your study.
+    A record's own `source_type` is its class, farm settings are Environmental, `chicken` on its own with no host is Food, and a specimen with no host is Human. [Definitions](../guides/definitions.md) gives the numbers behind each of these and says how to choose differently for your study.
 
 ## The classes
 
@@ -77,7 +77,7 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 - With both an animal and a human, it goes to review as `host_source_conflict`.
 - With no host, and a food named in the same text (`pork blood sausage`), it goes to review as `specimen_or_food`: the specimen word is an ingredient as likely as a sample.
 - With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`. Any animal NCBI Taxonomy names is recognised, not only those on the lexicon's word list; see [Hosts by taxonomy](../guides/lexicon.md#hosts-by-taxonomy).
-- With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls.
+- With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls. NCBI's submitters mean a person by such a record in 96.7% of 15,235 benchmark records ([Definitions](../guides/definitions.md#4-a-specimen-with-no-host-is-a-persons)).
 - With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
 
 ### Values that are not evidence

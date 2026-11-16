@@ -2,6 +2,33 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## Unreleased: 0.2.1, the statistics checked against R and scipy (branch `stats-reference-check-and-hostless-specimens-ncbi`)
+
+No class changes: the lexicon is still version 7. One number in the report's tables changes in its fifth digit.
+
+### The statistics are checked against independent implementations
+
+`report` computes its statistics with its own code. Each one is now compared with an independent implementation every time the tests run, and they agree. The new page "The statistics, and how each was checked" (`documentation/guides/statistics.md`) shows the comparison.
+
+- **R and vegan.** `tests/data/stats_reference/` holds 88 inputs, most of them counts from the real NCBI *Klebsiella* data, and the 567 values that R 4.3.3 and vegan 2.6-4 give for them. Simpson's index (`vegan::simpson.unb`), the Wilson interval (`prop.test`) and Benjamini–Hochberg q-values (`p.adjust`) agree to 12 decimal places, rarefaction (`vegan::rarefy`) to 9, and the chi-squared statistic (`chisq.test`) to 10 significant digits. The variance behind the interval of Simpson's index is within 0.2% of the variance over 2,000,000 samples drawn in R.
+- **Permutation p-values against exact ones.** Lineage enrichment is compared with the hypergeometric distribution for 107 lineage and source pairs, and the feature test with R's p-value from 1,000,000 random tables for 47 genes. On a dataset of ten isolates, every one of the 4,200 possible relabellings is listed (900 within strata), which gives the exact p-value for enrichment, the feature test and sharing events, with and without `--stratify-by`.
+- **scipy.** The tables made from the real *Klebsiella* data are recomputed with scipy, and the single-linkage clusters at 0, 5, 21 and 50 SNPs are the connected components scipy finds.
+- **The tests were tested.** Eight errors were put into the statistics code one at a time (a one-sided test for a two-sided one, strata ignored, same-host pairs counted, the large-sample variance, and others). Each made the new tests fail.
+- scipy is needed to run the tests, not to use `onehealth`.
+
+### One correction
+
+- **The Wilson interval uses the exact 97.5% point of the normal distribution**, 1.959964, as R and scipy do. It used 1.96. Interval bounds in `06_feature_prevalence.tsv` change in the fifth significant digit: for 51 of 150 isolates, 26.9032–41.8959% became 26.9033–41.8957%. Nothing printed in the HTML report changes. Nothing else needed correcting.
+
+### A specimen with no host: the Human default was measured, and kept
+
+`blood` or `stool` with no host named is classified Human. That was `onehealth`'s own judgement. It was measured against NCBI's `source_type`, like the three conventions of 0.2.0: of 15,235 benchmark records placed this way, NCBI's submitters call 14,735 (96.7%) human. The default stands, and the Definitions page now gives it as a fourth convention with these figures.
+
+The measurement also showed two kinds of record that are wrongly Human and that a text could settle. They are documented, and are to be corrected in the next lexicon version:
+
+- an animal named in a way the word list does not know, in a specimen's own text: `stool (Odocoileus hemionus)`, `pigeon stool` (78 benchmark records);
+- tissue of shellfish and fish from monitoring programmes: `oyster homogenized tissue dilution` (120 records).
+
 ## 16 November 2026: 0.2.0, the classes follow NCBI (lexicon v7) ([#14](https://github.com/bhargava-morampalli/onehealth/pull/14))
 
 **This version changes what some classes mean.** Where NCBI's records show a convention, `onehealth` now follows it, in three places. Results made with 0.1.0 (lexicon v6 and earlier) use the old definitions and are not comparable class for class; `v0.1.0` is the tag to check out to reproduce them. The new Definitions page in the documentation (`documentation/guides/definitions.md`) gives the figures behind each convention and how to choose differently for a study.

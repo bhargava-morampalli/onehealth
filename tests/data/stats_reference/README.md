@@ -32,6 +32,6 @@ It takes about 20 seconds and needs R with the vegan package (`apt install r-bas
 
 `cases.tsv` is fixed. `make_cases.py` takes its counts from the *Klebsiella* fixture as the classifier places those records, so running it again after the lexicon changes can change the counts. That would not make the comparison wrong, since R and `onehealth` always get the same inputs, but `reference.R` must then be run again, and the numbers quoted in the documentation updated (a test checks them).
 
-## Three more checks that need no file
+## Two more checks that need no file
 
 `tests/test_stats_reference.py` also compares the tables `report` makes from the real *Klebsiella* data with scipy, and compares every permutation p-value with the exact one on a dataset of ten isolates, where all 4,200 ways of relabelling the isolates can be listed.

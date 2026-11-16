@@ -100,6 +100,8 @@ Add `--dereplicate` (with `--distances`) to run the lineage and feature analyses
 
 The SNP threshold defaults to 21, the published *K. pneumoniae* value. Choose one for your organism and pipeline; the report always shows a sweep from 0 to 100 SNPs. Tests use 9,999 permutations with a fixed `--seed`, so results reproduce exactly. `--permutations 0` skips them for a quick look: p-values are left blank and the observed-vs-expected section is omitted.
 
+Every statistic in the report is compared with R, the vegan package or scipy, or with the exact answer, each time the tests run. [documentation/guides/statistics.md](documentation/guides/statistics.md) shows the comparison.
+
 Try it on synthetic data:
 
 ```bash
@@ -116,6 +118,7 @@ onehealth report work/demo/classified.tsv -o work/demo/report \
 > 1. **A record's own `source_type` is its class.** Where the submitter gave NCBI the One Health category (`human`, `animal`, `food`, `environmental`), it is used as it is. The lexicon reads free text and is not allowed to disagree with it. A third of NCBI records have one.
 > 2. **Farm settings are Environmental.** Manure, litter, a barn and a farm were Animal until lexicon v7. NCBI submitters record manure as environmental in 646 records of 747, and a farm with no host in 141 of 187. A farm *with* a host is the host: `pig farm`, host *Sus scrofa*, is Animal.
 > 3. **`chicken` or `turkey` on its own, with no host, is Food.** They were Animal until v7. NCBI submitters record a bare `chicken` with no host as food in 810 records of 867.
+> 4. **A specimen with no host is Human.** `blood` or `stool` with no host named is a person's in 14,735 NCBI records of 15,235 (96.7%). This default is older than v7; it was measured afterwards and kept.
 >
 > [documentation/guides/definitions.md](documentation/guides/definitions.md) has the figures behind each and what is still `onehealth`'s own judgement. If your study defines a source differently, one line in a `--decisions` file changes it for every row with that text.
 
