@@ -38,6 +38,8 @@ classify: 4 rows (4 ok, 0 review)
 lexicon v8 (seed v8), animal names from NCBI Taxonomy of 2026-11-14
 ```
 
+The date is that of the table of animal names in your version; it changes when the table is refreshed.
+
 `classify` adds the class columns:
 
 | query_id | isolation_source | l1 | paper_rollup | classify_reason |

@@ -40,7 +40,7 @@ jobs:
         run: uv sync --locked --extra dev
       - name: Rebuild the table from today's NCBI Taxonomy
         id: refresh
-        run: uv run python tools/refresh_animal_names.py --summary "$RUNNER_TEMP/report.md"
+        run: uv run python tools/refresh_animal_names.py --summary "$RUNNER_TEMP/report.md" --changelog CHANGELOG.md
       - name: Run the tests with the new table
         id: tests
         if: steps.refresh.outputs.changed == 'true'
@@ -57,7 +57,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git add src/onehealth/data/animal_names.tsv.gz
+          git add src/onehealth/data/animal_names.tsv.gz CHANGELOG.md
           git commit -m "Animal names from NCBI Taxonomy of $DATE"
           git push --force origin "$branch"
           if [ "$TESTS" = "success" ]; then verdict="The tests pass with the new table."; else verdict="**The tests fail with the new table.** See the run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; fi
