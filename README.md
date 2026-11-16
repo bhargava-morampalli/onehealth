@@ -58,6 +58,14 @@ onehealth resolve pdts.txt -o work/resolved.tsv --email you@example.com --pd-org
 
 This reads the group's current metadata table from NCBI, which lists every PDT with its BioSample and assembly. The table is streamed, not saved: about 200 MB for Klebsiella, 900 MB for Salmonella, and reading stops once every PDT is found. Several groups can be given, comma-separated. Group names are as at <https://ftp.ncbi.nlm.nih.gov/pathogen/Results/>. An outdated PDT version gets the current one. Without `--pd-organism`, a PDT is found only if NCBI named its assembly after it, which few genomes are.
 
+A run that was stopped, was killed, or met an NCBI error is finished with the same command and `--resume`:
+
+```bash
+onehealth resolve examples/ids.txt -o work/resolved.tsv --email you@example.com --resume
+```
+
+It keeps every ID the earlier run settled and looks up only the rest. While it works, `resolve` saves the table every 30 seconds, so a killed run loses at most that. An ID that was never looked up (`interrupted`, `ncbi_error`) is not a record with no source: `classify` sends it to review as `unresolved:<reason>` and warns, where a record that was fetched and has no source is `missing_source`.
+
 Rows that cannot be resolved or classified are written next to the output as `<stem>.review.tsv`. `classify` also writes `<stem>.review_groups.tsv`: each distinct source text in the review queue once, with the number of rows that carry it and empty columns for a decision. Fill in `l1` for the texts you can place and pass the table back with `--decisions`; each decision then applies to every row with that text. In a sample of 159,045 NCBI records, the 2,626 review rows that say anything hold 694 distinct texts.
 
 With `--metadata`, every extra local column (ST, `host_subject_id`, dates, ...) is carried into the resolved table. You can also run `classify` directly on your own metadata TSV.
