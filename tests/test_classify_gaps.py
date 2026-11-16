@@ -1,6 +1,5 @@
 """Gaps 2–4: food-producing / feed, lexicon holes, taxon-only source."""
 
-from pathlib import Path
 
 from onehealth.classify import classify_record
 from onehealth.lexicon import load_lexicon

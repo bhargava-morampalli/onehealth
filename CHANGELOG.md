@@ -4,7 +4,7 @@ What changed in `onehealth`, newest first, in terms of what you see as a user. I
 
 ## Unreleased: 0.2.0, the classes follow NCBI (lexicon v7) (branch `lexicon-v7-follow-ncbi-source-type-and-specimens`)
 
-**This version changes what some classes mean.** Where NCBI's records show a convention, `onehealth` now follows it, in three places. Results made with 0.1.0 (lexicon v6 and earlier) use the old definitions and are not comparable class for class; `v0.1.0` is the tag to check out to reproduce them. The new page [Definitions](documentation/guides/definitions.md) in the documentation gives the figures behind each convention and how to choose differently for a study.
+**This version changes what some classes mean.** Where NCBI's records show a convention, `onehealth` now follows it, in three places. Results made with 0.1.0 (lexicon v6 and earlier) use the old definitions and are not comparable class for class; `v0.1.0` is the tag to check out to reproduce them. The new Definitions page in the documentation (`documentation/guides/definitions.md`) gives the figures behind each convention and how to choose differently for a study.
 
 ### 1. A record's own `source_type` is its class
 
@@ -33,12 +33,12 @@ They were Animal. NCBI asks for a host when a sample is from an animal, and a ba
 - **A floor drain is not assumed to be in a hospital.** `floor drain` had the healthcare flag; in NCBI records it is a food plant's (`floor drain in produce prep room`). It is Environmental without the flag. `hospital floor drain` and `sink drain` keep it.
 - **A specimen word in a food is not a patient.** `pork blood sausage` was Human, because `blood` is a specimen and a specimen with no host defaults to Human. With no host and a food named in the same text, the row now goes to review as `specimen_or_food`.
 - **Fixtures and equipment of food premises** are Environmental even when the text names the food: `drain-raw meat`, `deli case`, `cutting boards`, `utensils`, `cooler`, `floor`.
-- **Water** in any phrase is Environmental (`pond water`, `ice water`), with `creek`, `stream`, `runoff`, `lagoon` and `pond`. `bottled water` is Food, and `water buffalo` is Animal.
+- **Water** in any phrase is Environmental (`pond water`, `tap water`), with `creek`, `stream`, `runoff`, `lagoon` and `pond`. `bottled water` is Food, and `water buffalo` is Animal.
 - **More body sites and fluids** are specimens: `respiratory`, `rectal`, `perirectal`, `urinary`, `vaginal`, `throat`, `aspirate`, `secretion`, `ascites`, `body fluid`. Organs are not, since in NCBI records a `lung` or `intestine` is an animal necropsy sample.
 - **Hospital equipment** is healthcare environment: `bed rails`, `ECG monitors`, `nebulisers`, `syringe drivers`, `infusion stands`, `stethoscopes`, `hospital bed`, `patient room`. Not `bronchoscope` or `duodenoscope`: in the IMP benchmark those are patient samples taken through the scope.
 - **`human ...` as a whole value** is Human: `Human Listeriosis`, `human infection`, `Human, Other`.
 - **Accents no longer split words.** `pâté` was read as the letters `p` and `t`; it is the word `pate`.
-- Four rule keys are new for a lexicon of your own: `no_host`, `setting_of`, `yields_to_host` and (from 0.1.0) `specimen_only`.
+- Three rule keys are new for a lexicon of your own: `no_host`, `setting_of` and `yields_to_host`.
 
 ### How it was measured
 

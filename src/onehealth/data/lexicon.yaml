@@ -344,10 +344,11 @@ rules:
       - processing plant
       - processing facility
       - processing establishment
-      # v7: fixtures and equipment of food premises. Each is environmental in every NCBI
-      # record that has a source_type, or all but one ("floor" 142 of 142, "drain raw" 72
-      # of 72, "deli case" 46 of 46). "drain" alone is not listed: it may be a surgical
-      # drain (fixture-no-setting).
+      # v7: fixtures and equipment of food premises. In the benchmark's development
+      # records each is environmental in every record, or all but one ("floor" 142 of
+      # 142, "drain raw" 72 of 72, "deli case" 46 of 46); in all four parts "floor" is
+      # 553 of 555. "drain" alone is not listed: it may be a surgical drain
+      # (fixture-no-setting).
       - floor
       - floor drain
       - floor drains
@@ -599,8 +600,9 @@ rules:
       - wastewater treatment
       - wwtp
       - influent
-      # v7: water in any phrase (environmental in 1,958 of 1,959 NCBI records with a
-      # source_type) and more water bodies.
+      # v7: water in any phrase and more water bodies. Environmental in 1,958 of 1,959
+      # of the benchmark's development records, and in 3,761 of 3,842 (97.9%) in all
+      # four parts.
       - water
       - creek
       - stream
@@ -759,7 +761,8 @@ rules:
     note: >
       v7. "chicken" names the animal and its meat. NCBI asks for a host when a sample is
       from an animal, and where a record has no host and a source_type, "chicken" on its
-      own is food in 151 records of 154 and "turkey" in 63 of 64. onehealth follows that:
+      own is food in 810 records of 867 and "turkey" in 255 of 256 (all four parts of the
+      benchmark; guides/definitions in the documentation). onehealth follows that:
       with no host these two words are Food; with a host the rule does not apply and the
       host decides, as before. Only words with that much evidence are listed: "duck" and
       "fish" still mean the animal, and so does "live chicken". A veterinary study whose "chicken" is a

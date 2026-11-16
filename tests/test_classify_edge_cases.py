@@ -2,7 +2,6 @@
 
 from onehealth.classify import classify_record
 from onehealth.constants import derive_paper_rollup
-from onehealth.overrides import load_overrides
 from onehealth.text import contains_phrase, tokenize
 
 
