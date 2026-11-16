@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: install without a clone; the linkage test is about a hundred times faster on close relatives (branch `install-without-a-clone-and-faster-linkage`)
+## 16 November 2026: install without a clone; the linkage test is about a hundred times faster on close relatives ([#18](https://github.com/bhargava-morampalli/onehealth/pull/18))
 
 No result changes: every number in a report is what it was.
 
