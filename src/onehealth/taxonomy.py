@@ -21,8 +21,12 @@ from __future__ import annotations
 import gzip
 from functools import lru_cache
 from importlib.resources import files
+from typing import TYPE_CHECKING
 
 from onehealth.text import tokenize
+
+if TYPE_CHECKING:  # for annotations only; importlib.resources.abc is Python 3.11+
+    from importlib.abc import Traversable
 
 ANIMAL = "animal"
 HUMAN = "human"
@@ -45,18 +49,43 @@ _WORDS_NOT_NAMES = frozenset({"sole", "ray", "monitor", "crane", "rail", "swift"
 _LONGEST_NAME = 4  # words
 
 
+_DATE_LINE = "# NCBI Taxonomy of "
+
+
+def _names_path() -> Traversable:
+    """The table that ships with the package. tools/refresh_animal_names.py points this elsewhere."""
+    return files("onehealth").joinpath("data/animal_names.tsv.gz")
+
+
 @lru_cache(maxsize=1)
 def _tables() -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
     """(scientific names, common names of chordates, common names of other animals). Read once, on first use."""
     tables: dict[str, set[str]] = {"s": set(), "v": set(), "c": set()}
-    path = files("onehealth").joinpath("data/animal_names.tsv.gz")
-    with path.open("rb") as raw, gzip.open(raw, "rt", encoding="utf-8") as handle:
+    with _names_path().open("rb") as raw, gzip.open(raw, "rt", encoding="utf-8") as handle:
         for line in handle:
             if line.startswith("#"):
                 continue
             kind, _, name = line.rstrip("\n").partition("\t")
             tables[kind].add(name)
     return frozenset(tables["s"]), frozenset(tables["v"]), frozenset(tables["c"])
+
+
+@lru_cache(maxsize=1)
+def table_date() -> str:
+    """The date of the NCBI Taxonomy dump the names come from ("2026-11-14"), or "" if the table does not say."""
+    with _names_path().open("rb") as raw, gzip.open(raw, "rt", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.startswith("#"):
+                break
+            if line.startswith(_DATE_LINE):
+                return line[len(_DATE_LINE):].split()[0]
+    return ""
+
+
+def forget_tables() -> None:
+    """Read the table again on next use: after _names_path has been pointed at another one."""
+    for cached in (_tables, table_date, taxon_kind, animal_name_within):
+        cached.cache_clear()
 
 
 def _names() -> tuple[frozenset[str], frozenset[str]]:

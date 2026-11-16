@@ -2,6 +2,34 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## 16 November 2026: lint and type checks in CI, and a monthly refresh of the animal names ([#19](https://github.com/bhargava-morampalli/onehealth/pull/19))
+
+No result changes: the lexicon is still version 8, and the table of animal names holds the same names.
+
+### Lint and type checks
+
+Nothing checked the code for mistakes the tests would not reach, such as an undefined name in a branch no test runs.
+
+- **ruff** checks for undefined names, unused imports and variables, and likely bugs (bugbear), with the rules in `pyproject.toml`. Style is not checked. It found three inner functions that read a loop's variable, which were safe where they are but break when code is moved; they now take the value as an argument.
+- **mypy** checks the types in `src/onehealth`. It found about twenty places where the annotations did not say what the code does (rows that hold numbers and text, an array that started as an empty list, an `Optional` that a branch already rules out). None was a bug at run time; each is now annotated or written so that the type is plain.
+- **CI** runs both in a job of their own, on Python 3.12: the numpy that `uv.lock` resolves, and its type stubs, differ between Python versions. Both pass on 3.10 to 3.13 as well.
+- `ruff`, `mypy` and `types-PyYAML` are in the `dev` extra, pinned by `uv.lock`.
+
+### Keeping the animal names current
+
+The table of animal names was a snapshot of NCBI Taxonomy from 14 November 2026, with no way to see what a newer one would change.
+
+- **The table records the date of its NCBI dump**, and `classify` prints it after the lexicon version: `lexicon v8 (seed v8), animal names from NCBI Taxonomy of 2026-11-14`. The table was rebuilt from the same dump to add the date: its names are identical, and the same dump now always gives the same file, byte for byte.
+- **`tools/refresh_animal_names.py`** rebuilds the table from a newer dump and reports what changes: the names added and removed, and every record of the three benchmark datasets whose class changes, with whether the change agrees with NCBI's label. If no name changed, it changes nothing.
+- **A monthly workflow** (`.github/workflows/taxonomy.yml`) runs it, runs the tests with the new table, and opens a pull request with the report. A new table changes classes only through a reviewed pull request and a new version. Opening the pull request needs a repository setting, described in the workflow and the lexicon guide.
+- Tried on NCBI Taxonomy of 16 November 2026: 24 new scientific names, and no class change in 170,816 benchmark records.
+
+### Also
+
+- `REVIEW.md`, `ROADMAP.md` and the working notes in `docs/` are removed. They described the tool as of October 2026 (lexicon v2); their findings were fixed, and what changed since is in this changelog.
+- The package metadata names its author without an email address.
+- **Known limitation, documented:** an animal named alone in `isolation_source` with no host (`gull`, `fox`) goes to review, not to Animal. The `classify` page says why and how to settle such rows with a decision.
+
 ## 16 November 2026: install without a clone; the linkage test is about a hundred times faster on close relatives ([#18](https://github.com/bhargava-morampalli/onehealth/pull/18))
 
 No result changes: every number in a report is what it was.

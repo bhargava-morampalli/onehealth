@@ -1,0 +1,75 @@
+# Once a month: rebuild onehealth's table of animal names from the newest NCBI Taxonomy and,
+# if any name changed, open a pull request with a report of what that does to the classes.
+#
+# A newer table can change classes (a host or specimen text that names a newly listed animal
+# is placed, where it went to review), so the table is never replaced without review. The
+# pull request is the review: it lists the names added and removed, every benchmark record
+# whose class changes, and whether the tests pass with the new table. Merging it is a change
+# to onehealth's results, released with a new version; the pull request says what to do.
+#
+# Opening the pull request needs "Allow GitHub Actions to create and approve pull requests"
+# (Settings, Actions, General, Workflow permissions). Without it the branch is still pushed,
+# and the run's summary says how to open the pull request by hand. A pull request opened by
+# this workflow does not start the other workflows (GitHub does not let one workflow's token
+# start another), which is why the tests run here, and run again on the first commit a
+# maintainer pushes to the branch.
+name: Taxonomy refresh
+
+on:
+  schedule:
+    - cron: "23 5 3 * *"  # 05:23 UTC on the 3rd of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: taxonomy-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv sync --locked --extra dev
+      - name: Rebuild the table from today's NCBI Taxonomy
+        id: refresh
+        run: uv run python tools/refresh_animal_names.py --summary "$RUNNER_TEMP/report.md"
+      - name: Run the tests with the new table
+        id: tests
+        if: steps.refresh.outputs.changed == 'true'
+        continue-on-error: true
+        run: uv run pytest -q
+      - name: Propose the new table
+        if: steps.refresh.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATE: ${{ steps.refresh.outputs.date }}
+          TESTS: ${{ steps.tests.outcome }}
+        run: |
+          branch="taxonomy-refresh-$DATE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add src/onehealth/data/animal_names.tsv.gz
+          git commit -m "Animal names from NCBI Taxonomy of $DATE"
+          git push --force origin "$branch"
+          if [ "$TESTS" = "success" ]; then verdict="The tests pass with the new table."; else verdict="**The tests fail with the new table.** See the run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; fi
+          { echo "$verdict"; echo; cat "$RUNNER_TEMP/report.md"; } > "$RUNNER_TEMP/body.md"
+          title="Animal names from NCBI Taxonomy of $DATE"
+          if gh pr view "$branch" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          elif ! gh pr create --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"; then
+            echo "::warning::Could not open a pull request. Allow GitHub Actions to create pull requests in the repository settings, or open one from the branch $branch."
+          fi
+      - name: Report
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/report.md" ]; then cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ "${{ steps.tests.outcome }}" = "failure" ]; then echo "The tests failed with the new table." >> "$GITHUB_STEP_SUMMARY"; fi

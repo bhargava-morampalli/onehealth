@@ -6,7 +6,7 @@ site_url: https://bhargava-morampalli.github.io/onehealth/
 repo_url: https://github.com/bhargava-morampalli/onehealth
 repo_name: bhargava-morampalli/onehealth
 edit_uri: edit/main/documentation/
-# docs/ holds internal working notes, so the published pages live here.
+# The pages live in documentation/.
 docs_dir: documentation
 
 theme:

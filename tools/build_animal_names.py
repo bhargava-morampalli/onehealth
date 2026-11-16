@@ -2,6 +2,10 @@
 
     python tools/build_animal_names.py                      # downloads new_taxdump.tar.gz (160 MB)
     python tools/build_animal_names.py new_taxdump.tar.gz   # or reads a copy you already have
+    python tools/build_animal_names.py --out names.tsv.gz   # writes somewhere else
+
+To see what a newer dump would change before replacing the table, use
+tools/refresh_animal_names.py, which also runs monthly in .github/workflows/taxonomy.yml.
 
 The lexicon recognises a host by a list of words (`chicken`, `bos taurus`, ...). No list
 covers every species a pathogen is isolated from, so a host the list does not know
@@ -38,11 +42,14 @@ them), names NCBI gives to groups that are not organisms ("environmental samples
 "unclassified Aves"), and unnamed entries ("Rattus sp. ABC-2011").
 
 NCBI updates the taxonomy every day, so a rebuild is not byte-for-byte the same as the
-file in the repository. The header of the file records which dump it was made from.
+file in the repository. The header of the file records which dump it was made from: its
+checksum, and the date NCBI wrote it (`# NCBI Taxonomy of 2026-11-14`), which `classify`
+prints, so a methods section can name the names it used.
 """
 
 from __future__ import annotations
 
+import argparse
 import gzip
 import hashlib
 import io
@@ -50,6 +57,7 @@ import re
 import sys
 import tarfile
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 URL = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz"
@@ -111,28 +119,51 @@ def build(data: bytes) -> tuple[set[str], set[str], set[str]]:
     return scientific, vertebrate, common - vertebrate
 
 
-def main(argv: list[str]) -> int:
-    if len(argv) > 1:
-        data, source = Path(argv[1]).read_bytes(), Path(argv[1]).name
-    else:
-        print(f"downloading {URL}", file=sys.stderr)
-        with urllib.request.urlopen(URL, timeout=900) as response:
-            data, source = response.read(), URL
-    scientific, vertebrate, common = build(data)
+def read_dump(path: str | None) -> tuple[bytes, str]:
+    """The dump's bytes and what to call it in the header: a file name, or the URL it came from."""
+    if path:
+        return Path(path).read_bytes(), Path(path).name
+    print(f"downloading {URL}", file=sys.stderr)
+    with urllib.request.urlopen(URL, timeout=900) as response:
+        return response.read(), URL
+
+
+def dump_date(data: bytes) -> str:
+    """The day NCBI wrote the dump: the date of its names.dmp, in UTC."""
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+        stamp = archive.getmember("names.dmp").mtime
+    return datetime.fromtimestamp(stamp, tz=timezone.utc).date().isoformat()
+
+
+def render(names: tuple[set[str], set[str], set[str]], source: str, md5: str, date: str) -> bytes:
+    """The table as it is stored: gzip with no time stamp, so the same names give the same bytes."""
+    scientific, vertebrate, common = names
     lines = [
         "# Names NCBI Taxonomy gives to animals. Made by tools/build_animal_names.py; do not edit by hand.",
-        f"# Source: {source}, md5 {hashlib.md5(data).hexdigest()}",
+        f"# Source: {source}, md5 {md5}",
+        f"# NCBI Taxonomy of {date} (the date of names.dmp in the dump)",
         "# s = scientific name (a chordate at any rank; any other animal by a name of two or three words);",
         "# v = common name of a chordate; c = common name of another animal. People are not listed.",
     ]
     lines += [f"s\t{name}" for name in sorted(scientific)]
     lines += [f"v\t{name}" for name in sorted(vertebrate)]
     lines += [f"c\t{name}" for name in sorted(common)]
-    OUT.write_bytes(gzip.compress(("\n".join(lines) + "\n").encode("utf-8"), compresslevel=9, mtime=0))
-    print(f"wrote {OUT}: {len(scientific)} scientific names, {len(vertebrate)} common names of chordates and "
-          f"{len(common)} of other animals, {OUT.stat().st_size / 1e6:.2f} MB", file=sys.stderr)
+    return gzip.compress(("\n".join(lines) + "\n").encode("utf-8"), compresslevel=9, mtime=0)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Rebuild onehealth's table of animal names from NCBI Taxonomy.")
+    parser.add_argument("dump", nargs="?", help="new_taxdump.tar.gz (default: download it from NCBI)")
+    parser.add_argument("--out", type=Path, default=OUT, help=f"Where to write the table (default: {OUT})")
+    args = parser.parse_args(argv)
+    data, source = read_dump(args.dump)
+    names = build(data)
+    args.out.write_bytes(render(names, source, hashlib.md5(data).hexdigest(), dump_date(data)))
+    scientific, vertebrate, common = names
+    print(f"wrote {args.out}: {len(scientific)} scientific names, {len(vertebrate)} common names of chordates and "
+          f"{len(common)} of other animals, {args.out.stat().st_size / 1e6:.2f} MB", file=sys.stderr)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())

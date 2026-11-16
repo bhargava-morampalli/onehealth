@@ -118,7 +118,17 @@ The host must be a name, or end with one (v8): `European rook`, `free-range whit
 
 **In a specimen's own text** (v8). `animal-name-in-specimen` reads `isolation_source` with `within: true`: `stool (Odocoileus hemionus)`, `pigeon stool` and `giant panda feces` are Animal, where the no-host default made them Human. It is stricter than the host rule, because ordinary words are animals' names too. A name of two or more words always counts. A single word counts only when it is the common name of a vertebrate and not also an everyday word: `pigeon` and `deer` count; `tip`, `white` and `sponge` (a moth, a butterfly and an invertebrate) do not, nor do `sole`, `ray` or `monitor`. The rule is `specimen_only` and `no_host`: it decides whose specimen it is and nothing else, so a species name alone in `isolation_source` is still not a description of a sample, and goes to review as `taxon_only_source`.
 
-The names are in `src/onehealth/data/animal_names.tsv.gz`: 204,487 scientific names and 35,780 common names from the NCBI Taxonomy dump of 14 November 2026. `tools/build_animal_names.py` rebuilds it. A lexicon of your own gets the same behaviour by giving a rule `taxonomy: animal`, and loses it by leaving the rule out.
+The names are in `src/onehealth/data/animal_names.tsv.gz`: 204,487 scientific names and 35,780 common names from the NCBI Taxonomy dump of 14 November 2026. `classify` prints that date after the lexicon version (`lexicon v8 (seed v8), animal names from NCBI Taxonomy of 2026-11-14`), so a methods section can name both. A lexicon of your own gets the same behaviour by giving a rule `taxonomy: animal`, and loses it by leaving the rule out.
+
+#### Keeping the names current
+
+NCBI adds and renames species every day, so the table falls behind. A newer table can change classes: a host that names a newly listed animal is placed, where it went to review before. So the table is never replaced without review, and a new table comes with a new version of `onehealth`.
+
+- **Once a month**, the workflow `.github/workflows/taxonomy.yml` rebuilds the table from the newest NCBI Taxonomy with `tools/refresh_animal_names.py`. If no name changed, it stops there.
+- **If names changed**, it runs the tests with the new table and opens a pull request. The pull request lists the names added and removed, every record of the benchmark datasets whose class changes (and whether the change agrees with NCBI's label), and what to do before merging: check the changes, update counts that tests quote, raise the version and say in the changelog that the names are newer.
+- **By hand**, `python tools/refresh_animal_names.py` does the same on your machine, and `python tools/build_animal_names.py` rebuilds the table with no report. Both take a dump you already have (`new_taxdump.tar.gz`) instead of downloading one. The same dump always gives the same file, byte for byte.
+
+The pull request needs the repository setting that lets GitHub Actions create pull requests (Settings, Actions, General, Workflow permissions). Without it, the workflow pushes the branch and says so.
 
 ### Whose specimen
 

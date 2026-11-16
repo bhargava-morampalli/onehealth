@@ -304,13 +304,13 @@ def test_enrichment_p_values_match_every_relabelling(strata):
     assert len(relabelled) == (4200 if not strata else 900)  # 10!/(4! 3! 3!), or 30 x 30 within the two years
     result = A.lineage_enrichment(_small_dataset(), min_isolates=5, permutations=PERMUTATIONS, seed=1, strata=strata)
     assert len(result) == 6
-    for row in result:
-        def count(labels):
-            return sum(1 for label, lineage in zip(labels, lineages) if label == row["source"] and lineage == row["lineage"])
+    def count(labels, source, lineage):
+        return sum(1 for label, of in zip(labels, lineages) if label == source and of == lineage)
 
-        values = [count(labels) for labels in relabelled]
+    for row in result:
+        values = [count(labels, row["source"], row["lineage"]) for labels in relabelled]
         expected = sum(values) / len(values)
-        assert row["observed"] == count(sources)
+        assert row["observed"] == count(sources, row["source"], row["lineage"])
         assert row["expected"] == pytest.approx(expected, abs=1e-9)
         exact = _exact_p(row["observed"], values, centre=expected)
         assert abs(row["p"] - exact) <= _monte_carlo_margin(exact, PERMUTATIONS), row

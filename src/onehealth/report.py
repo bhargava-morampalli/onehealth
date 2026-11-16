@@ -20,6 +20,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.artist import Artist  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch, Rectangle  # noqa: E402
 
@@ -142,6 +143,7 @@ def _vgrid(ax) -> None:
 def _legend_sources(ax, sources, loc="upper left", anchor=(0, 1.02), ncol=None, kind="patch") -> None:
     if not sources:
         return
+    handles: list[Artist]
     if kind == "patch":
         handles = [Patch(facecolor=colour(s), label=s) for s in sources]
     else:  # legends mirror the mark: a short line key for line charts
@@ -613,7 +615,7 @@ def build_report(
     kpis.append(("Source groups", str(len(groups_present))))
 
     names, matrix = read_distance_matrix(distances_path) if distances_path else ([], None)
-    if matrix is not None and A.fractional_distances(matrix):
+    if distances_path is not None and matrix is not None and A.fractional_distances(matrix):
         quality.append(f"The distances in {distances_path.name} are fractions between 0 and 1, as Mash or ANI "
                        f"distances are, not SNP counts. At the {threshold:g}-SNP threshold every pair of isolates "
                        "counts as closely related, so the genomic linkage sections"
@@ -804,7 +806,7 @@ def build_report(
                 f"({', '.join(f'{g}: {n}' for g, n in result.genotyped.items())}).")
 
     # 4. Genomic linkage
-    if distances_path:
+    if distances_path and matrix is not None:
         link = A.linkage(dataset, names, matrix, threshold=threshold, permutations=permutations, seed=seed,
                          strata=stratify)
         if link.unmatched:

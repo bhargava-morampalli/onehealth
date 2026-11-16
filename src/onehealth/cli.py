@@ -9,6 +9,7 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from onehealth import __version__
 from onehealth.classify import UNRESOLVED, classify_fieldnames, classify_rows
@@ -46,6 +47,7 @@ from onehealth.resolve import (
 )
 from onehealth.review import GROUP_FIELDS, load_decisions, review_groups, unused_decisions
 from onehealth.summarize import summarize, summary_fieldnames
+from onehealth.taxonomy import table_date
 
 
 # resolve saves what it has at most this often while it looks IDs up at NCBI.
@@ -198,7 +200,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
     require_columns(rows, args.input, [args.level], _CLASSIFY_FIRST)
     result = validate(rows, read_truth(args.truth, args.truth_column, args.level), args.level)
-    summary = [
+    summary: list[dict[str, Any]] = [
         {"metric": "isolates", "value": result.isolates, "meaning": "isolates with a truth label found in the input"},
         {"metric": "coverage", "value": f"{result.coverage:.4f}", "meaning": "share of truly classifiable isolates that onehealth classified"},
         {"metric": "accuracy", "value": f"{result.accuracy:.4f}", "meaning": "share of classified isolates whose class matches the truth"},
@@ -364,7 +366,9 @@ def cmd_classify(args: argparse.Namespace) -> int:
             print(f"warning: {len(unused)} decision{'s' if len(unused) > 1 else ''} in {args.decisions} matched no row "
                   f"(e.g. {'; '.join(unused[:3])})", file=sys.stderr)
     name = f"v{lexicon.version}" if lexicon.version.isdigit() else lexicon.version
-    print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
+    dated = table_date()
+    print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})" + (f", animal names from NCBI Taxonomy of {dated}" if dated else ""),
+          file=sys.stderr)
     missed = unmatched_overrides(rows, overrides)
     if missed:
         # Never applied, and nothing in the output would show it.

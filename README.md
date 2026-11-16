@@ -193,11 +193,15 @@ Override columns: `id` (or BioSample/assembly/SRA/PDT), `l1`, optional `healthca
 ```bash
 pip install -e ".[dev]"
 pytest
+ruff check
+mypy
 ```
+
+`ruff check` looks for mistakes such as undefined names and unused imports, and `mypy` checks the types in `src/onehealth`; their rules are in `pyproject.toml`.
 
 Besides small hand-built cases, the tests run on real public data: 307 *Klebsiella* isolates from NCBI Pathogen Detection with NCBI's own metadata, SNP calls and AMRFinderPlus results, and 166,158 Pathogen Detection records from 26 organism groups that carry NCBI's `source_type`. Provenance and the rebuild scripts are in `tests/data/ncbi_pd_klebsiella/` and `tests/data/ncbi_pd_source_types/`.
 
-GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull request (`.github/workflows/tests.yml`).
+GitHub Actions runs the whole suite on Python 3.10 to 3.13 for every pull request, with the lint and type checks and a check that the built package installs and runs (`.github/workflows/tests.yml`).
 
 ## Licence
 

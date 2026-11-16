@@ -11,6 +11,7 @@ it, and with empty columns for a decision. Filled in, the same table is what
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, PAPER_ROLLUP_VALUES
 from onehealth.errors import InputError
@@ -58,7 +59,7 @@ def review_groups(classified: list[dict[str, str]]) -> list[dict[str, str]]:
     The text shown is that of the first row in the group, as it was typed. The decision
     columns (l1, healthcare_environment, note) are left empty for the curator.
     """
-    groups: dict[tuple[DecisionKey, str], dict[str, str]] = {}
+    groups: dict[tuple[DecisionKey, str], dict[str, Any]] = {}  # "rows" is a count until the end
     for row in classified:
         if row.get("classify_status") != "review":
             continue
