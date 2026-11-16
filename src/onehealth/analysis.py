@@ -15,6 +15,7 @@ from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
 from datetime import date
+from typing import Any
 
 import numpy as np
 
@@ -601,7 +602,7 @@ def lineage_enrichment(
     rng = np.random.default_rng(seed)
     for _ in range(permutations):
         exceed += np.abs(counts(permute_within(src, codes, rng)) - expected) >= deviation
-    rows = []
+    rows: list[dict[str, Any]] = []
     for i, lineage in enumerate(tested):
         for j, group in enumerate(groups):
             rows.append(
@@ -810,7 +811,7 @@ def linkage(
 
     # Permutation null: shuffle labels among classified isolates, graph fixed.
     exceed = np.zeros_like(observed)
-    perm_values = []
+    perm_values = np.zeros((0, n_s, n_s), dtype=np.int64)  # one matrix of events per permutation
     labelled = np.flatnonzero(src >= 0)
     codes = strata_codes([isolates[i] for i in labelled], strata)
     if n_s and len(a) and permutations > 0:
@@ -831,7 +832,7 @@ def linkage(
         perm_values = np.concatenate(draws)
         mean = perm_values.mean(axis=0)
         exceed = (np.abs(perm_values - mean) >= np.abs(observed - mean) - 1e-9).sum(axis=0)
-    events = []
+    events: list[dict[str, Any]] = []
     for x in range(n_s):
         for y in range(x, n_s):
             denominator = per_source[groups[x]] + (per_source[groups[y]] if x != y else 0)
@@ -914,8 +915,8 @@ def linkage(
     place[by_cluster] = np.arange(len(isolates)) - np.repeat(first, sizes)
     pair_order = np.argsort(clusters[a], kind="stable")
     pair_cluster = clusters[a][pair_order]
-    pair_first = np.searchsorted(pair_cluster, cluster_ids, side="left")
-    pair_last = np.searchsorted(pair_cluster, cluster_ids, side="right")
+    pair_first = np.asarray(np.searchsorted(pair_cluster, cluster_ids, side="left"))
+    pair_last = np.asarray(np.searchsorted(pair_cluster, cluster_ids, side="right"))
     cluster_rows = []
     for cid, begin, size, lo, hi in zip(cluster_ids.tolist(), first.tolist(), sizes.tolist(), pair_first.tolist(),
                                         pair_last.tolist()):
@@ -1109,8 +1110,9 @@ class _EventCounter:
 
     def __init__(self, a: np.ndarray, b: np.ndarray, clusters: np.ndarray, n_s: int, dense: bool = True) -> None:
         self.n_s = n_s
-        _, compact = np.unique(clusters, return_inverse=True)  # clusters numbered 0, 1, 2, ...
-        self.n_clusters = int(compact.max()) + 1 if len(compact) else 0
+        ids, inverse = np.unique(clusters, return_inverse=True)
+        compact = np.asarray(inverse, dtype=np.int64)  # clusters numbered 0, 1, 2, ...
+        self.n_clusters = len(ids)
         pair_cluster = compact[a]
         self.blocks: list[tuple[np.ndarray, np.ndarray]] = []  # (members, their matrix of close pairs)
         loose = np.ones(len(a), dtype=bool)  # pairs still counted one by one

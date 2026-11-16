@@ -8,7 +8,7 @@ import os
 import re
 from array import array
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, Mapping, Sequence
 
 from onehealth.constants import (
     ASSEMBLY_ALIASES,
@@ -159,7 +159,7 @@ def _unquote(cell: str) -> str:
     return cell
 
 
-def write_tsv(path: Path, rows: list[dict[str, str]], fieldnames: Iterable[str]) -> None:
+def write_tsv(path: Path, rows: Sequence[Mapping[str, Any]], fieldnames: Iterable[str]) -> None:
     """Write the table whole or not at all.
 
     The rows go to a temporary file beside `path`, which then takes its place. A run that

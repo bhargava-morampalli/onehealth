@@ -140,10 +140,11 @@ def validate(classified: list[dict[str, str]], truth: dict[str, str], level: str
     seen: dict[str, tuple[str, str]] = {}  # isolate key -> first truth ID and label for it
     conflicts: list[str] = []
     for identifier, expected in truth.items():
-        row = by_id.get(identifier)
-        if row is None:
+        found = by_id.get(identifier)
+        if found is None:
             result.unmatched.append(identifier)
             continue
+        row = found
         key = isolate_key(row) or str(id(row))
         if key in seen:
             # Two truth IDs for one isolate (say BioSample and assembly): count it once, if they agree.

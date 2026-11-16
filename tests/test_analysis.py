@@ -358,7 +358,7 @@ def test_dereplication_removes_clonal_inflation_of_feature_tests():
     rows, names, presence = [], [], {}
     for k in range(20):
         source = "Human" if k < 10 else "Animal"
-        for copy in range(10 if k == 10 else 1):
+        for _ in range(10 if k == 10 else 1):
             i = len(rows)
             rows.append(_row(i, source))
             names.append(f"ISO{i}")

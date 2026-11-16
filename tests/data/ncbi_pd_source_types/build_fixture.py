@@ -142,6 +142,12 @@ def offsets(total: int, split: str, shared: bool) -> list[tuple[int, int]]:
     return [(step * k + shift, length) for k in range(PARTS)] if length > 0 else []
 
 
+def _cell(cells: list[str], column: dict[str, int], name: str) -> str:
+    """One value of a metadata line; NCBI writes NULL for empty."""
+    value = cells[column[name]].strip()
+    return "" if value == "NULL" else value
+
+
 def records(group: str, release: str, split: str) -> Counter:
     """Distinct labelled records in the parts of one table, counted."""
     address = url(group, release)
@@ -162,16 +168,12 @@ def records(group: str, release: str, split: str) -> Counter:
             if len(cells) != len(names):
                 continue
 
-            def cell(name: str) -> str:
-                value = cells[column[name]].strip()
-                return "" if value == "NULL" else value
-
-            target, label = cell("target_acc"), cell("source_type").lower()
+            target, label = _cell(cells, column, "target_acc"), _cell(cells, column, "source_type").lower()
             if label not in LABELS or target in seen:
                 continue
             seen.add(target)
-            if cell("isolation_source") or cell("host"):
-                counts[(group, *(cell(name) for name in COLUMNS), label)] += 1
+            if _cell(cells, column, "isolation_source") or _cell(cells, column, "host"):
+                counts[(group, *(_cell(cells, column, name) for name in COLUMNS), label)] += 1
     return counts
 
 

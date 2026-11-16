@@ -1,6 +1,7 @@
 # Runs the whole test suite on every pull request and push to main, on each Python version
-# the package supports (requires-python in pyproject.toml). A second job installs the built
-# wheel in an empty environment and runs it, as a user would. The documentation workflow only
+# the package supports (requires-python in pyproject.toml). A second job lints and type-checks
+# the code, and a third installs the built wheel in an empty environment and runs it, as a
+# user would. The documentation workflow only
 # runs tests/test_docs.py.
 name: Tests
 
@@ -33,6 +34,22 @@ jobs:
         run: uv sync --locked --extra dev
       - name: Test
         run: uv run pytest -q
+
+  checks:
+    # Lint and type check. One Python only: the numpy that uv.lock resolves differs between
+    # Python versions, and so do its type stubs. The rules are in pyproject.toml.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv sync --locked --extra dev
+      - name: Lint (ruff)
+        run: uv run ruff check --output-format github
+      - name: Type check (mypy)
+        run: uv run mypy
 
   package:
     # What "pip install" gives a user: the built wheel in an empty environment, run from

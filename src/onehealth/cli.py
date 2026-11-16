@@ -9,6 +9,7 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from onehealth import __version__
 from onehealth.classify import UNRESOLVED, classify_fieldnames, classify_rows
@@ -198,7 +199,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     rows = read_tsv(args.input)
     require_columns(rows, args.input, [args.level], _CLASSIFY_FIRST)
     result = validate(rows, read_truth(args.truth, args.truth_column, args.level), args.level)
-    summary = [
+    summary: list[dict[str, Any]] = [
         {"metric": "isolates", "value": result.isolates, "meaning": "isolates with a truth label found in the input"},
         {"metric": "coverage", "value": f"{result.coverage:.4f}", "meaning": "share of truly classifiable isolates that onehealth classified"},
         {"metric": "accuracy", "value": f"{result.accuracy:.4f}", "meaning": "share of classified isolates whose class matches the truth"},

@@ -236,13 +236,14 @@ class NCBIClient:
                 if accession:
                     by_stem.setdefault(accession.split(".", 1)[0], []).append(report)
             for asked in chunk:
+                hit: dict[str, Any] | None
                 if "." in asked:
-                    report = by_accession.get(asked)
+                    hit = by_accession.get(asked)
                 else:
                     matches = by_stem.get(asked, [])
-                    report = matches[0] if len(matches) == 1 else None
-                if report is not None:
-                    found[asked] = report
+                    hit = matches[0] if len(matches) == 1 else None
+                if hit is not None:
+                    found[asked] = hit
         return found
 
     def _datasets_reports(self, url: str) -> list[dict[str, Any]]:
