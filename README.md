@@ -8,6 +8,22 @@ The full documentation, with a tutorial and a page for each command, is publishe
 
 ## Install
 
+Python 3.10 or newer. No clone is needed:
+
+```bash
+pip install "git+https://github.com/bhargava-morampalli/onehealth.git"
+```
+
+For a study, install one release and name it in your methods. Add `@` and a tag from the [tags page](https://github.com/bhargava-morampalli/onehealth/tags):
+
+```bash
+pip install "git+https://github.com/bhargava-morampalli/onehealth.git@v0.2.0"
+```
+
+`uv tool install` and `pipx install` take the same address and give `onehealth` an environment of its own. `onehealth --version` prints what is installed.
+
+To change the code or run the tests, clone the repository:
+
 ```bash
 git clone https://github.com/bhargava-morampalli/onehealth.git
 cd onehealth
@@ -23,6 +39,8 @@ cd onehealth
 uv sync --extra dev
 uv run onehealth --help
 ```
+
+The examples below use files from the repository (`examples/`).
 
 ## Commands
 

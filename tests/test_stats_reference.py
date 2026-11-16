@@ -350,7 +350,13 @@ def _sharing_events(labels, patients) -> Counter:
 
 
 @pytest.mark.parametrize("strata", [(), ("year",)])
-def test_linkage_events_and_p_values_match_every_relabelling(strata):
+@pytest.mark.parametrize("matrix_products", [False, True])
+def test_linkage_events_and_p_values_match_every_relabelling(strata, matrix_products, monkeypatch):
+    if matrix_products:
+        # linkage counts a large cluster with matrix products. Make every cluster "large", so
+        # that way of counting is held to the exact answer too.
+        monkeypatch.setattr(A, "DENSE_MIN", 2)
+        monkeypatch.setattr(A, "DENSE_SHARE", 10**9)
     sources, patients = [s for s, *_ in SMALL], [patient for *_, patient in SMALL]
     years = [year for *_, year, _ in SMALL] if strata else None
     n = len(SMALL)
