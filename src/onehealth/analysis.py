@@ -792,24 +792,21 @@ def linkage(
                     dtype=np.int64)
     same_host = (host[pair_a] > 0) & (host[pair_a] == host[pair_b])
 
+    # Single linkage at every threshold in one pass: a cluster at 20 SNPs is a union of
+    # clusters at 10, so the pairs are added once, in order of distance.
+    thresholds = sorted(set(SWEEP_THRESHOLDS) | {threshold})
+    clusters_at = _components_by_threshold(len(isolates), pair_a, pair_b, pair_d, thresholds)
+
     def edges_at(t: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        hit = pair_d <= t
         # Clusters include pairs from one host individual, so a patient whose two
         # isolates link to different sources stays one cluster (one sharing event per
         # source pair); only the pair itself is not counted as sharing.
-        clusters = _components(len(isolates), pair_a[hit], pair_b[hit])
-        keep = hit & ~same_host
-        return pair_a[keep], pair_b[keep], pair_d[keep], clusters
-
-    def event_counts(labels: np.ndarray, a: np.ndarray, b: np.ndarray, clusters: np.ndarray) -> np.ndarray:
-        la, lb = labels[a], labels[b]
-        ok = (la >= 0) & (lb >= 0)
-        lo, hi = np.minimum(la[ok], lb[ok]), np.maximum(la[ok], lb[ok])
-        codes = np.unique(clusters[a[ok]] * n_s * n_s + lo * n_s + hi)
-        return np.bincount(codes % (n_s * n_s), minlength=n_s * n_s).reshape(n_s, n_s)
+        keep = (pair_d <= t) & ~same_host
+        return pair_a[keep], pair_b[keep], pair_d[keep], clusters_at[t]
 
     a, b, d, clusters = edges_at(threshold)
-    observed = event_counts(src, a, b, clusters) if n_s else np.zeros((0, 0), dtype=np.int64)
+    counter = _EventCounter(a, b, clusters, n_s)
+    observed = counter.counts(src[None, :])[0] if n_s else np.zeros((0, 0), dtype=np.int64)
 
     # Permutation null: shuffle labels among classified isolates, graph fixed.
     exceed = np.zeros_like(observed)
@@ -818,12 +815,20 @@ def linkage(
     codes = strata_codes([isolates[i] for i in labelled], strata)
     if n_s and len(a) and permutations > 0:
         rng = np.random.default_rng(seed)
+        # Many relabellings per call: the large clusters are then counted with matrix
+        # products. The labels are drawn one permutation at a time and in the same order
+        # whatever the batch size, so the result depends only on the seed.
+        batch = max(1, min(256, 4_000_000 // max(len(isolates), 1)))
         draws = []
-        for _ in range(permutations):
-            labels = src.copy()
-            labels[labelled] = permute_within(src[labelled], codes, rng)
-            draws.append(event_counts(labels, a, b, clusters))
-        perm_values = np.stack(draws)
+        done = 0
+        while done < permutations:
+            size = min(batch, permutations - done)
+            labels = np.repeat(src[None, :], size, axis=0)
+            for k in range(size):
+                labels[k, labelled] = permute_within(src[labelled], codes, rng)
+            draws.append(counter.counts(labels))
+            done += size
+        perm_values = np.concatenate(draws)
         mean = perm_values.mean(axis=0)
         exceed = (np.abs(perm_values - mean) >= np.abs(observed - mean) - 1e-9).sum(axis=0)
     events = []
@@ -853,80 +858,82 @@ def linkage(
         row["q"] = q
 
     # Hetland et al. 2025: share of isolates of one source with a close relative in another.
-    neighbours = [set() for _ in isolates]
-    for x, y in zip(a, b):
-        if src[y] >= 0:
-            neighbours[x].add(int(src[y]))
-        if src[x] >= 0:
-            neighbours[y].add(int(src[x]))
+    near = np.zeros((len(isolates), max(n_s, 1)), dtype=bool)  # isolate x has a close relative of source m
+    known = src[b] >= 0
+    near[a[known], src[b[known]]] = True
+    known = src[a] >= 0
+    near[b[known], src[a[known]]] = True
     linked = []
     for k, group in enumerate(groups):
-        members = np.flatnonzero(src == k)
+        members = src == k
+        size = int(members.sum())
         for m, other in enumerate(groups):
-            count = sum(1 for i in members if m in neighbours[i])
+            count = int(near[members, m].sum())
             linked.append(
                 {
                     "from_source": group,
                     "to_source": other,
-                    "isolates": len(members),
+                    "isolates": size,
                     "with_close_relative": count,
-                    "percent": 100 * count / len(members) if len(members) else math.nan,
+                    "percent": 100 * count / size if size else math.nan,
                 }
             )
 
     sweep = []
-    for t in sorted(set(SWEEP_THRESHOLDS) | {threshold}):
+    for t in thresholds:
         ta, tb, _, tc = edges_at(t)
-        counts = event_counts(src, ta, tb, tc) if n_s else np.zeros((0, 0))
+        counts = _EventCounter(ta, tb, tc, n_s, dense=False).counts(src[None, :])[0] if n_s else np.zeros((0, 0))
         diagonal = int(np.trace(counts)) if n_s else 0
         sweep.append({"threshold": t, "within_events": diagonal, "between_events": int(counts.sum()) - diagonal})
 
     cross_edges = []
-    for x, y, distance in zip(a, b, d):
-        if src[x] >= 0 and src[y] >= 0 and src[x] != src[y]:
-            gap = (
-                abs(isolates[x].year - isolates[y].year)
-                if isolates[x].year is not None and isolates[y].year is not None
-                else math.nan
-            )
-            cross_edges.append(
-                {
-                    "cluster": int(clusters[x]),
-                    "isolate_a": isolates[x].key,
-                    "source_a": isolates[x].source,
-                    "isolate_b": isolates[y].key,
-                    "source_b": isolates[y].source,
-                    "lineage": isolates[x].lineage or isolates[y].lineage,
-                    "snps": float(distance),
-                    "years_apart": gap,
-                }
-            )
+    crossing = (src[a] >= 0) & (src[b] >= 0) & (src[a] != src[b])
+    for x, y, distance in zip(a[crossing].tolist(), b[crossing].tolist(), d[crossing].tolist()):
+        gap = (
+            abs(isolates[x].year - isolates[y].year)
+            if isolates[x].year is not None and isolates[y].year is not None
+            else math.nan
+        )
+        cross_edges.append(
+            {
+                "cluster": int(clusters[x]),
+                "isolate_a": isolates[x].key,
+                "source_a": isolates[x].source,
+                "isolate_b": isolates[y].key,
+                "source_b": isolates[y].source,
+                "lineage": isolates[x].lineage or isolates[y].lineage,
+                "snps": float(distance),
+                "years_apart": gap,
+            }
+        )
 
-    # Members and edges grouped by cluster in one pass (not one scan of all edges per cluster).
-    cluster_members: dict[int, list[int]] = {}
-    for i, cid in enumerate(clusters.tolist()):
-        cluster_members.setdefault(cid, []).append(i)
-    cluster_edges: dict[int, list[tuple[int, int, float]]] = {}
-    for x, y, distance in zip(a.tolist(), b.tolist(), d.tolist()):
-        cluster_edges.setdefault(int(clusters[x]), []).append((x, y, distance))
+    # Members and pairs grouped by cluster with two sorts (not one search per pair).
+    by_cluster = np.argsort(clusters, kind="stable")  # isolates, cluster by cluster, each in input order
+    cluster_ids, first, sizes = np.unique(clusters[by_cluster], return_index=True, return_counts=True)
+    place = np.empty(len(isolates), dtype=np.int64)  # an isolate's position among its cluster's members
+    place[by_cluster] = np.arange(len(isolates)) - np.repeat(first, sizes)
+    pair_order = np.argsort(clusters[a], kind="stable")
+    pair_cluster = clusters[a][pair_order]
+    pair_first = np.searchsorted(pair_cluster, cluster_ids, side="left")
+    pair_last = np.searchsorted(pair_cluster, cluster_ids, side="right")
     cluster_rows = []
-    for cid in sorted(cluster_members):
-        members = np.array(cluster_members[cid])
-        if len(members) < 2:
+    for cid, begin, size, lo, hi in zip(cluster_ids.tolist(), first.tolist(), sizes.tolist(), pair_first.tolist(),
+                                        pair_last.tolist()):
+        if size < 2:
             continue
+        members = by_cluster[begin : begin + size]
         sources = Counter(isolates[i].source or "Unclassified" for i in members)
-        inside = cluster_edges.get(cid, [])
+        inside = pair_order[lo:hi]
         cluster_rows.append(
             {
                 "cluster": int(cid),
-                "isolates": len(members),
+                "isolates": size,
                 "sources": ", ".join(f"{g} ({sources[g]})" for g in [*groups, "Unclassified"] if sources[g]),
                 "n_sources": len([g for g in groups if sources[g]]),
                 "lineages": ", ".join(sorted({isolates[i].lineage for i in members if isolates[i].lineage})),
                 "members": [isolates[i].key for i in members],
                 "member_sources": [isolates[i].source for i in members],
-                "edges": [(int(np.searchsorted(members, x)), int(np.searchsorted(members, y)), distance)
-                          for x, y, distance in inside],
+                "edges": list(zip(place[a[inside]].tolist(), place[b[inside]].tolist(), d[inside].tolist())),
             }
         )
     cluster_rows.sort(key=lambda r: (-r["n_sources"], -r["isolates"], r["cluster"]))
@@ -1075,6 +1082,114 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
         not_in_matrix=sum(1 for iso in dataset.classified if iso.key not in in_matrix),
     )
     return result, summary
+
+
+# A cluster is counted with matrix products when it has at least this many isolates, at
+# most this many (its pairs are held as a square matrix of 4-byte numbers), and at least
+# one in DENSE_SHARE of its possible pairs is within the threshold.
+DENSE_MIN, DENSE_MAX, DENSE_SHARE = 64, 6000, 32
+DENSE_BYTES = 400_000_000  # for all such clusters together
+
+
+class _EventCounter:
+    """Sharing events between sources, for many labellings of one graph of close pairs.
+
+    A sharing event is one pair of sources joined inside one cluster by at least one close
+    pair. A permutation test asks for the events under thousands of relabellings of the
+    same graph, and in a dataset of close relatives the graph has millions of pairs.
+
+    Two ways of counting give the same numbers. Pair by pair: every close pair is given
+    its cluster and its two labels, and the distinct combinations are counted. That costs
+    one pass over the pairs for every labelling. For a large cluster in which many pairs
+    are close, matrix products do it for a whole batch of labellings at once: with A the
+    cluster's 0/1 matrix of close pairs and L a labelling as 0/1 columns, one per source,
+    A @ L counts each isolate's close relatives of each source, and L' @ (A @ L > 0) says
+    which pairs of sources are joined.
+    """
+
+    def __init__(self, a: np.ndarray, b: np.ndarray, clusters: np.ndarray, n_s: int, dense: bool = True) -> None:
+        self.n_s = n_s
+        _, compact = np.unique(clusters, return_inverse=True)  # clusters numbered 0, 1, 2, ...
+        self.n_clusters = int(compact.max()) + 1 if len(compact) else 0
+        pair_cluster = compact[a]
+        self.blocks: list[tuple[np.ndarray, np.ndarray]] = []  # (members, their matrix of close pairs)
+        loose = np.ones(len(a), dtype=bool)  # pairs still counted one by one
+        if dense and len(a):
+            sizes = np.bincount(compact, minlength=self.n_clusters)
+            pairs = np.bincount(pair_cluster, minlength=self.n_clusters)
+            wanted = np.flatnonzero((sizes >= DENSE_MIN) & (sizes <= DENSE_MAX) & (pairs * DENSE_SHARE >= sizes**2))
+            budget = DENSE_BYTES
+            place = np.zeros(len(compact), dtype=np.int64)
+            for c in wanted[np.argsort(-pairs[wanted], kind="stable")]:  # the clusters with most pairs first
+                cost = 4 * int(sizes[c]) ** 2
+                if cost > budget:
+                    continue
+                budget -= cost
+                members = np.flatnonzero(compact == c)
+                place[members] = np.arange(len(members))
+                inside = pair_cluster == c
+                block = np.zeros((len(members), len(members)), dtype=np.float32)
+                block[place[a[inside]], place[b[inside]]] = 1.0
+                block[place[b[inside]], place[a[inside]]] = 1.0
+                self.blocks.append((members, block))
+                loose &= ~inside
+        self.a, self.b, self.pair_cluster = a[loose], b[loose], pair_cluster[loose]
+
+    def counts(self, labels: np.ndarray) -> np.ndarray:
+        """Events for each labelling: `labels` is labellings x isolates (-1 for no source); the
+        result is labellings x sources x sources, filled where the first source comes first."""
+        n_s, size = self.n_s, len(labels)
+        out = np.zeros((size, n_s, n_s), dtype=np.int64)
+        if not n_s:
+            return out
+        if len(self.a):
+            seen = np.zeros(self.n_clusters * n_s * n_s, dtype=bool)
+            for k in range(size):
+                la, lb = labels[k, self.a], labels[k, self.b]
+                ok = (la >= 0) & (lb >= 0)
+                lo, hi = np.minimum(la, lb)[ok], np.maximum(la, lb)[ok]
+                seen[:] = False
+                seen[(self.pair_cluster[ok] * n_s + lo) * n_s + hi] = True
+                out[k] = seen.reshape(self.n_clusters, n_s * n_s).sum(axis=0).reshape(n_s, n_s)
+        sources = np.arange(n_s)
+        for members, block in self.blocks:
+            m = len(members)
+            is_source = (labels[:, members, None] == sources).astype(np.float32)  # labellings x members x sources
+            relatives = block @ is_source.transpose(1, 0, 2).reshape(m, size * n_s)  # members x (labellings, sources)
+            has_relative = (relatives.reshape(m, size, n_s).transpose(1, 0, 2) > 0).astype(np.float32)
+            joined = np.matmul(is_source.transpose(0, 2, 1), has_relative) > 0  # labellings x sources x sources
+            out += np.triu(joined)
+        return out
+
+
+def _components_by_threshold(
+    n: int, a: np.ndarray, b: np.ndarray, d: np.ndarray, thresholds: list[float]
+) -> dict[float, np.ndarray]:
+    """Single-linkage clusters at each threshold, as _components gives them, in one pass.
+
+    The pairs are added in order of distance, so the clusters at one threshold are the
+    starting point for the next.
+    """
+    parent = list(range(n))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    order = np.argsort(d, kind="stable")
+    first, second, distance = a[order].tolist(), b[order].tolist(), d[order].tolist()
+    out: dict[float, np.ndarray] = {}
+    position = 0
+    for t in sorted(set(thresholds)):
+        while position < len(distance) and distance[position] <= t:
+            rx, ry = find(first[position]), find(second[position])
+            if rx != ry:
+                parent[max(rx, ry)] = min(rx, ry)
+            position += 1
+        out[t] = np.array([find(x) for x in range(n)], dtype=np.int64)
+    return out
 
 
 def _components(n: int, a: np.ndarray, b: np.ndarray) -> np.ndarray:
