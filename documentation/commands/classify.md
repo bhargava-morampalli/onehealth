@@ -87,6 +87,9 @@ Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinic
 
 With nothing else to go on, the row goes to review.
 
+!!! note "Known limitation: an animal named alone in `isolation_source`"
+    Some submitters put the animal in `isolation_source` and leave `host` empty: `Larus cachinnans`, `gull`, `fox`. Such a row goes to review (`taxon_only_source` or `unmatched`), not to Animal. That is deliberate for now: with no host, a species name there is the animal in some NCBI records and its meat in others (a catfish species sold as fillets), and telling them apart needs a lexicon change measured on records nobody has looked at. On the most recent benchmark part this sent 151 of 5,697 animal records to review. Nothing is called wrongly: settle these rows in your study with one [decision](#decisions) per text, for example `gull` with `l1` Animal.
+
 ## Output
 
 The input columns, followed by:

@@ -8,7 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
-docs/
 
 # Analysis outputs
 work/

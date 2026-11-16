@@ -1,8 +1,8 @@
 # Builds the documentation site (mkdocs.yml, documentation/) on every pull request and
 # push, and fails on a broken link or a page that is behind the code (tests/test_docs.py).
-# Pushes to main also publish it to GitHub Pages, but only once the repository is public:
-# while it is private the deploy job is skipped. To turn publishing on after going public,
-# set Settings > Pages > Source to "GitHub Actions".
+# Pushes to main also publish it to GitHub Pages (Settings > Pages > Source: "GitHub
+# Actions"). The deploy job is skipped for a private copy of the repository, which cannot
+# publish Pages on every plan.
 name: Documentation
 
 on:

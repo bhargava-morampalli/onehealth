@@ -153,3 +153,21 @@ def test_heldout_baseline(records, lexicon):
 def test_development_baseline(records, lexicon):
     result = _score([r for r in records if r["split"] == "development"], lexicon)
     assert result["coverage"] >= 0.975 and result["accuracy"] >= 0.98
+
+
+def test_an_animal_named_alone_in_isolation_source_is_the_documented_known_limitation(records, lexicon):
+    """documentation/commands/classify.md: with no host, a species name in isolation_source goes to review."""
+    from onehealth.taxonomy import taxon_kind
+    from onehealth.text import is_unknown_value
+
+    animal = alone = 0
+    for row in records:
+        if row["split"] != "fresh" or row["ncbi_source_type"] != "animal":
+            continue
+        animal += int(row["records"])
+        result = classify_record({name: row[name] for name in ("isolation_source", "host", "host_disease")}, lexicon)
+        if result.classify_status == "review" and is_unknown_value(row["host"]) and taxon_kind(row["isolation_source"]) == "animal":
+            alone += int(row["records"])
+    assert (alone, animal) == (151, 5697)
+    page = (Path(__file__).parents[1] / "documentation" / "commands" / "classify.md").read_text(encoding="utf-8")
+    assert f"{alone} of {animal:,} animal records to review" in page
