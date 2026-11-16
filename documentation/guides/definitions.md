@@ -3,13 +3,14 @@
 !!! warning "Read this before you compare sources"
     A One Health class is a definition, not a measurement. Whether manure is an animal sample or an environmental one changes how many isolates are in each group, and so changes every comparison between groups. `onehealth` does not invent its own definitions where NCBI's records show a convention: **it follows NCBI**. This page says exactly where, with the numbers behind each choice, and how to choose differently for your own study.
 
-There are three such conventions. All three were adopted in lexicon version 7 (November 2026); results made with an earlier version use different definitions and are not comparable class for class.
+There are four such conventions. The first three were adopted in lexicon version 7 (November 2026); results made with an earlier version use different definitions and are not comparable class for class. The fourth is older, and was measured against NCBI's records afterwards and kept.
 
 | # | Convention | In short |
 |---|---|---|
 | 1 | [A record's own `source_type` is its class](#1-a-records-own-source_type-is-its-class) | Where the submitter told NCBI the One Health category, that category is used as it is. |
 | 2 | [Farm settings are environmental, and a farm with a host is the host](#2-farm-settings) | Manure, litter, a barn and a farm are Environmental. Until version 7 they were Animal. |
 | 3 | [`chicken` or `turkey` on its own is meat](#3-a-species-that-is-also-the-name-of-its-meat) | With no host these two words are Food. Until version 7 they were Animal. |
+| 4 | [A specimen with no host is a person's](#4-a-specimen-with-no-host-is-a-persons) | `blood` or `stool` with no host named is Human. Unchanged; NCBI's records agree for 96.7%. |
 
 The numbers on this page come from 139,554 NCBI Pathogen Detection records whose submitters filled in NCBI's `source_type`, from 18 organism groups (`tests/data/ncbi_pd_source_types/`). The test suite checks every figure quoted here against that data (`tests/test_ncbi_conventions.py`).
 
@@ -94,12 +95,32 @@ Only these two words are treated this way, because only they have this much evid
 
 **There is no agreed standard for this word.** The standards for sample metadata (NCBI's packages, the PHA4GE specification, the FoodOn ontology) do not say what a bare `chicken` means; they ask for it not to be left bare: a `host` for an animal, a food product term for meat, a `source_type`. `onehealth` goes with what NCBI's records show. A veterinary study whose `chicken` is a bird should say so with a [decision](../commands/classify.md#decisions): one line, `chicken` with `l1` Animal.
 
+## 4. A specimen with no host is a person's
+
+`blood`, `stool`, `urine` and `wound` name a specimen and say nothing about whose it is. Many clinical records give no host, because to the submitter it goes without saying. So when the text is a specimen, no host is given and nothing in the text names an animal, `onehealth` calls the row **Human**, with a reason that ends in `+no_host` so that you can count these rows.
+
+This default is older than version 7 and was `onehealth`'s own judgement. In November 2026 it was measured against NCBI's categories, like the conventions above. In the benchmark records that `classify` places this way from the text alone:
+
+| | Records | Human | Animal | Environmental | Food |
+|---|---|---|---|---|---|
+| A specimen, no host | 15,235 | 14,735 (96.7%) | 345 | 117 | 38 |
+
+So the default stands. NCBI's submitters mean a person by a host-less specimen in 29 records of 30.
+
+**Where the default is not applied.** In a record its submitter filed as environmental, food or other (the BioSample package `Pathogen.env`, or `epi_type` `environmental/other`), a host-less specimen goes to review as `no_host_env_package`. In a sample of 159,045 NCBI records there are 266 of these; of the 45 that also have a `source_type`, 34 are animal, 10 human and 1 environmental, so no default would be right. A specimen word in a text that names a food (`pork blood sausage`) goes to review as `specimen_or_food`.
+
+**What the 3.3% are.** Most are the faeces or tissue of an animal, submitted with no host and no word for the animal (`feces`, `stool`, `internal tissue liver`). No text classifier can tell these from a patient's; a `source_type` or a `host` can. Two kinds could be told from the text and are not yet, in version 7:
+
+- **An animal named in a way the word list does not know**: `stool (Odocoileus hemionus)`, `feces (Ursus americanus)`, `pigeon stool`. 78 benchmark records. The names NCBI Taxonomy gives to animals are used for the `host` column, not yet for the specimen's own text.
+- **Tissue of shellfish and fish from monitoring programmes**: `oyster homogenized tissue dilution`. 120 benchmark records, environmental or food in NCBI.
+
+Both are to be corrected in the next lexicon version. Until then, a [decision](../commands/classify.md#decisions) for the text settles them in your study.
+
 ## What is still onehealth's own judgement
 
 NCBI has no convention for these, so they are choices, and each can be counted in the output:
 
 - **`healthcare_environment`.** A hospital fixture is flagged only when the text says where it is (`hospital sink`, `ICU drain`), or is a sink or shower drain. A floor drain is not flagged: in NCBI records it is a food plant's.
-- **A specimen with no host is Human**, with the reason ending in `+no_host`. Not when the record was filed as environmental, food or other (`no_host_env_package`), and not when the same text names a food (`specimen_or_food`); those go to review.
 - **A host that is a plant goes to review** (`host_unrecognised`). Only animals and people are placed.
 - **`Laboratory`** is a class of its own, and rolls up to Environmental with Food.
 - **A fixture named without its setting** (`Sink swab`, `Rm 14 Drain`) goes to review.

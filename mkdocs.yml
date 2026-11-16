@@ -68,5 +68,6 @@ nav:
       - Definitions (read first): guides/definitions.md
       - Input files: guides/input-files.md
       - The lexicon: guides/lexicon.md
+      - The statistics, checked: guides/statistics.md
   - Benchmarks: benchmarks.md
   - Changelog: changelog.md

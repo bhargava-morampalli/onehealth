@@ -1,6 +1,6 @@
 [project]
 name = "onehealth"
-version = "0.2.0"
+version = "0.2.1"
 description = "Classify mixed NCBI isolate IDs into One Health source categories."
 readme = "README.md"
 license = "MIT"
@@ -16,7 +16,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+# scipy is used only by the tests, to check the statistics against an independent implementation.
+dev = ["pytest>=8.0", "scipy>=1.11"]
 # The documentation site (mkdocs.yml); not needed to use onehealth.
 docs = ["mkdocs-material>=9.5"]
 
@@ -28,7 +29,7 @@ requires = ["uv_build>=0.9.15,<0.15.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "scipy>=1.11"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
