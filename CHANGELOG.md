@@ -2,6 +2,11 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## 2026-11-16: animal names from NCBI Taxonomy of 2026-11-16
+
+The table of animal names is rebuilt from NCBI Taxonomy of 2026-11-16 (was 2026-11-14), by the monthly refresh: 24 names added and 0 removed.
+No record of the benchmark datasets changes class.
+
 ## 16 November 2026: the tests follow a refreshed table of animal names ([#21](https://github.com/bhargava-morampalli/onehealth/pull/21))
 
 No result changes.
