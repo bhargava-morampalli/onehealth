@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: 0.2.0, the classes follow NCBI (lexicon v7) (branch `lexicon-v7-follow-ncbi-source-type-and-specimens`)
+## 16 November 2026: 0.2.0, the classes follow NCBI (lexicon v7) ([#14](https://github.com/bhargava-morampalli/onehealth/pull/14))
 
 **This version changes what some classes mean.** Where NCBI's records show a convention, `onehealth` now follows it, in three places. Results made with 0.1.0 (lexicon v6 and earlier) use the old definitions and are not comparable class for class; `v0.1.0` is the tag to check out to reproduce them. The new Definitions page in the documentation (`documentation/guides/definitions.md`) gives the figures behind each convention and how to choose differently for a study.
 
