@@ -385,3 +385,38 @@ def test_shuffling_within_strata_gives_every_relabelling_equally_often():
     assert stats.chisquare(list(seen.values())).pvalue > 0.001
     plain = Counter(tuple(A.permute_within(sources, None, rng)) for _ in range(draws))
     assert len(plain) == 4200 and stats.chisquare(list(plain.values())).pvalue > 0.001
+
+
+# --- the documentation ------------------------------------------------------------------------
+
+
+def test_the_values_quoted_in_the_documentation_are_the_ones_computed():
+    """documentation/guides/statistics.md shows a few values side by side; each is recomputed here."""
+    page = (Path(__file__).parents[1] / "documentation" / "guides" / "statistics.md").read_text(encoding="utf-8")
+    human = [int(x) for x in _numbers(CASES["counts", "klebsiella_human"])]
+    assert (sum(human), len(human)) == (231, 22)
+    low, high = A.wilson(151, 231)
+    dataset, presence, _ = _feature_dataset("klebsiella")
+    gene = next(t for t in A.feature_prevalence(dataset, presence, {}, permutations=PERMUTATIONS, seed=1).tests
+                if t["feature"] == "aac(6')-Ib-cr5")
+    rows = []
+    for lineage, counts in _named(CASES["lineages", "klebsiella"]).items():
+        for source, n in zip(SOURCES, counts):
+            rows += [_row(len(rows) + k, source, lineage) for k in range(n)]
+    cell = next(r for r in A.lineage_enrichment(A.build_dataset(rows), min_isolates=5, permutations=PERMUTATIONS, seed=1)
+                if (r["lineage"], r["source"]) == ("PDS000045679.7", "Human"))
+    assert cell["observed"] == 27 and f"{cell['expected']:.1f}" == "24.9"
+    for line in (
+        f"| Simpson's index, 231 human isolates in 22 lineages | {A.simpson(human)[0]:.6f} | {R['counts', 'klebsiella_human', 'simpson']:.6f} |",
+        f"| Expected lineages in 58 of those isolates | {A.rarefaction(human, [58])[0]:.4f} | {R['counts', 'klebsiella_human', 'rarefy_58']:.4f} |",
+        f"| Wilson 95% interval, `oqxB` in 151 of 231 human isolates | {100 * low:.4f}–{100 * high:.4f}% | "
+        f"{100 * R['proportion', 'oqxB|Human', 'wilson_low']:.4f}–{100 * R['proportion', 'oqxB|Human', 'wilson_high']:.4f}% |",
+        f"| Chi-squared, `aac(6')-Ib-cr5` by source | {gene['chi2']:.4f} | {R['features', 'klebsiella|aac(6' + chr(39) + ')-Ib-cr5', 'chi2']:.4f} |",
+        f"| Its permutation p-value | {gene['p']:.4f} | {R['features', 'klebsiella|aac(6' + chr(39) + ')-Ib-cr5', 'p_simulated']:.4f} |",
+        f"| Enrichment of lineage `PDS000045679.7` in Human (27 isolates, 24.9 expected), p | {cell['p']:.4f} | "
+        f"{R['lineages', 'klebsiella|PDS000045679.7|1', 'p_exact']:.4f} (exact) |",
+    ):
+        assert line in page, line
+    old, new = A.wilson(51, 150, 1.96), A.wilson(51, 150)
+    assert f"{100 * old[0]:.4f}–{100 * old[1]:.4f}% became {100 * new[0]:.4f}–{100 * new[1]:.4f}%" in page
+    assert f"{len(CASES)} inputs" in page and f"computes {len(R)} values" in page

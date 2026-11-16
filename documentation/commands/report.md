@@ -121,6 +121,8 @@ Shared clusters are candidates for follow-up, not proof of the direction or rout
 
 The Methods section of the report describes what was run in the words of a methods paragraph, and cites each method.
 
+Every statistic here is checked against R, the vegan package or scipy, or against the exact answer, each time the tests run. [The statistics, and how each was checked](../guides/statistics.md) gives the comparison.
+
 ### The SNP threshold
 
 The default of 21 SNPs separated hospital clusters of *Klebsiella pneumoniae* in Europe (David et al. 2019); 22 was optimal in a Norwegian One Health study (Hetland et al. 2025). The right threshold depends on the organism, the SNP-calling pipeline and the time scale you care about, so choose it and say why. The threshold sweep shows how much your conclusions depend on it.
