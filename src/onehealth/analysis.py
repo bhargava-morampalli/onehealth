@@ -338,8 +338,12 @@ def match_names(names: list[str], dataset: Dataset) -> tuple[dict[str, str], lis
 # --- statistics helpers ------------------------------------------------------------
 
 
-def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
-    """Wilson score interval for a proportion."""
+# The 97.5% point of the standard normal distribution, for two-sided 95% intervals.
+Z_95 = 1.959963984540054
+
+
+def wilson(successes: int, n: int, z: float = Z_95) -> tuple[float, float]:
+    """Wilson score interval for a proportion (95% by default), as R's prop.test(correct=FALSE)."""
     if n == 0:
         return math.nan, math.nan
     p = successes / n
@@ -413,6 +417,20 @@ def strata_summary(isolates: list[Isolate], by: tuple[str, ...]) -> dict:
     return {"strata": len(sources), "isolates": len(classified), "isolates_in_single_source_strata": fixed}
 
 
+def simpson_variance(counts: list[int]) -> float:
+    """Sampling variance of Simpson's index of diversity (Simpson 1949), exact for any sample size.
+
+    The variance of the index over samples of n isolates drawn from a population in which
+    the lineages have the frequencies seen here.
+    """
+    n = sum(counts)
+    if n < 2:
+        return math.nan
+    p = [c / n for c in counts]
+    s2, s3 = sum(x**2 for x in p), sum(x**3 for x in p)
+    return max((4 * (n - 2) * s3 + 2 * s2 - 2 * (2 * n - 3) * s2**2) / (n * (n - 1)), 0.0)
+
+
 def simpson(counts: list[int]) -> tuple[float, float, float]:
     """Simpson's index of diversity (Hunter & Gaston 1988) with an approximate 95% CI.
 
@@ -426,10 +444,7 @@ def simpson(counts: list[int]) -> tuple[float, float, float]:
     if n < 2:
         return math.nan, math.nan, math.nan
     d = 1 - sum(c * (c - 1) for c in counts) / (n * (n - 1))
-    p = [c / n for c in counts]
-    s2, s3 = sum(x**2 for x in p), sum(x**3 for x in p)
-    variance = (4 * (n - 2) * s3 + 2 * s2 - 2 * (2 * n - 3) * s2**2) / (n * (n - 1))
-    half = 2 * math.sqrt(max(variance, 0.0))
+    half = 2 * math.sqrt(simpson_variance(counts))
     return d, max(0.0, d - half), min(1.0, d + half)
 
 

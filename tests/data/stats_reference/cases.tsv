@@ -1,0 +1,91 @@
+# Inputs for the comparison with R. Made by make_cases.py; see README.md.
+# Sources, in the order of every per-source list below: Human, Animal, Environmental, Food, Healthcare environment
+kind	case	values
+counts	klebsiella_human	27,27,16,15,14,14,12,12,12,12,10,9,7,6,6,6,6,5,5,4,3,3
+counts	klebsiella_animal	1
+counts	klebsiella_environmental	3,2,2,1,1,1,1,1,1,1
+counts	klebsiella_food	2
+counts	klebsiella_healthcare_environment	10,2
+counts	two_singletons	1,1
+counts	one_lineage	12
+counts	ten_singletons	1,1,1,1,1,1,1,1,1,1
+counts	four_equal	5,5,5,5
+counts	one_dominant	96,1,1,1,1
+counts	small_uneven	5,3,2
+counts	large	400,300,150,80,40,20,5,3,1,1
+lineages	klebsiella	PDS000045679.7=27,0,1,0,0;PDS000045354.6=27,0,0,0,0;PDS000006021.3=16,0,3,0,0;PDS000018040.6=15,0,2,0,2;PDS000020244.6=9,0,0,0,10;PDS000026087.11=14,0,1,0,0;PDS000045430.15=14,0,0,0,0;PDS000046930.8=12,0,2,0,0;PDS000036208.8=12,0,1,0,0;PDS000005598.4=12,0,0,0,0;PDS000005630.20=12,0,0,0,0;PDS000045417.6=10,0,1,0,0;PDS000045432.9=7,0,1,0,0;PDS000013084.6=5,0,0,2,0;PDS000036368.4=6,0,1,0,0;PDS000045422.11=6,1,0,0,0;PDS000005594.6=6,0,0,0,0;PDS000006641.5=6,0,0,0,0;PDS000046929.6=5,0,1,0,0;PDS000005569.4=4,0,0,0,0;PDS000005579.8=3,0,0,0,0;PDS000040670.5=3,0,0,0,0
+lineages	restricted	A=20,0,0;B=0,20,0;C=5,5,10;D=2,1,1;E=10,10,10
+features	klebsiella	sizes=231,1,14,2,12;emrD=229,1,14,2,12;oqxB=151,1,8,0,12;aac(6')-Ib-cr5=146,0,11,2,2;aph(6)-Id=135,1,12,0,2;tet(A)=104,1,8,2,2;gyrA_S83I=92,1,2,0,0;aac(6')-Ib=62,0,1,0,5;dfrA12=49,1,0,0,0;aph(3')-Ia=40,1,1,0,0;arr-3=31,0,1,0,0;blaSHV=26,0,1,0,0;blaSHV_C-112A=20,0,3,0,2;ant(2'')-Ia=11,0,0,0,9;acrR_V165I=9,0,0,0,10;blaSHV-76=15,0,2,0,0;qnrA1=8,0,0,0,9;qnrB19=15,0,0,0,0;iucB=14,0,0,0,0;ompK35_Y108TerfsTer0=14,0,0,0,0;dfrA1=13,0,0,0,0;aac(3)-IVa=12,0,0,0,0;ramR_Y47HfsTer3=12,0,0,0,0;dfrA50=10,0,0,0,0;ramR_A149RfsTer29=8,0,0,0,0;dfrA5=3,0,0,0,4;ompK35_G62AfsTer1=6,0,0,0,0;oqxB32=4,0,0,0,0;aac(6')-Ib-cr=3,0,0,0,0;qnrB9=3,0,0,0,0;aph(3')-VIa=2,0,0,0,0;dfrA8=2,0,0,0,0;ompK36_Q196Ter=2,0,0,0,0;rmtG=2,0,0,0,0;aadA8=1,0,0,0,0;blaCMY-6=1,0,0,0,0;blaSHV-5=1,0,0,0,0;cirA_T166RfsTer1=1,0,0,0,0;mgrB_Q30Ter=1,0,0,0,0;ompK36_G75PfsTer30=1,0,0,0,0;ompK36_Q66Ter=1,0,0,0,0;ramR_A34RfsTer19=1,0,0,0,0;ramR_R35AfsTer35=1,0,0,0,0
+features	two_sources	sizes=30,12;all_in_one=10,0;even=10,4;rare=1,0;nearly_all=29,12;opposite=2,11
+proportion	emrD|Human	229,231
+proportion	emrD|Animal	1,1
+proportion	emrD|Environmental	14,14
+proportion	emrD|Food	2,2
+proportion	emrD|Healthcare environment	12,12
+proportion	oqxB|Human	151,231
+proportion	oqxB|Animal	1,1
+proportion	oqxB|Environmental	8,14
+proportion	oqxB|Food	0,2
+proportion	oqxB|Healthcare environment	12,12
+proportion	aac(6')-Ib-cr5|Human	146,231
+proportion	aac(6')-Ib-cr5|Animal	0,1
+proportion	aac(6')-Ib-cr5|Environmental	11,14
+proportion	aac(6')-Ib-cr5|Food	2,2
+proportion	aac(6')-Ib-cr5|Healthcare environment	2,12
+proportion	aph(6)-Id|Human	135,231
+proportion	aph(6)-Id|Animal	1,1
+proportion	aph(6)-Id|Environmental	12,14
+proportion	aph(6)-Id|Food	0,2
+proportion	aph(6)-Id|Healthcare environment	2,12
+proportion	tet(A)|Human	104,231
+proportion	tet(A)|Animal	1,1
+proportion	tet(A)|Environmental	8,14
+proportion	tet(A)|Food	2,2
+proportion	tet(A)|Healthcare environment	2,12
+proportion	gyrA_S83I|Human	92,231
+proportion	gyrA_S83I|Animal	1,1
+proportion	gyrA_S83I|Environmental	2,14
+proportion	gyrA_S83I|Food	0,2
+proportion	gyrA_S83I|Healthcare environment	0,12
+proportion	aac(6')-Ib|Human	62,231
+proportion	aac(6')-Ib|Animal	0,1
+proportion	aac(6')-Ib|Environmental	1,14
+proportion	aac(6')-Ib|Food	0,2
+proportion	aac(6')-Ib|Healthcare environment	5,12
+proportion	dfrA12|Human	49,231
+proportion	dfrA12|Animal	1,1
+proportion	dfrA12|Environmental	0,14
+proportion	dfrA12|Food	0,2
+proportion	dfrA12|Healthcare environment	0,12
+proportion	aph(3')-Ia|Human	40,231
+proportion	aph(3')-Ia|Animal	1,1
+proportion	aph(3')-Ia|Environmental	1,14
+proportion	aph(3')-Ia|Food	0,2
+proportion	aph(3')-Ia|Healthcare environment	0,12
+proportion	arr-3|Human	31,231
+proportion	arr-3|Animal	0,1
+proportion	arr-3|Environmental	1,14
+proportion	arr-3|Food	0,2
+proportion	arr-3|Healthcare environment	0,12
+proportion	blaSHV|Human	26,231
+proportion	blaSHV|Animal	0,1
+proportion	blaSHV|Environmental	1,14
+proportion	blaSHV|Food	0,2
+proportion	blaSHV|Healthcare environment	0,12
+proportion	blaSHV_C-112A|Human	20,231
+proportion	blaSHV_C-112A|Animal	0,1
+proportion	blaSHV_C-112A|Environmental	3,14
+proportion	blaSHV_C-112A|Food	0,2
+proportion	blaSHV_C-112A|Healthcare environment	2,12
+proportion	none_of_40	0,40
+proportion	all_of_40	40,40
+proportion	one_of_1	1,1
+proportion	none_of_1	0,1
+proportion	one_of_3	1,3
+proportion	half_of_1000	500,1000
+proportion	three_of_10000	3,10000
+pvalues	mixed	0.0001,0.0004,0.0019,0.0095,0.0201,0.0278,0.0298,0.0344,0.0459,0.3240,0.4262,0.5719,0.6528,0.7590,1
+pvalues	ties_and_ones	0.05,0.05,0.05,1,1,0.0001,0.5
+pvalues	with_untested	0.01,NA,0.04,0.03,NA,0.5
+pvalues	single	0.03
+pvalues	unsorted	0.9,0.0002,0.6,0.0450,0.0100,0.2
