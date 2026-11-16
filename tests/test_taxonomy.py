@@ -3,6 +3,7 @@
 import gzip
 import importlib.util
 import io
+import re
 import tarfile
 import time
 from importlib.resources import files
@@ -346,12 +347,26 @@ def test_a_table_is_rebuilt_byte_for_byte_and_records_its_date(tmp_path):
     assert date == "2025-11-14" and names["v"] == {"gull"} and len(names["s"]) == 6
 
 
+def _shipped_date() -> str:
+    """The date line of the table in the package, read here without onehealth's own code.
+
+    Not written into the tests: the monthly refresh replaces the table, and with it the date.
+    """
+    path = files("onehealth").joinpath("data/animal_names.tsv.gz")
+    with path.open("rb") as raw, gzip.open(raw, "rt", encoding="utf-8") as handle:
+        dated = [line for line in handle.read(4000).splitlines() if line.startswith("# NCBI Taxonomy of ")]
+    assert len(dated) == 1, "the table must record the date of its NCBI dump"
+    return dated[0].split()[4]
+
+
 def test_the_shipped_table_says_which_dump_it_is_from_and_classify_prints_it(tmp_path, capsys):
-    assert taxonomy.table_date() == "2026-11-14"
+    shipped = _shipped_date()
+    assert re.fullmatch(r"20\d\d-\d\d-\d\d", shipped) and shipped >= "2026-11-14"
+    assert taxonomy.table_date() == shipped
     table = tmp_path / "t.tsv"
     table.write_text("query_id\thost\tisolation_source\nA\tgull\tfeces\n", encoding="utf-8")
     assert cli.main(["classify", str(table), "-o", str(tmp_path / "out.tsv")]) == 0
-    assert "animal names from NCBI Taxonomy of 2026-11-14" in capsys.readouterr().err
+    assert f"animal names from NCBI Taxonomy of {shipped}" in capsys.readouterr().err
 
 
 def test_a_refresh_compares_the_names_and_the_classes_and_puts_the_shipped_table_back(tmp_path, lexicon):
@@ -374,9 +389,9 @@ def test_a_refresh_compares_the_names_and_the_classes_and_puts_the_shipped_table
     text = refresh.report("2025-11-01", "2025-11-14", names, [result])
     assert "Animal names from NCBI Taxonomy of 2025-11-14 (was 2025-11-01)" in text
     assert "| common names of chordates | 1 | 0 |" in text and "`feces`, host `gull`: Unclassified to Animal" in text
-    assert "Raise the package version" in text
+    assert "If any class changes above, also raise the package version" in text
     # The shipped table is in use again.
-    assert taxonomy.table_date() == "2026-11-14" and taxon_kind("European rook") == "animal"
+    assert taxonomy.table_date() == _shipped_date() and taxon_kind("European rook") == "animal"
 
 
 def test_a_refresh_with_the_same_names_changes_nothing(tmp_path, monkeypatch):

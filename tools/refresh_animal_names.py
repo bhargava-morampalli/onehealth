@@ -165,10 +165,10 @@ def report(old_date: str, new_date: str, names: dict[str, tuple[list[str], list[
               "(a moth called `tip`), may need an entry in `_WORDS_NOT_NAMES` in `src/onehealth/taxonomy.py`.",
               "2. Run the tests. Tests that quote exact counts from the benchmark fail when the table changes a class; "
               "update the counts, and the documentation pages that quote them, if the change is right.",
-              "3. Raise the package version in `pyproject.toml` and `src/onehealth/__init__.py`, and say in "
-              "`CHANGELOG.md` that the animal names now come from NCBI Taxonomy of this date. Classes can change, so "
-              "results made before and after are not comparable row for row.",
-              "4. `classify` prints the date of the table it used, for a methods section."]
+              "3. Add a line to `CHANGELOG.md` saying that the animal names now come from NCBI Taxonomy of this "
+              "date. If any class changes above, also raise the package version in `pyproject.toml` and "
+              "`src/onehealth/__init__.py`: results made before and after are then not comparable row for row.",
+              "4. `classify` prints the date of the table it used, so a methods section can name it either way."]
     return "\n".join(lines) + "\n"
 
 
