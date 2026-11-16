@@ -47,6 +47,7 @@ from onehealth.resolve import (
 )
 from onehealth.review import GROUP_FIELDS, load_decisions, review_groups, unused_decisions
 from onehealth.summarize import summarize, summary_fieldnames
+from onehealth.taxonomy import table_date
 
 
 # resolve saves what it has at most this often while it looks IDs up at NCBI.
@@ -365,7 +366,9 @@ def cmd_classify(args: argparse.Namespace) -> int:
             print(f"warning: {len(unused)} decision{'s' if len(unused) > 1 else ''} in {args.decisions} matched no row "
                   f"(e.g. {'; '.join(unused[:3])})", file=sys.stderr)
     name = f"v{lexicon.version}" if lexicon.version.isdigit() else lexicon.version
-    print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})", file=sys.stderr)
+    dated = table_date()
+    print(f"lexicon {name} (seed v{SEED_LEXICON_VERSION})" + (f", animal names from NCBI Taxonomy of {dated}" if dated else ""),
+          file=sys.stderr)
     missed = unmatched_overrides(rows, overrides)
     if missed:
         # Never applied, and nothing in the output would show it.

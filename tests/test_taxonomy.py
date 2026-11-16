@@ -1,11 +1,16 @@
 """Hosts the word lists do not name are recognised by the names NCBI Taxonomy gives to animals (lexicon v6)."""
 
 import gzip
+import importlib.util
+import io
+import tarfile
+import time
 from importlib.resources import files
 from pathlib import Path
 
 import pytest
 
+from onehealth import cli, taxonomy
 from onehealth.classify import classify_record, classify_rows
 from onehealth.io_tsv import read_tsv
 from onehealth.lexicon import load_lexicon
@@ -262,3 +267,129 @@ def test_within_needs_taxonomy_animal(tmp_path: Path):
     path.write_text('version: "x"\nrules:\n  - id: r\n    within: true\n    phrases: [a]\n    l1: Animal\n', encoding="utf-8")
     with pytest.raises(ValueError, match="within needs taxonomy: animal"):
         load_lexicon(path)
+
+
+# --- the table, its date, and refreshing it -----------------------------------------------------------
+
+TOOLS = Path(__file__).resolve().parent.parent / "tools"
+
+
+def _tool(name: str):
+    spec = importlib.util.spec_from_file_location(f"tool_{name}", TOOLS / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _dmp(rows: list[tuple[str, ...]]) -> bytes:
+    """NCBI's .dmp format: fields separated by <TAB>|<TAB>, each line ending with <TAB>|."""
+    return "".join("\t|\t".join(row) + "\t|\n" for row in rows).encode("utf-8")
+
+
+def _dump(names: list[tuple[str, str, str]], when: float = 1_763_078_400.0) -> bytes:
+    """A new_taxdump.tar.gz with names.dmp and rankedlineage.dmp only, written at `when` (2025-11-14 UTC)."""
+    # tax_id, name, species, genus, family, order, class, phylum, kingdom, domain
+    lineage = [
+        ("1", "Larus", "", "Larus", "Laridae", "Charadriiformes", "Aves", "Chordata", "Metazoa", "Eukaryota"),
+        ("2", "Homo sapiens", "", "Homo", "Hominidae", "Primates", "Mammalia", "Chordata", "Metazoa", "Eukaryota"),
+        ("3", "Magallana gigas", "", "Magallana", "Ostreidae", "Ostreida", "Bivalvia", "Mollusca", "Metazoa", "Eukaryota"),
+        ("4", "Magallana", "", "", "Ostreidae", "Ostreida", "Bivalvia", "Mollusca", "Metazoa", "Eukaryota"),
+        ("5", "Musca domestica", "", "Musca", "Muscidae", "Diptera", "Insecta", "Arthropoda", "Metazoa", "Eukaryota"),
+        ("6", "Sepsis fulgens", "", "Sepsis", "Sepsidae", "Diptera", "Insecta", "Arthropoda", "Metazoa", "Eukaryota"),
+        ("7", "Penaeus vannamei", "", "Penaeus", "Penaeidae", "Decapoda", "Malacostraca", "Arthropoda", "Metazoa", "Eukaryota"),
+        ("8", "Zea mays", "", "Zea", "Poaceae", "Poales", "", "Streptophyta", "Viridiplantae", "Eukaryota"),
+        ("9", "Rattus sp. ABC-2011", "", "Rattus", "Muridae", "Rodentia", "Mammalia", "Chordata", "Metazoa", "Eukaryota"),
+    ]
+    archive = io.BytesIO()
+    with tarfile.open(fileobj=archive, mode="w:gz") as tar:
+        for member, data in (("names.dmp", _dmp([(t, n, "", c) for t, n, c in names])), ("rankedlineage.dmp", _dmp(lineage))):
+            info = tarfile.TarInfo(member)
+            info.size, info.mtime = len(data), when
+            tar.addfile(info, io.BytesIO(data))
+    return archive.getvalue()
+
+
+NAMES = [
+    ("1", "Larus", "scientific name"), ("1", "gull", "genbank common name"),
+    ("2", "Homo sapiens", "scientific name"), ("2", "human", "genbank common name"),
+    ("3", "Magallana gigas", "scientific name"), ("3", "Crassostrea gigas", "synonym"),
+    ("4", "Magallana", "scientific name"),
+    ("5", "Musca domestica", "scientific name"), ("5", "house fly", "genbank common name"),
+    ("6", "Sepsis fulgens", "scientific name"), ("6", "Sepsis", "synonym"),
+    ("7", "Penaeus vannamei", "scientific name"), ("7", "Litopenaeus vannamei", "synonym"),
+    ("8", "Zea mays", "scientific name"), ("8", "maize", "common name"),
+    ("9", "Rattus sp. ABC-2011", "scientific name"),
+]
+
+
+def test_the_builder_keeps_the_names_it_should():
+    builder = _tool("build_animal_names")
+    scientific, vertebrate, common = builder.build(_dump(NAMES))
+    # A chordate at any rank; another animal by a species name, if it is a mollusc, a crustacean or
+    # has a common name; synonyms of those. Not people, plants, unnamed entries or a lone genus.
+    assert scientific == {"larus", "magallana gigas", "crassostrea gigas", "musca domestica", "penaeus vannamei",
+                          "litopenaeus vannamei"}
+    assert vertebrate == {"gull"} and common == {"house fly"}
+    assert builder.dump_date(_dump(NAMES)) == "2025-11-14"
+
+
+def test_a_table_is_rebuilt_byte_for_byte_and_records_its_date(tmp_path):
+    builder, refresh = _tool("build_animal_names"), _tool("refresh_animal_names")
+    dump = tmp_path / "new_taxdump.tar.gz"
+    dump.write_bytes(_dump(NAMES))
+    first, second = tmp_path / "a.tsv.gz", tmp_path / "b.tsv.gz"
+    assert builder.main([str(dump), "--out", str(first)]) == 0
+    time.sleep(1.1)  # a gzip time stamp would differ now
+    assert builder.main([str(dump), "--out", str(second)]) == 0
+    assert first.read_bytes() == second.read_bytes()
+    names, date = refresh.read_table(first)
+    assert date == "2025-11-14" and names["v"] == {"gull"} and len(names["s"]) == 6
+
+
+def test_the_shipped_table_says_which_dump_it_is_from_and_classify_prints_it(tmp_path, capsys):
+    assert taxonomy.table_date() == "2026-11-14"
+    table = tmp_path / "t.tsv"
+    table.write_text("query_id\thost\tisolation_source\nA\tgull\tfeces\n", encoding="utf-8")
+    assert cli.main(["classify", str(table), "-o", str(tmp_path / "out.tsv")]) == 0
+    assert "animal names from NCBI Taxonomy of 2026-11-14" in capsys.readouterr().err
+
+
+def test_a_refresh_compares_the_names_and_the_classes_and_puts_the_shipped_table_back(tmp_path, lexicon):
+    builder, refresh = _tool("build_animal_names"), _tool("refresh_animal_names")
+    without = [row for row in NAMES if row[1] != "gull"]
+    old, new = tmp_path / "old.tsv.gz", tmp_path / "new.tsv.gz"
+    old.write_bytes(builder.render(builder.build(_dump(without)), "old", "0", "2025-11-01"))
+    new.write_bytes(builder.render(builder.build(_dump(NAMES)), "new", "1", "2025-11-14"))
+
+    names = refresh.compare(refresh.read_table(old)[0], refresh.read_table(new)[0])
+    assert names == {"s": ([], []), "v": (["gull"], []), "c": ([], [])}
+
+    rows = [{"isolation_source": "feces", "host": "gull", "label": "Animal"},
+            {"isolation_source": "blood", "host": "Homo sapiens", "label": "Human"}]
+    data = [("tiny", rows, lambda row: 3, lambda row: row["label"])]
+    (result,) = refresh.class_changes(old, new, lexicon, data)
+    assert result["rows"] == 6 and result["toward"] == 3 and result["away"] == 0
+    assert result["changes"] == {("feces", "gull", "Unclassified", "Animal"): 3}
+
+    text = refresh.report("2025-11-01", "2025-11-14", names, [result])
+    assert "Animal names from NCBI Taxonomy of 2025-11-14 (was 2025-11-01)" in text
+    assert "| common names of chordates | 1 | 0 |" in text and "`feces`, host `gull`: Unclassified to Animal" in text
+    assert "Raise the package version" in text
+    # The shipped table is in use again.
+    assert taxonomy.table_date() == "2026-11-14" and taxon_kind("European rook") == "animal"
+
+
+def test_a_refresh_with_the_same_names_changes_nothing(tmp_path, monkeypatch):
+    builder, refresh = _tool("build_animal_names"), _tool("refresh_animal_names")
+    dump = tmp_path / "new_taxdump.tar.gz"
+    dump.write_bytes(_dump(NAMES))
+    table = tmp_path / "animal_names.tsv.gz"
+    table.write_bytes(builder.render(builder.build(_dump(NAMES)), "earlier", "0", "2025-11-01"))
+    before = table.read_bytes()
+    monkeypatch.setattr(refresh, "TABLE", table)
+    outputs = tmp_path / "github_output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(outputs))
+    assert refresh.main([str(dump), "--summary", str(tmp_path / "report.md")]) == 0
+    assert table.read_bytes() == before  # a newer dump with the same names is not a change
+    assert outputs.read_text(encoding="utf-8") == "changed=false\ndate=2025-11-14\n"
+    assert "Nothing to do" in (tmp_path / "report.md").read_text(encoding="utf-8")

@@ -70,7 +70,7 @@ Every command has its own help, for example `onehealth classify --help`.
 
 | Extra | Installs | For |
 |---|---|---|
-| `dev` | pytest, scipy | Running the test suite: `pip install -e ".[dev]"`, then `pytest`. scipy is used only by the tests, to check the statistics. |
+| `dev` | pytest, scipy, ruff, mypy | Running the test suite and the checks: `pip install -e ".[dev]"`, then `pytest`, `ruff check` and `mypy`. scipy is used only by the tests, to check the statistics. |
 | `docs` | MkDocs Material | Building this site: `pip install -e ".[docs]"`, then `mkdocs serve` |
 
 ## Network access

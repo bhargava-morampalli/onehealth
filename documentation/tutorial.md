@@ -35,7 +35,7 @@ onehealth classify work/resolved.tsv -o work/classified.tsv --overrides examples
 
 ```text
 classify: 4 rows (4 ok, 0 review)
-lexicon v8 (seed v8)
+lexicon v8 (seed v8), animal names from NCBI Taxonomy of 2026-11-14
 ```
 
 `classify` adds the class columns:
