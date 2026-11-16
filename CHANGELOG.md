@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: a `resolve` run can be finished, and a failed lookup no longer looks like a record with no source (branch `resolve-resume-and-unresolved-rows-in-classify`)
+## 17 November 2026: a `resolve` run can be finished, and a failed lookup no longer looks like a record with no source ([#17](https://github.com/bhargava-morampalli/onehealth/pull/17))
 
 No class changes: the lexicon is still version 8.
 
