@@ -2,6 +2,31 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## Unreleased: install without a clone; the linkage test is about a hundred times faster on close relatives (branch `install-without-a-clone-and-faster-linkage`)
+
+No result changes: every number in a report is what it was.
+
+### Install without a clone
+
+The only install the documentation gave was an editable one from a clone of the repository.
+
+- **`pip install "git+https://github.com/bhargava-morampalli/onehealth.git"`** installs the newest version; add `@` and a tag (`@v0.2.0`) for a fixed one, to name in a study's methods. `uv tool install` and `pipx install` take the same address. The Install page and the README now lead with this; the clone is for changing the code and running the tests.
+- **The package is checked as a user gets it.** A new job in the test workflow builds the wheel, installs it in an empty environment, and runs `classify` and `report` from another directory, so a data file left out of the package fails the build.
+
+### The linkage test on thousands of close relatives
+
+With 4,000 isolates that are mostly close relatives, there are millions of pairs within the SNP threshold, and every one of them was read again for each of the 9,999 permutations.
+
+| 4,000 isolates, 3 million pairs within 100 SNPs | Before | Now |
+|---|---|---|
+| 9,999 permutations | 9 minutes or more | 3 to 6 seconds |
+| Everything else in the linkage sections | 19 seconds | 5 seconds |
+
+- **Large clusters are counted with matrix products**, a batch of permutations at a time, where many of a cluster's pairs are close. Other pairs are still read one by one.
+- **Clusters at every threshold of the sweep come from one pass** over the pairs, in order of distance; there were ten passes.
+- **The tables are built with sorts**, where there was one search per pair.
+- **The results are the same**, to the last digit, for the same seed. Events, expected ranges, p-values, clusters and tables were compared between the old and new code on 48 random datasets (with unclassified isolates, strata, missing distances and shuffled rows) and on the 4,000-isolate one, and are identical. In that last run, on a busy machine, the old code took 23.6 minutes and the new 10.5 seconds. The exhaustive check of the linkage test against every possible relabelling now runs for both ways of counting.
+
 ## 16 November 2026: a `resolve` run can be finished, and a failed lookup no longer looks like a record with no source ([#17](https://github.com/bhargava-morampalli/onehealth/pull/17))
 
 No class changes: the lexicon is still version 8.

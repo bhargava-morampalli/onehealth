@@ -1087,7 +1087,7 @@ def dereplicate(dataset: Dataset, names: list[str], matrix: np.ndarray, threshol
 # A cluster is counted with matrix products when it has at least this many isolates, at
 # most this many (its pairs are held as a square matrix of 4-byte numbers), and at least
 # one in DENSE_SHARE of its possible pairs is within the threshold.
-DENSE_MIN, DENSE_MAX, DENSE_SHARE = 64, 6000, 32
+DENSE_MIN, DENSE_MAX, DENSE_SHARE = 64, 10_000, 32
 DENSE_BYTES = 400_000_000  # for all such clusters together
 
 
