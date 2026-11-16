@@ -2,6 +2,68 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## 16 November 2026: 0.3.0, a meat species with no host is food; animals named in the text (lexicon v8) ([#16](https://github.com/bhargava-morampalli/onehealth/pull/16))
+
+**This version changes what some classes mean again**, in the same direction as 0.2.0: where NCBI's records show a convention, `onehealth` follows it. Results made with 0.2.x (lexicon v7) are not comparable class for class. The Definitions page has the figures.
+
+On 26,604 NCBI records drawn after v8 was finished and read once, with `source_type` hidden, v8 classifies 97.8% and is right for 96.7% of those (v7: 97.1% and 95.4%). Animal precision goes from 90.7% to 97.4% and Food recall from 91.7% to 97.4%.
+
+### 1. A meat species with no host is Food, anywhere in the text
+
+0.2.0 made the whole values `chicken` and `turkey` Food when there is no host. NCBI's records show the same for the word inside a longer text, and for the other species sold as meat. Of 3,190 benchmark records with no host that the rule now decides, 3,079 (96.5%) are food.
+
+- **`fish`, `poultry`, `salmon`, `beef`, `lamb`, `chicken liver`, `packaged chicken`, `marine fish`** with no host are Food. They were Animal, or in review (`beef`).
+- **With a host, the host decides**, as before: `chicken liver` with host *Gallus gallus* is Animal.
+- **What says what was sampled still wins**: a specimen (`chicken feces`), a gut site (`chicken cecal content`, `chicken gut`), `live chicken`, `beef cattle`, a farm or litter.
+- **`duck`, `pig`, `cow`, `cattle`, `swine`, `bovine` still mean the animal.** A bare `cattle` with no host is an animal in all 46 NCBI records.
+
+### 2. An animal named in a specimen's own text
+
+A specimen with no host is Human by default. 0.2.1 measured that default and found one kind of record it gets wrong that a text can settle: `stool (Odocoileus hemionus)`, `pigeon stool`, `giant panda feces`. The word lists do not know these animals.
+
+- **Any name NCBI Taxonomy gives to an animal now counts**, with the reason `specimens+animal-name-in-specimen`. 79 of the 81 benchmark records placed this way are animal in NCBI; 0.2.1 called them Human.
+- **Ordinary words are animals' names too**, so a single word counts only when it names a vertebrate and is not an everyday word: `pigeon` and `deer` count; `tip`, `white` and `sponge` (a moth, a butterfly, an invertebrate) do not, nor `sole`, `ray` or `monitor`. A name of two or more words always counts. In 5,611 patient specimens of a separate NCBI sample, none is mistaken for an animal's.
+- **Shellfish tissue is not a patient.** `oyster homogenized tissue dilution` was Human, because `tissue` is a specimen. `oyster` is now a food, so it goes to review as `specimen_or_food`.
+
+### 3. More hosts are recognised
+
+- **A name at the end of a host value**: `European rook`, `free-range white-tailed deer`, `forest musk deer`, and `white stork nestling` (a word for the animal's age may follow). A name in the middle is still not used, nor one in a list (`bologna, hot dogs, sausage-like products`).
+- **Oysters, shrimps, crabs and flies by their species name**: `Magallana gigas`, `Litopenaeus vannamei`, `Musca domestica`. The name table now holds the species names of molluscs, of crustaceans and of any other animal NCBI gives a common name, and synonyms. It grew from 0.7 to 1.4 MB.
+- **`pets`** as a host is Animal.
+
+### 4. Other changes in lexicon v8
+
+- **A carcass with an animal host is the animal.** `carcass swab` with host porcine went to review as a conflict. In NCBI's records it is animal in 211 of 211. With no host a carcass is still Food.
+- **An animal's gut is the animal**: `cecal content`, `cecum`, `intestine`, `gut`, `dropping`. With a human host the host decides (`intestines of patients`).
+- **A sponge, a wipe, dust or a bare `swab`** is Environmental (`sponge`: 5,532 NCBI records of 5,669). A swab with a host is the host's: `swab` with host *Homo sapiens* is Human.
+- **Foods that were in review**: `oyster`, `clam`, `mussel`, `prawn`, `crab`, `tuna`, `grain`, `cereal`, `oatmeal`, `rice`, `potato`, `seed`, `almond`, `peach`, `guacamole`, `queso fresco`, `hot dog`, `pig ears` and more, and anything `frozen`, `cooked` or `dried`. Each is food in at least 95% of at least twenty NCBI records.
+- **`hospital` as the whole value is Human**: the place a patient isolate came from, in 328 NCBI records of 328. So is `healthcare facility`. `hospital sink` is still a fixture. One record of the IMP benchmark is described only as `hospital`, and its curators place it in the hospital environment; `onehealth` now disagrees with them on that row.
+- **Body fluids and the placenta** are specimens: `cerebral spinal fluid`, `synovial fluid`, `placenta`.
+- One rule key is new for a lexicon of your own: `within`.
+
+### How it was measured
+
+The benchmark grew to 166,158 records from 26 organism groups, in five parts that share no record. v8 was written with the first four in view. The fifth, the fresh part, was drawn when v8 was finished: the unread parts of the Salmonella, *E. coli*, Campylobacter and Klebsiella tables, and eight organism groups chosen by name before any of their records were seen. The rebuild reproduced the four earlier parts byte for byte.
+
+| Fresh part, 26,604 records | v7 | v8, as first read |
+|---|---|---|
+| Coverage | 97.1% | 97.8% |
+| Accuracy | 95.4% | 96.7% |
+| Animal precision / recall | 90.7% / 91.2% | 97.4% / 92.0% |
+| Food precision / recall | 98.7% / 91.7% | 98.2% / 97.4% |
+| Human precision / recall | 98.8% / 95.8% | 98.8% / 95.9% |
+| Environmental precision / recall | 81.4% / 84.2% | 81.4% / 85.1% |
+
+**One correction was made after the reading**, and it is the reason for the low Environmental precision: 296 records described only as `healthcare facility`, all human to their submitter. 0.2.0 had added that phrase as a hospital fixture with no labelled record to go by. It is now read like `hospital`. With it, the lexicon that ships scores 97.9% accuracy on the fresh part, but that part has now been seen, so the table above is the fair test. Nothing else was changed after the reading.
+
+What v8 still gets wrong there: 119 animal records called Human (faeces with no host and no word for the animal), and 186 animal records sent to review, most of them an animal named in `isolation_source` with no host (`Larus cachinnans`, `gull`, `fox`).
+
+On the four earlier parts, which v8 was written with, coverage goes from 90.3–96.7% to 97.1–98.8% and accuracy from 96.1–97.5% to 97.9–98.5%. On the IMP benchmark, coverage is 84.9% and accuracy 99.8% as before; one row changes (`hospital`, above). No row of the NCBI *Klebsiella*, demo or example data changes class.
+
+### Also
+
+- The package version is 0.3.0, and `lexicon_version` is 8.
+
 ## 16 November 2026: 0.2.1, the statistics checked against R and scipy ([#15](https://github.com/bhargava-morampalli/onehealth/pull/15))
 
 No class changes: the lexicon is still version 7. One number in the report's tables changes in its fifth digit.

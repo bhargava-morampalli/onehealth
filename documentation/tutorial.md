@@ -35,7 +35,7 @@ onehealth classify work/resolved.tsv -o work/classified.tsv --overrides examples
 
 ```text
 classify: 4 rows (4 ok, 0 review)
-lexicon v7 (seed v7)
+lexicon v8 (seed v8)
 ```
 
 `classify` adds the class columns:

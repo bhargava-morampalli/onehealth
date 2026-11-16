@@ -9,7 +9,7 @@ import pytest
 from onehealth.classify import classify_record, classify_rows
 from onehealth.io_tsv import read_tsv
 from onehealth.lexicon import load_lexicon
-from onehealth.taxonomy import taxon_kind
+from onehealth.taxonomy import animal_name_within, taxon_kind
 from onehealth.validate import read_truth, validate
 
 IMP = Path(__file__).parent / "data" / "imp_carbapenemase_sources" / "samples.tsv"
@@ -64,7 +64,10 @@ def test_names_of_people_are_recognised(value):
         "old lady",
         "soldier",
         "pure culture",
-        "white stork nestling",  # an animal, but not a name: left for review, never guessed from a word inside
+        "nestling of a white stork in a zoo",  # the name is in the middle, not at the end
+        "bologna, hot dogs, sausage-like products",  # a list of things
+        "kitchen sponge",  # one word at the end must name a vertebrate
+        "sponge cake",
         "Zea mays",  # a plant
         "Allium cepa",
         "Escherichia coli",  # a bacterium
@@ -97,7 +100,16 @@ def test_other_values_are_not_names_of_animals_or_people(value):
         ("urine", "Zea mays", "Unclassified", "review", "host_unrecognised"),
         ("", "Environment", "Unclassified", "review", "unmatched"),
         ("", "sea water", "Unclassified", "review", "unmatched"),
-        ("feces", "white stork nestling", "Unclassified", "review", "host_unrecognised"),
+        # v8: a name at the end of the value, or before a word for the animal's age.
+        ("feces", "white stork nestling", "Animal", "ok", "specimens+host-taxonomy"),
+        ("feces", "European rook", "Animal", "ok", "specimens+host-taxonomy"),
+        ("", "free-range white-tailed deer", "Animal", "ok", "host-taxonomy"),
+        # v8: an oyster, a shrimp or a fly by its species name.
+        ("tissue", "Magallana gigas", "Animal", "ok", "specimens+host-taxonomy"),
+        ("", "Litopenaeus vannamei", "Animal", "ok", "host-taxonomy"),
+        ("", "Musca domestica", "Animal", "ok", "host-taxonomy"),
+        # A list of several things is not one host.
+        ("feces", "bologna, hot dogs, sausage-like products", "Unclassified", "review", "host_unrecognised"),
     ],
 )
 def test_classify_places_hosts_by_taxonomy(lexicon, source, host, l1, status, reason):
@@ -146,7 +158,8 @@ def test_the_name_table_holds_animals_only():
         if not line.startswith("#"):
             kind, name = line.split("\t")
             (scientific if kind == "s" else common).add(name)
-    assert len(scientific) > 80_000 and len(common) > 30_000
+    assert len(scientific) > 200_000 and len(common) > 30_000
+    assert {line.split("\t")[0] for line in lines if not line.startswith("#")} == {"s", "v", "c"}
     names = scientific | common
     # People are left to the lexicon's own rules, and groups that are not organisms are left out.
     assert not names & {"homo", "homo sapiens", "human", "humans", "environmental samples"}
@@ -160,7 +173,7 @@ def test_imp_benchmark_animal_hosts_are_all_found(lexicon):
     """13 animal isolates (American crow, a silver gull) had hosts no word list named; every curated animal is now Animal."""
     result = validate(classify_rows(read_tsv(IMP), lexicon), read_truth(IMP, "truth", "paper_rollup"))
     assert result.count(truth="Animal") == result.count("Animal", "Animal") == 51
-    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8487, 0.9978)
+    assert (round(result.coverage, 4), round(result.accuracy, 4)) == (0.8489, 0.9976)
 
 
 # --- "human" in a specimen's own text ---------------------------------------------------------------
@@ -189,3 +202,63 @@ def test_imp_benchmark_animal_hosts_are_all_found(lexicon):
 def test_human_in_a_specimens_text_says_whose_it_is(lexicon, source, host, more, l1, reason):
     result = _classify(lexicon, source, host, **more)
     assert (result.l1, result.classify_reason) == (l1, reason)
+
+
+# --- v8: a name at the end of a host value, and inside a specimen's text ------------------------------
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["white stork nestling", "European rook", "ground squirrel", "forest musk deer", "wild seal",
+     "free-range white-tailed deer", "others - Daboia russelii", "adult female macaque",
+     "Magallana gigas", "Crassostrea virginica", "Procambarus clarkii", "Litopenaeus vannamei", "Musca domestica"],
+)
+def test_a_name_at_the_end_of_a_host_value_and_invertebrate_species(value):
+    assert taxon_kind(value) == "animal"
+
+
+@pytest.mark.parametrize(
+    "text, name",
+    [
+        ("stool (Odocoileus hemionus)", "odocoileus hemionus"),
+        ("feces (Ursus americanus)", "ursus americanus"),
+        ("giant panda feces", "giant panda"),
+        ("tibetan antelope feces", "tibetan antelope"),
+        ("pigeon stool", "pigeon"),
+        ("roe deer faeces", "deer"),
+        # Ordinary words that are also animals' names.
+        ("catheter tip", ""),  # a moth
+        ("white blood cells", ""),  # a butterfly
+        ("wound, sole of foot", ""),  # a fish
+        ("ECG monitor swab", ""),  # a lizard
+        ("tick bite wound", ""),
+        ("sponge", ""),
+        ("maternal placental", ""),  # "placentals", a clade of mammals
+        ("blood", ""),
+        ("rectal swab", ""),
+        ("", ""),
+    ],
+)
+def test_an_animal_name_inside_a_text(text, name):
+    assert animal_name_within(text) == name
+
+
+def test_an_animal_named_in_a_specimen_text_decides_whose_it_is(lexicon):
+    """Until v8 these were Human: the word lists do not know the animal, and with no host a specimen is a person's."""
+    for source in ("stool (Odocoileus hemionus)", "pigeon stool", "giant panda feces", "rectal swab (Ursus americanus)"):
+        result = _classify(lexicon, source, "")
+        assert (result.l1, result.classify_reason) == ("Animal", "specimens+animal-name-in-specimen"), source
+    # Only for a specimen, and only with no host.
+    assert _classify(lexicon, "stool", "").classify_reason == "specimens+no_host"
+    assert _classify(lexicon, "catheter tip", "").classify_reason == "specimens+no_host"
+    assert _classify(lexicon, "giant panda feces", "Homo sapiens").classify_reason == "specimens+human-host"
+    assert _classify(lexicon, "giant panda enclosure", "").classify_status == "review"
+    # A bare species name in isolation_source is still not a description of a sample.
+    assert _classify(lexicon, "Bos taurus", "").classify_reason == "taxon_only_source"
+
+
+def test_within_needs_taxonomy_animal(tmp_path: Path):
+    path = tmp_path / "lex.yaml"
+    path.write_text('version: "x"\nrules:\n  - id: r\n    within: true\n    phrases: [a]\n    l1: Animal\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="within needs taxonomy: animal"):
+        load_lexicon(path)

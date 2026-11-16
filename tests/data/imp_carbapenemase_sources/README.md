@@ -35,7 +35,7 @@ The 69 genomes in Table S1 without a public BioSample are excluded. One BioSampl
 
 ## Baseline
 
-Measured with `onehealth classify` then `onehealth validate`. The lexicon that ships is v7: 84.9% coverage, 99.8% accuracy, 666 sent to review, and every one of the 51 animal isolates found (Animal recall 100%, precision 91.1%; Environmental recall 18.0%). v5 gave the same figures as v4, with one more row classified; v6 found the 13 animal isolates whose host no word list named. The table records what each earlier version scored when it was current; those versions are in the repository history.
+Measured with `onehealth classify` then `onehealth validate`. The lexicon that ships is v8: 84.9% coverage, 99.8% accuracy, 665 sent to review, and every one of the 51 animal isolates found (Animal recall 100%, precision 91.1%; Environmental recall 18.0%). v8 changes one row: a record described only as `hospital` is Human (in NCBI's records that value is a patient's in 328 of 328), where the curators say hospital environment. v5 gave the same figures as v4, with one more row classified; v6 found the 13 animal isolates whose host no word list named. The table records what each earlier version scored when it was current; those versions are in the repository history.
 
 | Metric | Lexicon v2 | Lexicon v3 | Lexicon v4 |
 |---|---|---|---|

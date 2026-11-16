@@ -1,6 +1,6 @@
 [project]
 name = "onehealth"
-version = "0.2.1"
+version = "0.3.0"
 description = "Classify mixed NCBI isolate IDs into One Health source categories."
 readme = "README.md"
 license = "MIT"

@@ -168,7 +168,10 @@ def _taxon_only(source: str, hits: list[RuleHit]) -> bool:
     """
     if not is_taxon_only_source(source):
         return False
-    return not any(hit.field == "isolation_source" and "host" not in hit.rule.fields for hit in hits)
+    # A specimen_only rule says whose specimen it is; it does not describe a sample either.
+    return not any(
+        hit.field == "isolation_source" and "host" not in hit.rule.fields and not hit.rule.specimen_only for hit in hits
+    )
 
 
 def _classify_specimen(rule: LexiconRule, hits: list[RuleHit], view: dict[str, str], version: str) -> Classification:

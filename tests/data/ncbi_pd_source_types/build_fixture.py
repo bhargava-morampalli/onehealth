@@ -20,9 +20,14 @@ with HTTP range requests instead of whole files. Nothing is simulated.
                 parts, and three organism groups in neither other split. Meant to be
                 read once, after v7; it showed that one v7 rule (a farm with a host)
                 went against NCBI's records, and the rule was corrected.
-* final         The last eight parts of the same six tables, right after the
+* final         Eight more parts of the same six tables, right after the
                 development parts, and five more organism groups. Read once, after
-                v7 was corrected, and never used to change the lexicon.
+                v7 was corrected, and not used to change v7. Lexicon v8 was written
+                with all four splits above in view.
+* fresh         Drawn after v8 was finished and read once. Eight parts of the four
+                tables that still had unread parts (right after the validation parts;
+                Listeria and Acinetobacter were already read in full), and eight more
+                organism groups, chosen by name before any of their records were seen.
 
 Records are counted, not listed: one output row per distinct (organism group,
 isolation_source, host, host_disease, source_type), with the number of records. A
@@ -75,6 +80,17 @@ FINAL_ONLY = {
     "Clostridium_botulinum": "PDG000000059.243",
     "Aeromonas": "PDG000000068.313",
 }
+# Read on 16 November 2026.
+FRESH_ONLY = {
+    "Vibrio_alginolyticus": "PDG000000136.164",
+    "Enterococcus_faecalis": "PDG000000072.881",
+    "Enterococcus_faecium": "PDG000000071.979",
+    "Citrobacter_freundii": "PDG000000039.1355",
+    "Aeromonas_veronii": "PDG000000076.214",
+    "Pseudomonas_aeruginosa": "PDG000000036.1837",
+    "Enterobacter_hormaechei": "PDG000000105.895",
+    "Serratia": "PDG000000016.1070",
+}
 
 
 def url(group: str, release: str) -> str:
@@ -104,22 +120,26 @@ def offsets(total: int, split: str, shared: bool) -> list[tuple[int, int]]:
     The development parts start each eighth of the table, and the held-out parts half-way
     between them. In the six tables every split reads, the final parts come right after
     the development parts and the validation parts right after the held-out parts, each
-    shortened where the table is too small for a full part. The byte ranges do not
-    overlap, so no record is in two splits. A table that only the validation or the final
-    split reads is read at the development positions.
+    shortened where the table is too small for a full part. The fresh parts come right
+    after the validation parts, where the table has room left; a table that has none
+    gives no parts. The byte ranges do not overlap, so no record is in two splits. A
+    table that only one of the later splits reads is read at the development positions.
     """
     step = total // PARTS
-    if split == "development" or (split in ("validation", "final") and not shared):
+    if split == "development" or (split in ("validation", "final", "fresh") and not shared):
         shift, length = 5_000, PART_BYTES
     elif split == "heldout":
         shift, length = step // 2, PART_BYTES
     elif split == "validation":
         shift = step // 2 + PART_BYTES + 5_000
         length = min(PART_BYTES, step - shift - 5_000)
-    else:
+    elif split == "final":
         shift = PART_BYTES + 10_000
         length = min(PART_BYTES, step // 2 - shift - 5_000)
-    return [(step * k + shift, length) for k in range(PARTS)]
+    else:
+        shift = step // 2 + 2 * PART_BYTES + 10_000
+        length = min(PART_BYTES, step - shift - 5_000)
+    return [(step * k + shift, length) for k in range(PARTS)] if length > 0 else []
 
 
 def records(group: str, release: str, split: str) -> Counter:
@@ -160,7 +180,8 @@ def main() -> int:
     plan += [("heldout", group, release) for group, release in {**DEVELOPMENT, **HELDOUT_ONLY}.items()]
     plan += [("validation", group, release) for group, release in {**DEVELOPMENT, **VALIDATION_ONLY}.items()]
     plan += [("final", group, release) for group, release in {**DEVELOPMENT, **FINAL_ONLY}.items()]
-    every = {**DEVELOPMENT, **HELDOUT_ONLY, **VALIDATION_ONLY, **FINAL_ONLY}
+    plan += [("fresh", group, release) for group, release in {**DEVELOPMENT, **FRESH_ONLY}.items()]
+    every = {**DEVELOPMENT, **HELDOUT_ONLY, **VALIDATION_ONLY, **FINAL_ONLY, **FRESH_ONLY}
     lines = ["# NCBI Pathogen Detection records that carry NCBI's own source_type. See README.md."]
     lines += [f"# {group} {release}" for group, release in every.items()]
     lines.append("\t".join(("split", "organism_group", *COLUMNS, "ncbi_source_type", "records")))

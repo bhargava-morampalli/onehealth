@@ -43,13 +43,15 @@ def test_meat_cuts_and_foods_are_food_not_animal(lexicon, source):
 @pytest.mark.parametrize(
     "source, host, l1, reason",
     [
-        # The species with a host, or with another word, still means the animal. On its
-        # own with no host, "chicken" is meat since v7 (test_ncbi_conventions.py).
+        # The species with a host, alive, or with a gut site still means the animal. With no
+        # host, "chicken" is meat: on its own since v7, anywhere in the text since v8
+        # (test_ncbi_conventions.py).
         ("chicken", "Gallus gallus", "Animal", "animal-hosts"),
-        ("live chicken", "", "Animal", "animal-hosts"),
-        ("cecum", "Gallus gallus", "Animal", "animal-hosts"),
-        # An organ is not a cut: retail giblets or a necropsy sample.
-        ("chicken liver", "", "Animal", "animal-hosts"),
+        ("live chicken", "", "Animal", "animal-alive"),
+        ("cecum", "Gallus gallus", "Animal", "animal-sites+animal-hosts"),
+        # An organ with no host is retail giblets since v8 (food in 96% of NCBI's records);
+        # with a host it is a necropsy sample.
+        ("chicken liver", "", "Food", "meat-species-no-host"),
         ("chicken liver", "Gallus gallus", "Animal", "animal-hosts"),
         ("chicken liver (giblets)", "", "Food", "food-items"),
         # A bare body part can be a patient's.
@@ -58,7 +60,7 @@ def test_meat_cuts_and_foods_are_food_not_animal(lexicon, source):
         ("breast milk", "", "Human", "specimens+no_host"),
         # Livestock named with a food word.
         ("food animal", "", "Animal", "animal-food-producing"),
-        ("beef cattle", "", "Animal", "animal-hosts"),
+        ("beef cattle", "", "Animal", "animal-alive"),
     ],
 )
 def test_what_v5_leaves_alone(lexicon, source, host, l1, reason):

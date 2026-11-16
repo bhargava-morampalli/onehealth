@@ -17,6 +17,14 @@
 # Staphylococcus_pseudintermedius PDG000000042.545
 # Clostridium_botulinum PDG000000059.243
 # Aeromonas PDG000000068.313
+# Vibrio_alginolyticus PDG000000136.164
+# Enterococcus_faecalis PDG000000072.881
+# Enterococcus_faecium PDG000000071.979
+# Citrobacter_freundii PDG000000039.1355
+# Aeromonas_veronii PDG000000076.214
+# Pseudomonas_aeruginosa PDG000000036.1837
+# Enterobacter_hormaechei PDG000000105.895
+# Serratia PDG000000016.1070
 split	organism_group	isolation_source	host	host_disease	ncbi_source_type	records
 development	Salmonella	stool	Homo sapiens		human	1489
 development	Salmonella	stool			human	1005
@@ -11851,3 +11859,1866 @@ final	Aeromonas	kidney	Micropterus salmoides		animal	1
 final	Aeromonas	liver	Cyprinus carpio		animal	1
 final	Aeromonas	tilapia			food	1
 final	Aeromonas	urine			human	1
+fresh	Salmonella	stool	Homo sapiens		human	2142
+fresh	Salmonella	stool			human	706
+fresh	Salmonella	urine	Homo sapiens		human	282
+fresh	Salmonella	blood	Homo sapiens		human	239
+fresh	Salmonella	stool	Homo sapiens	not provided	human	182
+fresh	Salmonella	feces	Bos taurus		animal	108
+fresh	Salmonella	environmental swab sponge			environmental	103
+fresh	Salmonella	urine			human	70
+fresh	Salmonella	raw intact chicken			food	56
+fresh	Salmonella	Pork			food	55
+fresh	Salmonella	poultry			food	55
+fresh	Salmonella	blood			human	51
+fresh	Salmonella	feces	not provided		animal	51
+fresh	Salmonella	biological fluid or and tissue	Homo sapiens		human	46
+fresh	Salmonella	poultry carcass	poultry		animal	45
+fresh	Salmonella	water			environmental	43
+fresh	Salmonella		Homo sapiens		human	40
+fresh	Salmonella	feces	Homo sapiens		human	40
+fresh	Salmonella	environmental swab			environmental	38
+fresh	Salmonella	chicken drag swab			environmental	35
+fresh	Salmonella	soil			environmental	33
+fresh	Salmonella	biological fluid or and tissue	Bos taurus		animal	32
+fresh	Salmonella	ground component chicken			food	26
+fresh	Salmonella	boneless beef			food	25
+fresh	Salmonella	Product-Raw-Ground, Comminuted or Otherwise Nonintact-Pork			food	24
+fresh	Salmonella	Stool specimen			human	24
+fresh	Salmonella	chicken - young chicken carcass rinse (post-chill)			food	24
+fresh	Salmonella	ground turkey			food	23
+fresh	Salmonella	comminuted chicken			food	22
+fresh	Salmonella	poultry environmental swab			environmental	20
+fresh	Salmonella	chicken breast			food	19
+fresh	Salmonella	farm soil			environmental	19
+fresh	Salmonella	blood	Homo sapiens	not provided	human	17
+fresh	Salmonella	chicken			food	17
+fresh	Salmonella	ground component turkey			food	16
+fresh	Salmonella	Comminuted Turkey			food	15
+fresh	Salmonella	cecal content	Sus scrofa domestica		animal	14
+fresh	Salmonella	environmental swab glofe of dairy farm worker			environmental	14
+fresh	Salmonella	Litter			environmental	13
+fresh	Salmonella	Nonintact Chicken			food	13
+fresh	Salmonella	swab			environmental	13
+fresh	Salmonella	urine	Homo sapiens	not provided	human	13
+fresh	Salmonella	wheat			food	13
+fresh	Salmonella	feces	Equus caballus		animal	12
+fresh	Salmonella	feces	Sus scrofa domesticus	Enteritis	animal	12
+fresh	Salmonella	sediment			environmental	12
+fresh	Salmonella	spleen mouse	Mus musculus		animal	12
+fresh	Salmonella	biological fluid or and tissue	Sus scrofa domesticus		animal	11
+fresh	Salmonella	environmental swab bib of dairy farm worker			environmental	11
+fresh	Salmonella	stool	Homo sapiens	gastroenteritis	human	11
+fresh	Salmonella	whole blood	Homo sapiens		human	11
+fresh	Salmonella	Blood Specimen	Homo sapiens		human	10
+fresh	Salmonella	Chicken Liver			food	10
+fresh	Salmonella	pooled tissue	Bos taurus		animal	10
+fresh	Salmonella	Raw pet food			food	9
+fresh	Salmonella	Urine Specimen	Homo sapiens		human	9
+fresh	Salmonella	finished ground turkey			food	9
+fresh	Salmonella	pistachio			food	9
+fresh	Salmonella	turkey			food	9
+fresh	Salmonella	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	8
+fresh	Salmonella	chicken egg			food	8
+fresh	Salmonella	comminuted beef			food	8
+fresh	Salmonella	feces	bovine		animal	8
+fresh	Salmonella	feces	canine		animal	8
+fresh	Salmonella	feces	chicken		animal	8
+fresh	Salmonella	ground beef			food	8
+fresh	Salmonella	intestine	Struthio camelus		animal	8
+fresh	Salmonella	Isolated Organism			human	7
+fresh	Salmonella	blood	Homo sapiens	gastroenteritis	human	7
+fresh	Salmonella	caeca content	Gallus gallus domesticus		animal	7
+fresh	Salmonella	chicken wing			food	7
+fresh	Salmonella	feces	Gallus gallus domesticus		animal	7
+fresh	Salmonella	feces	Sus scrofa domesticus		animal	7
+fresh	Salmonella	finished spinach			food	7
+fresh	Salmonella	food			food	7
+fresh	Salmonella	raw almond			food	7
+fresh	Salmonella	skin after chiller	Gallus gallus domesticus		animal	7
+fresh	Salmonella	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	6
+fresh	Salmonella	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	6
+fresh	Salmonella	Animal-Swine-Sow (cecal)	Sus scrofa		animal	6
+fresh	Salmonella	Chicken gizzards			food	6
+fresh	Salmonella	Colon	Sus scrofa domesticus	not provided	animal	6
+fresh	Salmonella	Spices and salt-Ground black pepper			food	6
+fresh	Salmonella	chicken litter drag swab			environmental	6
+fresh	Salmonella	environmental swab boot of dairy farm worker			environmental	6
+fresh	Salmonella	placenta	Bos taurus		animal	6
+fresh	Salmonella	raw pistachio			food	6
+fresh	Salmonella	raw product			food	6
+fresh	Salmonella	retail chicken liver			food	6
+fresh	Salmonella	sewage			environmental	6
+fresh	Salmonella	strawberry			food	6
+fresh	Salmonella	wound	Homo sapiens		human	6
+fresh	Salmonella	Abscess	Homo sapiens		human	5
+fresh	Salmonella	Animal-Cattle-Heifer (cecal)	Bovine		animal	5
+fresh	Salmonella	Blood Venous	Homo sapiens		human	5
+fresh	Salmonella	carcass swab	not provided		animal	5
+fresh	Salmonella	cattle			animal	5
+fresh	Salmonella	creek water			environmental	5
+fresh	Salmonella	feces	Struthio camelus		animal	5
+fresh	Salmonella	finished pet food			environmental	5
+fresh	Salmonella	intestine	Sus scrofa domesticus	not provided	animal	5
+fresh	Salmonella	intestine mouse	Mus musculus		animal	5
+fresh	Salmonella	litter			environmental	5
+fresh	Salmonella	meat			food	5
+fresh	Salmonella	pistachio kernel			food	5
+fresh	Salmonella	pork meat			food	5
+fresh	Salmonella	raw ground beef			food	5
+fresh	Salmonella	shipment liner from hatchery			environmental	5
+fresh	Salmonella	urine	Homo sapiens	gastroenteritis	human	5
+fresh	Salmonella		Homo sapiens	not provided	human	4
+fresh	Salmonella	Product-Raw-Intact-Pork			food	4
+fresh	Salmonella	Tissue	Homo sapiens		human	4
+fresh	Salmonella	caecum avian	Struthio camelus		animal	4
+fresh	Salmonella	enrichment broth			food	4
+fresh	Salmonella	environmental			environmental	4
+fresh	Salmonella	feces	Equus caballus	Salmonellosis	animal	4
+fresh	Salmonella	feces	pogona		animal	4
+fresh	Salmonella	in shell nut			food	4
+fresh	Salmonella	kibble			environmental	4
+fresh	Salmonella	kratom powder			food	4
+fresh	Salmonella	liver	Bos taurus	Sepsis	animal	4
+fresh	Salmonella	lung	Bos taurus		animal	4
+fresh	Salmonella	lymph node	Sus scrofa domesticus		animal	4
+fresh	Salmonella	neem powder			food	4
+fresh	Salmonella	nut cracker			food	4
+fresh	Salmonella	rinse water			environmental	4
+fresh	Salmonella	swine lagoon			environmental	4
+fresh	Salmonella	well water			environmental	4
+fresh	Salmonella	Chicken Gizzard			food	3
+fresh	Salmonella	Chicken hearts			food	3
+fresh	Salmonella	Chicken livers			food	3
+fresh	Salmonella	Rectal Swab	Homo sapiens		human	3
+fresh	Salmonella	Urine specimen			human	3
+fresh	Salmonella	animal-cattle-steer			food	3
+fresh	Salmonella	body fluid			human	3
+fresh	Salmonella	bone meal fertilizer			environmental	3
+fresh	Salmonella	bootie	Gallus gallus		environmental	3
+fresh	Salmonella	carcass rinse	not provided		animal	3
+fresh	Salmonella	chicken breast (Gallus gallus)			animal	3
+fresh	Salmonella	chicken meat			food	3
+fresh	Salmonella	cucumber			food	3
+fresh	Salmonella	cucumbers			food	3
+fresh	Salmonella	drag swab			environmental	3
+fresh	Salmonella	drag swab (Gallus gallus domesticus)			environmental	3
+fresh	Salmonella	feces	Equus caballus	not provided	animal	3
+fresh	Salmonella	feces	Sus scrofa domesticus	not provided	animal	3
+fresh	Salmonella	finished chicken			food	3
+fresh	Salmonella	finished fertilizer			environmental	3
+fresh	Salmonella	fly trap			environmental	3
+fresh	Salmonella	hazelnut farm shelled			food	3
+fresh	Salmonella	intestine			animal	3
+fresh	Salmonella	meat bone meal			environmental	3
+fresh	Salmonella	mullet fish			food	3
+fresh	Salmonella	pooled tissue	Gallus gallus domesticus		animal	3
+fresh	Salmonella	product-raw-intact-beef			food	3
+fresh	Salmonella	quail farm environmental swab			environmental	3
+fresh	Salmonella	raw poultry			food	3
+fresh	Salmonella	serrano pepper			food	3
+fresh	Salmonella	swab	Sus scrofa domesticus		animal	3
+fresh	Salmonella	yak cheese dog chew			food	3
+fresh	Salmonella		Homo sapiens	gastroenteritis	human	2
+fresh	Salmonella	Abscess			human	2
+fresh	Salmonella	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	2
+fresh	Salmonella	Animal-Sheep-Lamb (cecal)	Ovine		animal	2
+fresh	Salmonella	Animal-Sheep-Mature Sheep (cecal)	Ovine		animal	2
+fresh	Salmonella	Blood specimen			human	2
+fresh	Salmonella	Chicken Gizzards			food	2
+fresh	Salmonella	Chicken Heart			food	2
+fresh	Salmonella	Colon	Sus scrofa domesticus	Colitis	animal	2
+fresh	Salmonella	Fluid			human	2
+fresh	Salmonella	Ground Beef			food	2
+fresh	Salmonella	Rectal Swab			human	2
+fresh	Salmonella	Rectum	Homo sapiens		human	2
+fresh	Salmonella	Synovial Fluid	Homo sapiens		human	2
+fresh	Salmonella	VEAL			food	2
+fresh	Salmonella	almond			food	2
+fresh	Salmonella	beef			food	2
+fresh	Salmonella	boneless chicken			food	2
+fresh	Salmonella	broiler carcass	poultry		animal	2
+fresh	Salmonella	celery seed			food	2
+fresh	Salmonella	chicken breasts			food	2
+fresh	Salmonella	chicken rinse water	Gallus gallus		animal	2
+fresh	Salmonella	chicken thigh			food	2
+fresh	Salmonella	cloacal swab	Pogona		animal	2
+fresh	Salmonella	cocoa powder			food	2
+fresh	Salmonella	drag swabs of shelled egg farm facility			environmental	2
+fresh	Salmonella	dried pork ear			food	2
+fresh	Salmonella	dried seaweed			food	2
+fresh	Salmonella	elephant ginger			food	2
+fresh	Salmonella	environmental swab chicken			environmental	2
+fresh	Salmonella	environmental swab turkey			environmental	2
+fresh	Salmonella	farm tool cart			environmental	2
+fresh	Salmonella	feces	Bos taurus	Salmonellosis	animal	2
+fresh	Salmonella	feces	Equus caballus	Colitis	animal	2
+fresh	Salmonella	feces	Equus caballus	salmonellosis	animal	2
+fresh	Salmonella	feces	Gallus gallus		animal	2
+fresh	Salmonella	feces	Giraffa camelopardalis		animal	2
+fresh	Salmonella	fertilizer			environmental	2
+fresh	Salmonella	finished peanut butter			food	2
+fresh	Salmonella	finished pizzle			environmental	2
+fresh	Salmonella	finished power green			food	2
+fresh	Salmonella	finished sweet kale salad			food	2
+fresh	Salmonella	fluff	Gallus gallus		environmental	2
+fresh	Salmonella	frozen pepper			food	2
+fresh	Salmonella	frozen yanang leaf			food	2
+fresh	Salmonella	ground sage			food	2
+fresh	Salmonella	halawa halva plain			food	2
+fresh	Salmonella	halawa pistachio			food	2
+fresh	Salmonella	hazelnut			food	2
+fresh	Salmonella	intestine	Antilocapra americana		animal	2
+fresh	Salmonella	intestine	Equus caballus		animal	2
+fresh	Salmonella	intestine	Sus scrofa domesticus		animal	2
+fresh	Salmonella	irrigation water			environmental	2
+fresh	Salmonella	joint	chicken		animal	2
+fresh	Salmonella	liver	Gallus gallus	Sepsis	animal	2
+fresh	Salmonella	lung	Bos taurus	Pneumonia	animal	2
+fresh	Salmonella	lung	Bos taurus	Septicemia	animal	2
+fresh	Salmonella	mango			food	2
+fresh	Salmonella	meat bone meal			food	2
+fresh	Salmonella	meat feed			food	2
+fresh	Salmonella	other	Homo sapiens		human	2
+fresh	Salmonella	other	Homo sapiens	not provided	human	2
+fresh	Salmonella	peppercorn			food	2
+fresh	Salmonella	pig ear			food	2
+fresh	Salmonella	placenta	Ovis aries		animal	2
+fresh	Salmonella	pooled tissue	Cervidae		animal	2
+fresh	Salmonella	pooled tissue	Sus scrofa domesticus		animal	2
+fresh	Salmonella	pork chop			food	2
+fresh	Salmonella	powdered turmeric			food	2
+fresh	Salmonella	raw ground poultry pet food for cat			food	2
+fresh	Salmonella	raw macadamia nut			food	2
+fresh	Salmonella	raw plant based powder			food	2
+fresh	Salmonella	sesame seed			food	2
+fresh	Salmonella	sesame seed paste			food	2
+fresh	Salmonella	shelled pistachio			food	2
+fresh	Salmonella	sifter tailing from dry milk manufacturing			environmental	2
+fresh	Salmonella	small intestine	Sus scrofa domesticus		animal	2
+fresh	Salmonella	sputum	Homo sapiens		human	2
+fresh	Salmonella	stall swab	Equus caballus		animal	2
+fresh	Salmonella	swine farm truck swab			environmental	2
+fresh	Salmonella	swine feed			food	2
+fresh	Salmonella	swine lairage swab			environmental	2
+fresh	Salmonella	swine soil			environmental	2
+fresh	Salmonella	thyroid formula herbal supplement			food	2
+fresh	Salmonella	turkey drag swab			environmental	2
+fresh	Salmonella	wild turkey liver avian			food	2
+fresh	Salmonella	yolk sac	Gallus gallus		animal	2
+fresh	Salmonella		bovine		animal	1
+fresh	Salmonella	"Blood, Venous"	Homo sapiens		human	1
+fresh	Salmonella	"Skin, cellulitis"	Homo sapiens		human	1
+fresh	Salmonella	Abdominal Wound	Homo sapiens		human	1
+fresh	Salmonella	Abdominal drainage	Homo sapiens		human	1
+fresh	Salmonella	Animal-Bearded Dragon			animal	1
+fresh	Salmonella	Animal-Chicken-Heavy Fowl			food	1
+fresh	Salmonella	Animal-Leopard Gecko			animal	1
+fresh	Salmonella	Animal-Snake			human	1
+fresh	Salmonella	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	1
+fresh	Salmonella	Ascites	Homo sapiens		human	1
+fresh	Salmonella	BRONCH WASH	Homo sapiens	not provided	human	1
+fresh	Salmonella	Back Door Threshold			environmental	1
+fresh	Salmonella	Beef Jerky			food	1
+fresh	Salmonella	Blood Aerobic	Homo sapiens		human	1
+fresh	Salmonella	Blood Right Ac	Homo sapiens	not provided	human	1
+fresh	Salmonella	Body Fluid (Specify:)	Homo sapiens		human	1
+fresh	Salmonella	Bovine mixed tissue-lymph node and intestine			animal	1
+fresh	Salmonella	Breakroom Floor			environmental	1
+fresh	Salmonella	Bronchial Wash Lavage	Homo sapiens		human	1
+fresh	Salmonella	CHICKEN GIZZARD			food	1
+fresh	Salmonella	CHICKEN HEART			food	1
+fresh	Salmonella	Chemical Supply Closet			environmental	1
+fresh	Salmonella	Chicken Breasts			food	1
+fresh	Salmonella	Chicken Chicken Breast			food	1
+fresh	Salmonella	Chicken Gizzard			animal	1
+fresh	Salmonella	Chicken Heart			animal	1
+fresh	Salmonella	Chicken Hearts			food	1
+fresh	Salmonella	Chicken Wings			food	1
+fresh	Salmonella	Chicken breasts			food	1
+fresh	Salmonella	Chicken liver			food	1
+fresh	Salmonella	Colon	Sus scrofa	Enteric Salmonellosis	animal	1
+fresh	Salmonella	Composite Tissue	Gallus gallus	Yolk sac infection	animal	1
+fresh	Salmonella	Composite tissue	Gallus gallus	Yolk sac infection	animal	1
+fresh	Salmonella	Dollie in Breakroom			environmental	1
+fresh	Salmonella	Egg Grill One			environmental	1
+fresh	Salmonella	Employees Handle - MenSWomenS			environmental	1
+fresh	Salmonella	Enteric pool	Sus scrofa domesticus	not provided	animal	1
+fresh	Salmonella	Fecal Swab	Homo sapiens		human	1
+fresh	Salmonella	Fecal swab	Sus scrofa domesticus	not provided	animal	1
+fresh	Salmonella	Feeder Swab			environmental	1
+fresh	Salmonella	Floor Next to Prep			environmental	1
+fresh	Salmonella	Floor in Front of Grill One			environmental	1
+fresh	Salmonella	Floor in Front of Hot Box			environmental	1
+fresh	Salmonella	Floor in Front of Walk in Cooler			environmental	1
+fresh	Salmonella	Front Grill Grail			environmental	1
+fresh	Salmonella	Front Plate Grill One			environmental	1
+fresh	Salmonella	Front Plate Grill Two			environmental	1
+fresh	Salmonella	GI tract	Drymarchon corais	Salmonellosis	animal	1
+fresh	Salmonella	GROUND TURKEY BREASTS			food	1
+fresh	Salmonella	Grill Drawers One Composite			environmental	1
+fresh	Salmonella	Grill Line Casters Composite			environmental	1
+fresh	Salmonella	Ground beef			food	1
+fresh	Salmonella	Isolate	Meleagris gallopavo		animal	1
+fresh	Salmonella	Isolate	Sus scrofa domesticus		animal	1
+fresh	Salmonella	Jejunum	Alectoris chukar	Sepsis	animal	1
+fresh	Salmonella	Knee Fluid			human	1
+fresh	Salmonella	LItter			environmental	1
+fresh	Salmonella	Litter	Broiler		environmental	1
+fresh	Salmonella	Litter	Chicken		environmental	1
+fresh	Salmonella	Litter	Chicken Broiler		environmental	1
+fresh	Salmonella	Liver Tissue			animal	1
+fresh	Salmonella	Lizard bedding			environmental	1
+fresh	Salmonella	Lizard water bowl			environmental	1
+fresh	Salmonella	Nesting area			environmental	1
+fresh	Salmonella	Peritoneum	Homo sapiens		human	1
+fresh	Salmonella	Pharynx	Squamata		animal	1
+fresh	Salmonella	Pleural fluid (thoracentesis f	Homo sapiens		human	1
+fresh	Salmonella	Raw manufactured trimmings			food	1
+fresh	Salmonella	Rectal	Homo sapiens		human	1
+fresh	Salmonella	Right Thigh	Homo sapiens		human	1
+fresh	Salmonella	SCROTUM			human	1
+fresh	Salmonella	Sides in Front of Front Egg Grill			environmental	1
+fresh	Salmonella	Small Intestine			animal	1
+fresh	Salmonella	Small Intestine	Bos taurus	Enteritis	animal	1
+fresh	Salmonella	Small Intestines	Bos taurus	Sepsis	animal	1
+fresh	Salmonella	Specimen From Wound	Homo sapiens		human	1
+fresh	Salmonella	Urinary Catheter	Homo sapiens		human	1
+fresh	Salmonella	Vestibule One Floor			environmental	1
+fresh	Salmonella	Vestibule Two Floor			environmental	1
+fresh	Salmonella	Wall Adjacent to Back Door			environmental	1
+fresh	Salmonella	Wound - Left Leg	Homo sapiens		human	1
+fresh	Salmonella	Wound- Rt Heel	Homo sapiens		human	1
+fresh	Salmonella	abdominal fluid			human	1
+fresh	Salmonella	abdominal fluid	Gallus gallus domesticus		animal	1
+fresh	Salmonella	abdominal swab	Reptilia		animal	1
+fresh	Salmonella	abscess	Pantherophis guttatus		animal	1
+fresh	Salmonella	alfalfa seed			food	1
+fresh	Salmonella	alfalfa sprout seed			food	1
+fresh	Salmonella	animal feed			food	1
+fresh	Salmonella	aspirate	Homo sapiens		human	1
+fresh	Salmonella	barramundi			food	1
+fresh	Salmonella	beef enrichment			food	1
+fresh	Salmonella	beef marrow bone			food	1
+fresh	Salmonella	beef trim			food	1
+fresh	Salmonella	blood	Bos taurus	Sepsis	animal	1
+fresh	Salmonella	blood	Equus caballus		animal	1
+fresh	Salmonella	blood	Equus caballus	Sepsis	animal	1
+fresh	Salmonella	blowhole	Delphinus delphis		animal	1
+fresh	Salmonella	body fluid	Homo sapiens		human	1
+fresh	Salmonella	bone			human	1
+fresh	Salmonella	bone meal fertilizer			food	1
+fresh	Salmonella	bones/heart	Gallus gallus	Incidental finding	animal	1
+fresh	Salmonella	broccoli			food	1
+fresh	Salmonella	buffalo horn	buffalo		animal	1
+fresh	Salmonella	caecum			animal	1
+fresh	Salmonella	caecum	Meleagris gallopavo		animal	1
+fresh	Salmonella	cat feces			animal	1
+fresh	Salmonella	cecal tonsils	Gallus gallus domesticus		animal	1
+fresh	Salmonella	cerasee tea			food	1
+fresh	Salmonella	cheese			food	1
+fresh	Salmonella	chest abcess fluid	Homo sapiens		human	1
+fresh	Salmonella	chicken carcass			food	1
+fresh	Salmonella	chicken carcass rinse	Gallus gallus		animal	1
+fresh	Salmonella	chicken coop			food	1
+fresh	Salmonella	chicken feed			food	1
+fresh	Salmonella	chicken leg			food	1
+fresh	Salmonella	chicken manure drag swab			environmental	1
+fresh	Salmonella	chicken mixed part			food	1
+fresh	Salmonella	chicken paper			environmental	1
+fresh	Salmonella	chicken recipe for cats			food	1
+fresh	Salmonella	chicken thighs			food	1
+fresh	Salmonella	chicken wing (Gallus gallus)			animal	1
+fresh	Salmonella	cloaca			environmental	1
+fresh	Salmonella	cloacal swab	Sistrurus miliarius	not provided	animal	1
+fresh	Salmonella	colon	Eclectus roratus		animal	1
+fresh	Salmonella	coriander powder			food	1
+fresh	Salmonella	crab			food	1
+fresh	Salmonella	crab claw			food	1
+fresh	Salmonella	creek sediment			environmental	1
+fresh	Salmonella	cricket powder			food	1
+fresh	Salmonella	dog tissue			animal	1
+fresh	Salmonella	embryo game bird			animal	1
+fresh	Salmonella	ethiopian cabbage brassica carinata texsel green			food	1
+fresh	Salmonella	feces			animal	1
+fresh	Salmonella	feces			environmental	1
+fresh	Salmonella	feces	Ammotragus lervia		animal	1
+fresh	Salmonella	feces	Ateles	Enteritis	animal	1
+fresh	Salmonella	feces	Bos taurus	Enteritis	animal	1
+fresh	Salmonella	feces	Bos taurus	not provided	animal	1
+fresh	Salmonella	feces	Canis lupus familiaris		animal	1
+fresh	Salmonella	feces	Canis lupus familiaris	Diarrhea	animal	1
+fresh	Salmonella	feces	Equus caballus	Enteritis	animal	1
+fresh	Salmonella	feces	Equus caballus	Previous Salmonellosis	animal	1
+fresh	Salmonella	feces	Lemur catta		animal	1
+fresh	Salmonella	feces	Marsupialia		animal	1
+fresh	Salmonella	feces	Sus scrofa domesticus	Salmonellosis	animal	1
+fresh	Salmonella	feces	Sus scrofa domesticus	salmonellosis	animal	1
+fresh	Salmonella	feces (Bos taurus)			animal	1
+fresh	Salmonella	field organic spinach			food	1
+fresh	Salmonella	finished chia seed powder			food	1
+fresh	Salmonella	finished fruit bowl			food	1
+fresh	Salmonella	finished green pepper			food	1
+fresh	Salmonella	finished ground beef			food	1
+fresh	Salmonella	finished ground chicken			food	1
+fresh	Salmonella	finished kale salad			food	1
+fresh	Salmonella	finished product			food	1
+fresh	Salmonella	finished product chicken			food	1
+fresh	Salmonella	finished product sandwich			food	1
+fresh	Salmonella	finished product tissue			food	1
+fresh	Salmonella	finished romaine lettuce			food	1
+fresh	Salmonella	finished water			food	1
+fresh	Salmonella	fluid			human	1
+fresh	Salmonella	food (smoked beef)			food	1
+fresh	Salmonella	food isolate (Ground beef)			food	1
+fresh	Salmonella	fresh frozen debonded milkfish belly			food	1
+fresh	Salmonella	frozen chicken and vegetable pet food			food	1
+fresh	Salmonella	frozen fresh water prawn			food	1
+fresh	Salmonella	frozen octopus			food	1
+fresh	Salmonella	frozen pandan leaf			food	1
+fresh	Salmonella	frozen shrimp			food	1
+fresh	Salmonella	frozen squid ring			food	1
+fresh	Salmonella	gel bone			environmental	1
+fresh	Salmonella	green long bean			food	1
+fresh	Salmonella	gut pool	peafowl		animal	1
+fresh	Salmonella	heart/liver	Gallus gallus		animal	1
+fresh	Salmonella	intestine	Bos taurus		animal	1
+fresh	Salmonella	intestine	Bos taurus	Death	animal	1
+fresh	Salmonella	intestine	Ovis aries	Incidental finding	animal	1
+fresh	Salmonella	intestine	Vicugna pacos	Death	animal	1
+fresh	Salmonella	intestine	chicken		animal	1
+fresh	Salmonella	intestine primate			animal	1
+fresh	Salmonella	intestine rodent			animal	1
+fresh	Salmonella	intestine/cecum	Equus caballus	Enteritis	animal	1
+fresh	Salmonella	intestines	Bos taurus	Sepsis	animal	1
+fresh	Salmonella	jejunum	Bos taurus		animal	1
+fresh	Salmonella	joint	Didelphis virginiana	Death	animal	1
+fresh	Salmonella	kidney	Bos taurus		animal	1
+fresh	Salmonella	lagoon			environmental	1
+fresh	Salmonella	live chick shipping materials			environmental	1
+fresh	Salmonella	liver	Bos taurus	Infection	animal	1
+fresh	Salmonella	liver	Potamotrygon boesemani		animal	1
+fresh	Salmonella	liver ratite			food	1
+fresh	Salmonella	liver, bos taurus			food	1
+fresh	Salmonella	lung			human	1
+fresh	Salmonella	lung	Boa constrictor		animal	1
+fresh	Salmonella	lung	Bos taurus	Enterocolitis	animal	1
+fresh	Salmonella	lung	Bos taurus	Salmonellosis	animal	1
+fresh	Salmonella	lung	Bos taurus	Sepsis	animal	1
+fresh	Salmonella	lung	Ovis aries	Aborted fetus	animal	1
+fresh	Salmonella	lung	Sus scrofa domesticus		animal	1
+fresh	Salmonella	lung/brain	Sus scrofa domesticus		animal	1
+fresh	Salmonella	lymph node	Canis lupus familiaris	Tonsilitis	animal	1
+fresh	Salmonella	manure separator			environmental	1
+fresh	Salmonella	meat pork			food	1
+fresh	Salmonella	mix tissue	Bos taurus	Salmonellosis	animal	1
+fresh	Salmonella	mung bean			food	1
+fresh	Salmonella	mus musculus			animal	1
+fresh	Salmonella	non fat dry milk			food	1
+fresh	Salmonella	not provided	Homo sapiens		human	1
+fresh	Salmonella	omentum	Alligator mississippiensis		animal	1
+fresh	Salmonella	ovine pooled tissue	ovine		animal	1
+fresh	Salmonella	pasilla pepper			food	1
+fresh	Salmonella	peanut			food	1
+fresh	Salmonella	pet food			food	1
+fresh	Salmonella	pet food dog			food	1
+fresh	Salmonella	placenta	bovine		animal	1
+fresh	Salmonella	pool of lung\, liver\, heart\, and spleen	Bos taurus		animal	1
+fresh	Salmonella	pooled eggs	Gallus gallus		animal	1
+fresh	Salmonella	pooled tissue	Anas platyrhynchos		animal	1
+fresh	Salmonella	pooled tissue	Canis lupus familiaris		animal	1
+fresh	Salmonella	pooled tissue	bovine		animal	1
+fresh	Salmonella	pooled tissue	turkey		animal	1
+fresh	Salmonella	pump water			environmental	1
+fresh	Salmonella	raw chicken			food	1
+fresh	Salmonella	raw meat			food	1
+fresh	Salmonella	raw peanut			food	1
+fresh	Salmonella	raw pet food			food	1
+fresh	Salmonella	raw pork			food	1
+fresh	Salmonella	raw product green			food	1
+fresh	Salmonella	raw tomato			food	1
+fresh	Salmonella	semolina			food	1
+fresh	Salmonella	shrimp			food	1
+fresh	Salmonella	slim carrot			food	1
+fresh	Salmonella	small intestine	Bos taurus		animal	1
+fresh	Salmonella	small intestine	Serpentes		animal	1
+fresh	Salmonella	soft almond fudge			food	1
+fresh	Salmonella	spice mixture khmeli suneli			food	1
+fresh	Salmonella	spleen			animal	1
+fresh	Salmonella	spleen	Gallus gallus		animal	1
+fresh	Salmonella	spleen	chicken		animal	1
+fresh	Salmonella	stool			animal	1
+fresh	Salmonella	stool	not provided		animal	1
+fresh	Salmonella	swab-fecal swab w/ cary blair			human	1
+fresh	Salmonella	testudine tank water			environmental	1
+fresh	Salmonella	tissue pool	Bos taurus	Systemic Infection	animal	1
+fresh	Salmonella	tomato			food	1
+fresh	Salmonella	trim meat			food	1
+fresh	Salmonella	turkey carcass rinse			environmental	1
+fresh	Salmonella	wild chicken intestine avian	Gallus gallus domesticus		animal	1
+fresh	Salmonella	wound			human	1
+fresh	Salmonella	wound	Homo sapiens	not provided	human	1
+fresh	Salmonella	yolk sac	chicken		animal	1
+fresh	Escherichia_coli_Shigella	stool	Homo sapiens		human	1662
+fresh	Escherichia_coli_Shigella	stool	Homo sapiens	not provided	human	626
+fresh	Escherichia_coli_Shigella	wastewater			environmental	410
+fresh	Escherichia_coli_Shigella		bovine		animal	318
+fresh	Escherichia_coli_Shigella	healthcare facility			human	296
+fresh	Escherichia_coli_Shigella	stool			human	176
+fresh	Escherichia_coli_Shigella	Larus cachinnans			animal	121
+fresh	Escherichia_coli_Shigella	bovine			animal	94
+fresh	Escherichia_coli_Shigella	bovine manure			environmental	85
+fresh	Escherichia_coli_Shigella	chicken			food	80
+fresh	Escherichia_coli_Shigella	fresh manure			environmental	70
+fresh	Escherichia_coli_Shigella	feces			human	68
+fresh	Escherichia_coli_Shigella	ground turkey			food	67
+fresh	Escherichia_coli_Shigella	turkey			food	62
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris		animal	61
+fresh	Escherichia_coli_Shigella	Animal-Sheep-Lamb (cecal)	Ovine		animal	56
+fresh	Escherichia_coli_Shigella	water			environmental	56
+fresh	Escherichia_coli_Shigella	cow	bovine	Mastitis	animal	53
+fresh	Escherichia_coli_Shigella	Downstream pintag irrigation water			environmental	33
+fresh	Escherichia_coli_Shigella	cow	Bos taurus		animal	33
+fresh	Escherichia_coli_Shigella	Animal-Sheep-Mature Sheep (cecal)	Ovine		animal	30
+fresh	Escherichia_coli_Shigella		Homo sapiens		human	27
+fresh	Escherichia_coli_Shigella	Lab			human	27
+fresh	Escherichia_coli_Shigella	beef cattle feces	Bos taurus		animal	25
+fresh	Escherichia_coli_Shigella	cow			animal	25
+fresh	Escherichia_coli_Shigella	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	24
+fresh	Escherichia_coli_Shigella	human			human	24
+fresh	Escherichia_coli_Shigella	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	21
+fresh	Escherichia_coli_Shigella	chicken meat			food	21
+fresh	Escherichia_coli_Shigella	stool	not collected		animal	21
+fresh	Escherichia_coli_Shigella	blood	Homo sapiens		human	20
+fresh	Escherichia_coli_Shigella	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	19
+fresh	Escherichia_coli_Shigella	manure flush slurry			environmental	18
+fresh	Escherichia_coli_Shigella	soil			environmental	18
+fresh	Escherichia_coli_Shigella	romaine lettuce			food	17
+fresh	Escherichia_coli_Shigella	Animal-Swine-Sow (cecal)	Sus scrofa		animal	16
+fresh	Escherichia_coli_Shigella	cecal content	Sus scrofa domestica		animal	16
+fresh	Escherichia_coli_Shigella	rectal swab	Felis catus		animal	15
+fresh	Escherichia_coli_Shigella	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	14
+fresh	Escherichia_coli_Shigella	beef			food	14
+fresh	Escherichia_coli_Shigella	feces	Gallus gallus		animal	14
+fresh	Escherichia_coli_Shigella	ground turkey	not provided	not provided	food	14
+fresh	Escherichia_coli_Shigella	product-raw-intact-beef			food	14
+fresh	Escherichia_coli_Shigella	sediment			environmental	14
+fresh	Escherichia_coli_Shigella	chicken breast			food	13
+fresh	Escherichia_coli_Shigella	feces	Porcine		animal	12
+fresh	Escherichia_coli_Shigella	feces	not collected		animal	12
+fresh	Escherichia_coli_Shigella	fox			animal	12
+fresh	Escherichia_coli_Shigella	meat			food	12
+fresh	Escherichia_coli_Shigella	urine	Homo sapiens		human	12
+fresh	Escherichia_coli_Shigella	feces	Bovine		animal	11
+fresh	Escherichia_coli_Shigella	Feces (Canis lupus familiaris)			animal	10
+fresh	Escherichia_coli_Shigella	Fly			environmental	10
+fresh	Escherichia_coli_Shigella	Pork			food	10
+fresh	Escherichia_coli_Shigella	fecal boot swab	Meleagris gallopavo Linnaeus f. domestica		environmental	10
+fresh	Escherichia_coli_Shigella	feral pig	porcine		animal	10
+fresh	Escherichia_coli_Shigella		cow		animal	9
+fresh	Escherichia_coli_Shigella	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	9
+fresh	Escherichia_coli_Shigella	Animal-Cattle-Heifer (cecal)	Bovine		animal	9
+fresh	Escherichia_coli_Shigella	bovine	cow		animal	9
+fresh	Escherichia_coli_Shigella	milk	bovine		animal	9
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Cystitis	animal	9
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	cystitis	animal	9
+fresh	Escherichia_coli_Shigella		Homo sapiens	not provided	human	8
+fresh	Escherichia_coli_Shigella	Feces from cage, slaughter area, floor litter			environmental	8
+fresh	Escherichia_coli_Shigella	Ground pork			food	8
+fresh	Escherichia_coli_Shigella	chicken feces	Gallus gallus		animal	8
+fresh	Escherichia_coli_Shigella	cloacal swab			animal	8
+fresh	Escherichia_coli_Shigella	food			food	8
+fresh	Escherichia_coli_Shigella	Animal-Cattle-Steer (cecal)	Bovine		animal	7
+fresh	Escherichia_coli_Shigella	comminuted beef			food	7
+fresh	Escherichia_coli_Shigella	poultry			food	7
+fresh	Escherichia_coli_Shigella	scat onion packing yard			environmental	7
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Urinary tract infection	animal	7
+fresh	Escherichia_coli_Shigella	Amphibians & reptiles	amphibian and reptile		animal	6
+fresh	Escherichia_coli_Shigella	Stool specimen			human	6
+fresh	Escherichia_coli_Shigella	aquaculture water			animal	6
+fresh	Escherichia_coli_Shigella	black_headed_gull			animal	6
+fresh	Escherichia_coli_Shigella	cloacal swab	pigeon		animal	6
+fresh	Escherichia_coli_Shigella	cow calf	Bos taurus		animal	6
+fresh	Escherichia_coli_Shigella	Aquaculture Sediment			animal	5
+fresh	Escherichia_coli_Shigella	Chicken Liver			food	5
+fresh	Escherichia_coli_Shigella	Ground Beef			food	5
+fresh	Escherichia_coli_Shigella	Ground Pork			food	5
+fresh	Escherichia_coli_Shigella	Turkey Ground Turkey			food	5
+fresh	Escherichia_coli_Shigella	duck			animal	5
+fresh	Escherichia_coli_Shigella	feces			animal	5
+fresh	Escherichia_coli_Shigella	feces	Bos taurus		animal	5
+fresh	Escherichia_coli_Shigella	field			environmental	5
+fresh	Escherichia_coli_Shigella	mammary gland	bovine		animal	5
+fresh	Escherichia_coli_Shigella	raw product			food	5
+fresh	Escherichia_coli_Shigella		Bovine		animal	4
+fresh	Escherichia_coli_Shigella		pig		animal	4
+fresh	Escherichia_coli_Shigella	Chicken Thighs			food	4
+fresh	Escherichia_coli_Shigella	Gorund Turkey			food	4
+fresh	Escherichia_coli_Shigella	Pork Chops			food	4
+fresh	Escherichia_coli_Shigella	lettuce-leaf			food	4
+fresh	Escherichia_coli_Shigella	scat dropping from dry river bed			environmental	4
+fresh	Escherichia_coli_Shigella	Chicken Heart	not provided	not provided	food	3
+fresh	Escherichia_coli_Shigella	Chicken Hearts			food	3
+fresh	Escherichia_coli_Shigella	Chicken thighs			food	3
+fresh	Escherichia_coli_Shigella	Pork Chop			food	3
+fresh	Escherichia_coli_Shigella	Pork chop			food	3
+fresh	Escherichia_coli_Shigella	Tank milk			food	3
+fresh	Escherichia_coli_Shigella	basil			food	3
+fresh	Escherichia_coli_Shigella	cow veal calf	Bos taurus		animal	3
+fresh	Escherichia_coli_Shigella	crow	Corvus		animal	3
+fresh	Escherichia_coli_Shigella	feces	Canis lupus familiaris		animal	3
+fresh	Escherichia_coli_Shigella	feces	cat		animal	3
+fresh	Escherichia_coli_Shigella	feces	cow		animal	3
+fresh	Escherichia_coli_Shigella	lettuce leaf			food	3
+fresh	Escherichia_coli_Shigella	patient			human	3
+fresh	Escherichia_coli_Shigella	soil and scat			environmental	3
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	UTI	animal	3
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Urinary Tract Infections	animal	3
+fresh	Escherichia_coli_Shigella	wild boar			animal	3
+fresh	Escherichia_coli_Shigella		Alpaca		animal	2
+fresh	Escherichia_coli_Shigella		Caprine		animal	2
+fresh	Escherichia_coli_Shigella		rabbit		animal	2
+fresh	Escherichia_coli_Shigella	Celery			food	2
+fresh	Escherichia_coli_Shigella	Chicken Gizzards			food	2
+fresh	Escherichia_coli_Shigella	Chicken Thighs	not provided	not provided	food	2
+fresh	Escherichia_coli_Shigella	Chicken drumsticks			food	2
+fresh	Escherichia_coli_Shigella	Chicken heart (giblets)			food	2
+fresh	Escherichia_coli_Shigella	Chicken liver			food	2
+fresh	Escherichia_coli_Shigella	Chicken livers			food	2
+fresh	Escherichia_coli_Shigella	Ground Beef	not provided	not provided	food	2
+fresh	Escherichia_coli_Shigella	Ground beef			food	2
+fresh	Escherichia_coli_Shigella	Ileum	Bovine		animal	2
+fresh	Escherichia_coli_Shigella	Lettuce from pintag market			food	2
+fresh	Escherichia_coli_Shigella	Raw Milk- Bovine			food	2
+fresh	Escherichia_coli_Shigella	Rectum	Bovine		animal	2
+fresh	Escherichia_coli_Shigella	Urine (Cysto)	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	bile	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	brown headed cowbird	Molothrus ater		animal	2
+fresh	Escherichia_coli_Shigella	celery			food	2
+fresh	Escherichia_coli_Shigella	crow			animal	2
+fresh	Escherichia_coli_Shigella	environmental swab sponge			environmental	2
+fresh	Escherichia_coli_Shigella	feces	Ovine		animal	2
+fresh	Escherichia_coli_Shigella	finished product			food	2
+fresh	Escherichia_coli_Shigella	fresh coriander			food	2
+fresh	Escherichia_coli_Shigella	ground beef	not provided	not provided	food	2
+fresh	Escherichia_coli_Shigella	intestine	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	liver	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	lung	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	other	Homo sapiens		human	2
+fresh	Escherichia_coli_Shigella	pancreas	Canis lupus familiaris		animal	2
+fresh	Escherichia_coli_Shigella	poultry litter	Gallus gallus		environmental	2
+fresh	Escherichia_coli_Shigella	poultry soil	Gallus gallus		environmental	2
+fresh	Escherichia_coli_Shigella	raw chicken giblets			food	2
+fresh	Escherichia_coli_Shigella	raw chicken thighs			food	2
+fresh	Escherichia_coli_Shigella	raw ground turkey			food	2
+fresh	Escherichia_coli_Shigella	respiratory	Homo sapiens		human	2
+fresh	Escherichia_coli_Shigella	retail raw whole milk cow			food	2
+fresh	Escherichia_coli_Shigella	skin	Canis lupus familiaris	Dermatitis	animal	2
+fresh	Escherichia_coli_Shigella	urine	Homo sapiens	not provided	human	2
+fresh	Escherichia_coli_Shigella		Calf		animal	1
+fresh	Escherichia_coli_Shigella		chicken		animal	1
+fresh	Escherichia_coli_Shigella		dog		animal	1
+fresh	Escherichia_coli_Shigella		goat		animal	1
+fresh	Escherichia_coli_Shigella		not provided	not provided	human	1
+fresh	Escherichia_coli_Shigella		sheep		animal	1
+fresh	Escherichia_coli_Shigella	(TRIM) BMT CARCASS			food	1
+fresh	Escherichia_coli_Shigella	ABDOMEN SW	Canis lupus familiaris	Infection	animal	1
+fresh	Escherichia_coli_Shigella	Abdomen Swab	Canis lupus familiaris	pyoderma	animal	1
+fresh	Escherichia_coli_Shigella	Anal gland	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Arugula Baby arugula	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	BEEF TRIM			food	1
+fresh	Escherichia_coli_Shigella	Bladder stones	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Boneless Pork Chops			food	1
+fresh	Escherichia_coli_Shigella	Boneless Thin Cut Center Cut Pork Loin Chops			food	1
+fresh	Escherichia_coli_Shigella	CLOTH WIPE			environmental	1
+fresh	Escherichia_coli_Shigella	Chicken Chicken Breast			food	1
+fresh	Escherichia_coli_Shigella	Chicken Chicken Gizzard	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Chicken Chicken Heart	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Chicken Chicken Liver	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Chicken Gizzard	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Chicken Gizzard (Giblets)			food	1
+fresh	Escherichia_coli_Shigella	Chicken Heart			food	1
+fresh	Escherichia_coli_Shigella	Chicken Heart (Giblets)			food	1
+fresh	Escherichia_coli_Shigella	Chicken Liver	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Chicken Liver (Giblets)			food	1
+fresh	Escherichia_coli_Shigella	Chicken gizzard (giblets)			food	1
+fresh	Escherichia_coli_Shigella	Chicken gizzards			food	1
+fresh	Escherichia_coli_Shigella	Chicken heart			food	1
+fresh	Escherichia_coli_Shigella	Dairy source water			food	1
+fresh	Escherichia_coli_Shigella	Draining Tract	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Endotracheal Wash Swab	Canis lupus familiaris	pneumonia	animal	1
+fresh	Escherichia_coli_Shigella	Feces (Felis catus domesticus)			animal	1
+fresh	Escherichia_coli_Shigella	Foreskin	Canis lupus familiaris	Balanoposthitis	animal	1
+fresh	Escherichia_coli_Shigella	Ground Turkey Breast	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Ileum	Porcine		animal	1
+fresh	Escherichia_coli_Shigella	Incision Line Swab	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Intestine-Small	Bovine		animal	1
+fresh	Escherichia_coli_Shigella	Intestine-Small	Odocoileus virginianus		animal	1
+fresh	Escherichia_coli_Shigella	Jejunum	Bovine		animal	1
+fresh	Escherichia_coli_Shigella	Left hind paw wound	Canis lupus familiaris	Wound Infection	animal	1
+fresh	Escherichia_coli_Shigella	Livestock			animal	1
+fresh	Escherichia_coli_Shigella	Mammary Gland Swab	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	PORK			food	1
+fresh	Escherichia_coli_Shigella	Perianal Fistula	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Pericardial Fluid	Bos taurus	Sepsis	animal	1
+fresh	Escherichia_coli_Shigella	Peritoneal Fluid	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Pork Ground Pork			food	1
+fresh	Escherichia_coli_Shigella	Pork Loin Center Cut Chops Thick			food	1
+fresh	Escherichia_coli_Shigella	Rectal Swab	Homo sapiens	not provided	human	1
+fresh	Escherichia_coli_Shigella	Seafood Salad			food	1
+fresh	Escherichia_coli_Shigella	Skin Swab	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Surgical site	Canis lupus familiaris	Incisional dehiscence	animal	1
+fresh	Escherichia_coli_Shigella	Tap water			environmental	1
+fresh	Escherichia_coli_Shigella	Turkey Ground Turkey	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	Urine - Cysto	Felis catus		animal	1
+fresh	Escherichia_coli_Shigella	Urine obtained by clean catch	Homo sapiens		human	1
+fresh	Escherichia_coli_Shigella	Urine(Canus lupis familiaris)	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Urine- Cysto	Felis catus		animal	1
+fresh	Escherichia_coli_Shigella	Uterine	Equus caballus	Endometritis	animal	1
+fresh	Escherichia_coli_Shigella	Uterine	Equus caballus	Placentitis	animal	1
+fresh	Escherichia_coli_Shigella	Uterine Fluid	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Uterine Swab	Equus caballus	Vaginitis	animal	1
+fresh	Escherichia_coli_Shigella	Uterus	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Vagina	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	Whole-Blood	Homo sapiens		human	1
+fresh	Escherichia_coli_Shigella	Wound (Canis lupus familiaris)			animal	1
+fresh	Escherichia_coli_Shigella	Wound Swab	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	abdominal fluid	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	anal gland	Canis lupus familiaris	Anal sacculitis	animal	1
+fresh	Escherichia_coli_Shigella	avian mallard	Anas platyrhynchos		animal	1
+fresh	Escherichia_coli_Shigella	bile	Canis lupus familiaris	Cholangiohepatitis	animal	1
+fresh	Escherichia_coli_Shigella	blood	Homo sapiens	not provided	human	1
+fresh	Escherichia_coli_Shigella	bone marrow	chicken		animal	1
+fresh	Escherichia_coli_Shigella	cantaloupe			food	1
+fresh	Escherichia_coli_Shigella	cecum tonsil	Meleagris gallopavo		animal	1
+fresh	Escherichia_coli_Shigella	chick paper	not provided	not provided	environmental	1
+fresh	Escherichia_coli_Shigella	chicken breast	not provided	not provided	food	1
+fresh	Escherichia_coli_Shigella	chicken litter			environmental	1
+fresh	Escherichia_coli_Shigella	coyote	Canis latrans		animal	1
+fresh	Escherichia_coli_Shigella	deer			animal	1
+fresh	Escherichia_coli_Shigella	draining tract	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	ear	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	ear	Canis lupus familiaris	None provided	animal	1
+fresh	Escherichia_coli_Shigella	environmental			environmental	1
+fresh	Escherichia_coli_Shigella	farm compost			environmental	1
+fresh	Escherichia_coli_Shigella	feces	Felis catus		animal	1
+fresh	Escherichia_coli_Shigella	feces	Odocoileus virginianus		animal	1
+fresh	Escherichia_coli_Shigella	feces	ovine		human	1
+fresh	Escherichia_coli_Shigella	feces	poultry		animal	1
+fresh	Escherichia_coli_Shigella	feeder swab			environmental	1
+fresh	Escherichia_coli_Shigella	frozen ground venison based cat food			food	1
+fresh	Escherichia_coli_Shigella	gall bladder (Canis lupus familiaris)			animal	1
+fresh	Escherichia_coli_Shigella	ground lamb			food	1
+fresh	Escherichia_coli_Shigella	intestine	Bovine		animal	1
+fresh	Escherichia_coli_Shigella	intestine	Neogale vison		animal	1
+fresh	Escherichia_coli_Shigella	large intestine bovine	cow		animal	1
+fresh	Escherichia_coli_Shigella	lettuce-romaine			food	1
+fresh	Escherichia_coli_Shigella	lung (Canis lupus familaris)			animal	1
+fresh	Escherichia_coli_Shigella	nasal cavity	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	nasal swab	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	nose	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	not provided			environmental	1
+fresh	Escherichia_coli_Shigella	other	Homo sapiens	not provided	human	1
+fresh	Escherichia_coli_Shigella	patient	Homo sapiens		human	1
+fresh	Escherichia_coli_Shigella	paw pad	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	peritoneal fluid	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	poultry waterer swab	Gallus gallus		environmental	1
+fresh	Escherichia_coli_Shigella	raw ground pork			food	1
+fresh	Escherichia_coli_Shigella	retail raw whole milk goat			food	1
+fresh	Escherichia_coli_Shigella	semen	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	skin	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	skin swab (Canis lupus familiaris)			animal	1
+fresh	Escherichia_coli_Shigella	small intestine			animal	1
+fresh	Escherichia_coli_Shigella	stool	not provided	not provided	human	1
+fresh	Escherichia_coli_Shigella	stool and broth	Homo sapiens		human	1
+fresh	Escherichia_coli_Shigella	tomato			food	1
+fresh	Escherichia_coli_Shigella	urine			animal	1
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Hematuria	animal	1
+fresh	Escherichia_coli_Shigella	urine	Canis lupus familiaris	Recurrent urinary tract infections	animal	1
+fresh	Escherichia_coli_Shigella	urine	Equus caballus	UTI	animal	1
+fresh	Escherichia_coli_Shigella	vagina	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	waterer swab			environmental	1
+fresh	Escherichia_coli_Shigella	wound	Canis lupus familiaris		animal	1
+fresh	Escherichia_coli_Shigella	wound	Canis lupus familiaris	Dermatitis	animal	1
+fresh	Escherichia_coli_Shigella	wound	Homo sapiens		human	1
+fresh	Escherichia_coli_Shigella	wound swab (Canis lupus familiaris)			animal	1
+fresh	Campylobacter	raw intact chicken			food	2587
+fresh	Campylobacter	chicken - young chicken carcass rinse (post-chill)			food	1286
+fresh	Campylobacter	stool			human	1065
+fresh	Campylobacter	stool	Homo sapiens		human	1063
+fresh	Campylobacter	chicken carcass			food	1053
+fresh	Campylobacter	stool	Homo sapiens	not provided	human	771
+fresh	Campylobacter	comminuted chicken			food	281
+fresh	Campylobacter	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	210
+fresh	Campylobacter	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	170
+fresh	Campylobacter	fecal stool	Homo sapiens		human	160
+fresh	Campylobacter	Nonintact Chicken			food	157
+fresh	Campylobacter	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	147
+fresh	Campylobacter	feces	Homo sapiens		human	129
+fresh	Campylobacter	Animal-Cattle-Steer (cecal)	Bovine		animal	119
+fresh	Campylobacter	Chicken Liver (Giblets)			food	111
+fresh	Campylobacter	Animal-Cattle-Heifer (cecal)	Bovine		animal	100
+fresh	Campylobacter	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	91
+fresh	Campylobacter	Animal-Turkey-Young Turkey	Meleagris gallopavo		animal	75
+fresh	Campylobacter	animal-swine-market swine	Sus scrofa		animal	71
+fresh	Campylobacter	animal-chicken-young chicken	Gallus gallus		animal	69
+fresh	Campylobacter	animal-cattle-dairy cow	Bovine		animal	62
+fresh	Campylobacter	animal-cattle-steer	Bovine		animal	57
+fresh	Campylobacter	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	56
+fresh	Campylobacter	chicken			food	56
+fresh	Campylobacter	Comminuted Turkey			food	55
+fresh	Campylobacter	Animal-Swine-Sow (cecal)	Sus scrofa		animal	54
+fresh	Campylobacter	Chicken Gizzard (Giblets)			food	51
+fresh	Campylobacter	feces	porcine		animal	44
+fresh	Campylobacter	Animal-Chicken-Heavy Fowl			food	42
+fresh	Campylobacter	chicken breast			food	37
+fresh	Campylobacter	Environmental Drag Swab			environmental	35
+fresh	Campylobacter	animal-cattle-heifer	Bovine		animal	31
+fresh	Campylobacter	animal-chicken-young chicken	Gallus gallus		food	29
+fresh	Campylobacter	animal-cattle-steer	Bovine		food	25
+fresh	Campylobacter	blood	Homo sapiens	not provided	human	23
+fresh	Campylobacter	Animal-Turkey-Turkey Carcass Sponge			food	22
+fresh	Campylobacter	animal-cattle-dairy cow	Bovine		food	21
+fresh	Campylobacter	blood	Homo sapiens		human	18
+fresh	Campylobacter	Chicken Livers			food	17
+fresh	Campylobacter	animal-swine-sow	Sus scrofa		animal	17
+fresh	Campylobacter	animal-cattle-beef cow	Bovine		animal	16
+fresh	Campylobacter	Chicken Heart (Giblets)			food	15
+fresh	Campylobacter	Raw Milk			food	15
+fresh	Campylobacter	fecal stool	Gallus gallus domesticus		animal	15
+fresh	Campylobacter	Calf Colony	Bos taurus		animal	14
+fresh	Campylobacter	Chicken Liver			food	13
+fresh	Campylobacter	retail chicken			food	13
+fresh	Campylobacter	stool	Bovine		animal	13
+fresh	Campylobacter	CHICKEN LIVER			food	12
+fresh	Campylobacter	Chicken Gizzard			food	12
+fresh	Campylobacter	Nefas Silk Sub-City Woreda 11 Health Center	Homo sapiens	Diarrhea (D003967)	human	12
+fresh	Campylobacter	Small Intestine	Bovine		animal	12
+fresh	Campylobacter	animal-cattle-heifer	Bovine		food	12
+fresh	Campylobacter	water			environmental	12
+fresh	Campylobacter	animal-cattle-beef cow	Bovine		food	11
+fresh	Campylobacter	feces	canine		animal	11
+fresh	Campylobacter	Calf Fecal	Bos taurus		animal	10
+fresh	Campylobacter	Chicken Giblet			food	10
+fresh	Campylobacter	FOOD; POULTRY RINSE			food	10
+fresh	Campylobacter	Pigeon Six Month Sampling	Columbidae		animal	10
+fresh	Campylobacter	blood			human	10
+fresh	Campylobacter	mesenteric lymph node	porcine		animal	10
+fresh	Campylobacter	feces	Bovine		animal	9
+fresh	Campylobacter	feces	Canis lupus familiaris		animal	9
+fresh	Campylobacter	Calf Four Month Sampling	Bos taurus		animal	8
+fresh	Campylobacter	Chicken Heart			food	8
+fresh	Campylobacter	chicken	not provided	not provided	food	8
+fresh	Campylobacter	whole carcass	Gallus gallus		animal	8
+fresh	Campylobacter	CHICKEN LIVERS			food	7
+fresh	Campylobacter	Calf	Bos taurus		animal	7
+fresh	Campylobacter	Calf Final Fecal Full Swipe	Bos taurus		animal	7
+fresh	Campylobacter	Chicken Hearts			food	7
+fresh	Campylobacter	Chicken Livers	not provided	not provided	food	7
+fresh	Campylobacter	Chicken liver			food	7
+fresh	Campylobacter	feces	bovine		animal	7
+fresh	Campylobacter	chicken liver			food	6
+fresh	Campylobacter	crop	Gallus gallus		animal	6
+fresh	Campylobacter	turkey			food	6
+fresh	Campylobacter		Bovine		animal	5
+fresh	Campylobacter		not provided	not provided	human	5
+fresh	Campylobacter	Animal-Sheep-Lamb (cecal)	Ovine		animal	5
+fresh	Campylobacter	CHICKEN GIZZARD			food	5
+fresh	Campylobacter	CHICKEN HEART			food	5
+fresh	Campylobacter	Calf Final Fecal Colony	Bos taurus		animal	5
+fresh	Campylobacter	Chicken Heart			animal	5
+fresh	Campylobacter	Chicken Liver			animal	5
+fresh	Campylobacter	Chicken Thighs			food	5
+fresh	Campylobacter	Chicken Wings			food	5
+fresh	Campylobacter	Chicken chicken liver			food	5
+fresh	Campylobacter	Chicken gizzard			food	5
+fresh	Campylobacter	Chicken liver (giblets)			food	5
+fresh	Campylobacter	FOOD (POULTRY RINSE)			food	5
+fresh	Campylobacter	Poultry carcass rinse	not provided	not provided	food	5
+fresh	Campylobacter	chicken breast	not provided	not provided	food	5
+fresh	Campylobacter	chicken heart			food	5
+fresh	Campylobacter	human stool			human	5
+fresh	Campylobacter		Homo sapiens		human	4
+fresh	Campylobacter	Addis Ababa Abattoir Enterprise	Bos taurus		animal	4
+fresh	Campylobacter	Bovine Small intestine	Bovine		animal	4
+fresh	Campylobacter	Calf Full Swipe	Bos taurus		animal	4
+fresh	Campylobacter	Calf Three Month Sampling	Bos taurus		animal	4
+fresh	Campylobacter	Chicken Gizzard			animal	4
+fresh	Campylobacter	Chicken Hearts	not provided	not provided	food	4
+fresh	Campylobacter	Chicken Thighs	not provided	not provided	food	4
+fresh	Campylobacter	Chicken heart			food	4
+fresh	Campylobacter	Chicken livers			food	4
+fresh	Campylobacter	Pasteurized Milk			food	4
+fresh	Campylobacter	Product-Rinse-Chicken			food	4
+fresh	Campylobacter	Small intestine	Bovine		animal	4
+fresh	Campylobacter	cecal	Meleagris gallopavo		animal	4
+fresh	Campylobacter	chicken breast			animal	4
+fresh	Campylobacter	comminuted beef			food	4
+fresh	Campylobacter	feces	Bos taurus		animal	4
+fresh	Campylobacter	poultry rinse			environmental	4
+fresh	Campylobacter	Addis Ababa Abattoir Enterprise	Bos taurus		food	3
+fresh	Campylobacter	Animal-Calf-Non Formula-fed Veal (cecal)	Bovine		animal	3
+fresh	Campylobacter	Calf Eviscerated Midline Colony	Bos taurus		animal	3
+fresh	Campylobacter	Calf Fecal Harvest	Bos taurus		animal	3
+fresh	Campylobacter	Calf Six Month Sampling	Bos taurus		animal	3
+fresh	Campylobacter	Chicken Breasts			food	3
+fresh	Campylobacter	Chicken Gizzards			food	3
+fresh	Campylobacter	Dove Three Month Sampling	Columbidae		animal	3
+fresh	Campylobacter	Fly Colony			environmental	3
+fresh	Campylobacter	Poultry rinse			food	3
+fresh	Campylobacter	bile	poultry		animal	3
+fresh	Campylobacter	bovine	Bovine		animal	3
+fresh	Campylobacter	environmental swab sponge			environmental	3
+fresh	Campylobacter	liver	chicken		animal	3
+fresh	Campylobacter	placenta	Ovis aries	Aborted fetus	animal	3
+fresh	Campylobacter	whole chicken			food	3
+fresh	Campylobacter		Homo sapiens	not provided	human	2
+fresh	Campylobacter		Meleagris gallopavo		animal	2
+fresh	Campylobacter	Animal-Goat (cecal)	Caprine		animal	2
+fresh	Campylobacter	CHICKEN HEART (GIBLETS)			food	2
+fresh	Campylobacter	CHICKEN THIGHS			food	2
+fresh	Campylobacter	CHICKEN WINGS			food	2
+fresh	Campylobacter	Calf Dehided Midline Harvest	Bos taurus		animal	2
+fresh	Campylobacter	Calf Dehided Midline Harvest Full Swipe	Bos taurus		animal	2
+fresh	Campylobacter	Calf Harvest	Bos taurus		animal	2
+fresh	Campylobacter	Canine Feces	Canine		animal	2
+fresh	Campylobacter	Chicken Leg (Gallus gallus)			animal	2
+fresh	Campylobacter	Chicken Wings	not provided	not provided	food	2
+fresh	Campylobacter	Chicken gizzard (giblets)			food	2
+fresh	Campylobacter	Chicken heart (giblets)			food	2
+fresh	Campylobacter	Chicken thighs			food	2
+fresh	Campylobacter	Ground Pork			food	2
+fresh	Campylobacter	Pigeon Fecal	Columbidae		animal	2
+fresh	Campylobacter	Pork Chops			food	2
+fresh	Campylobacter	Product-Rinse-Unknown species			food	2
+fresh	Campylobacter	Raw Chicken Breast			food	2
+fresh	Campylobacter	Raw milk-bovine			food	2
+fresh	Campylobacter	Rectum	Homo sapiens		human	2
+fresh	Campylobacter	Rectum	Homo sapiens	not provided	human	2
+fresh	Campylobacter	Small Intestine	Avian		animal	2
+fresh	Campylobacter	Small intestine	Porcine		animal	2
+fresh	Campylobacter	animal feed			food	2
+fresh	Campylobacter	bovine feces	Bovine		animal	2
+fresh	Campylobacter	chicken chicken liver			food	2
+fresh	Campylobacter	chicken thigh			food	2
+fresh	Campylobacter	feces			animal	2
+fresh	Campylobacter	ground turkey			food	2
+fresh	Campylobacter	intestine	Canis lupus familiaris		animal	2
+fresh	Campylobacter	placenta	Ovis aries	Placentitis	animal	2
+fresh	Campylobacter	stool	Canine		animal	2
+fresh	Campylobacter	surface water			environmental	2
+fresh	Campylobacter		Canine		animal	1
+fresh	Campylobacter		Ovine		animal	1
+fresh	Campylobacter		bird		animal	1
+fresh	Campylobacter		caprine		animal	1
+fresh	Campylobacter	Animal-Calf-Bob Veal (cecal)	Bovine		animal	1
+fresh	Campylobacter	Animal-Calf-Formula-fed Veal (cecal)	Bovine		animal	1
+fresh	Campylobacter	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		food	1
+fresh	Campylobacter	Animal-Sheep-Mature Sheep (cecal)	Ovine		animal	1
+fresh	Campylobacter	Bison Ileum	Bison		animal	1
+fresh	Campylobacter	Bison Wy State Vet lab	Bison		animal	1
+fresh	Campylobacter	Bovine Fecal	Bovine		animal	1
+fresh	Campylobacter	Bovine Intestine	Bovine		animal	1
+fresh	Campylobacter	CHICKEN BREASTS			food	1
+fresh	Campylobacter	CHICKEN GIZARDS			food	1
+fresh	Campylobacter	CHICKEN GIZZARD (GIBLETS)			food	1
+fresh	Campylobacter	CHICKEN GIZZARDS			food	1
+fresh	Campylobacter	CHICKEN HEARTS			food	1
+fresh	Campylobacter	CHICKEN LIVER (GIBLETS)			food	1
+fresh	Campylobacter	Calf Dehided Midline Colony Harvest	Bos taurus		animal	1
+fresh	Campylobacter	Calf Dehided Midline Harvest Colony	Bos taurus		animal	1
+fresh	Campylobacter	Calf Dehided USDA Colony Harvest	Bos taurus		animal	1
+fresh	Campylobacter	Calf Dehided USDA Harvest Full Swipe	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated Midline	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated Midline Full Swipe	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated Midline Harvest	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated USDA Colony	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated USDA Full Swipe	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated USDA Harvest Colony	Bos taurus		animal	1
+fresh	Campylobacter	Calf Eviscerated USDA Harvest Full Swipe	Bos taurus		animal	1
+fresh	Campylobacter	Calf Final Fecal	Bos taurus		animal	1
+fresh	Campylobacter	Caniine Stool	Canine		animal	1
+fresh	Campylobacter	Cecum	Ovine		animal	1
+fresh	Campylobacter	Chicken Chicken Legs			food	1
+fresh	Campylobacter	Chicken Chicken Livers			food	1
+fresh	Campylobacter	Chicken Gizzard	not provided	not provided	food	1
+fresh	Campylobacter	Chicken Gizzards	not provided	not provided	food	1
+fresh	Campylobacter	Chicken Gizzards (Giblets)			food	1
+fresh	Campylobacter	Chicken Heat			food	1
+fresh	Campylobacter	Chicken Leg			animal	1
+fresh	Campylobacter	Chicken Legs			food	1
+fresh	Campylobacter	Chicken Mixed Parts (Gallus gallus)			animal	1
+fresh	Campylobacter	Chicken Thighs (Gallus gallus)			animal	1
+fresh	Campylobacter	Chicken Wings (Gallus gallus)			animal	1
+fresh	Campylobacter	Chicken chicken breast			food	1
+fresh	Campylobacter	Chicken chicken breasts			food	1
+fresh	Campylobacter	Chicken chicken gizzard			food	1
+fresh	Campylobacter	Chicken chicken heart			food	1
+fresh	Campylobacter	Chicken chicken legs			food	1
+fresh	Campylobacter	Chicken chicken thighs			food	1
+fresh	Campylobacter	Chicken gizzard	not provided	not provided	food	1
+fresh	Campylobacter	Chicken legs			food	1
+fresh	Campylobacter	Chicken livers	not provided	not provided	food	1
+fresh	Campylobacter	Colon	Bos taurus	Fibrinonecrotizing enteritis	animal	1
+fresh	Campylobacter	Colon	Ovine		animal	1
+fresh	Campylobacter	Colon	porcine		animal	1
+fresh	Campylobacter	Feces (Canis lupus familiaris)			animal	1
+fresh	Campylobacter	Feed Environmental			environmental	1
+fresh	Campylobacter	Fetus	Ovis aries		animal	1
+fresh	Campylobacter	Fly			environmental	1
+fresh	Campylobacter	GI (ICCJ)	Primate		animal	1
+fresh	Campylobacter	Intestine (sm)	Bovine		animal	1
+fresh	Campylobacter	Intestine (sm)	Ovine		animal	1
+fresh	Campylobacter	Large Intestine	Bovine		animal	1
+fresh	Campylobacter	Pheasant Small Intestine	Avian		animal	1
+fresh	Campylobacter	Pigeon	Columbidae		animal	1
+fresh	Campylobacter	Pleural fluid	Homo sapiens	not provided	human	1
+fresh	Campylobacter	Porcine Small Intestine	Porcine		animal	1
+fresh	Campylobacter	Poultry	Chicken Gizzard		food	1
+fresh	Campylobacter	Poultry	Chicken Liver		food	1
+fresh	Campylobacter	Poultry	Ground Turkey		food	1
+fresh	Campylobacter	Product-Rinse-Other Poultry			food	1
+fresh	Campylobacter	Rectum	Canis lupus familiaris		animal	1
+fresh	Campylobacter	Small Intestine	Canine		animal	1
+fresh	Campylobacter	Small Intestine	Canine	not provided	animal	1
+fresh	Campylobacter	Small Intestine	Chicken		animal	1
+fresh	Campylobacter	Small Intestine	Ovine		animal	1
+fresh	Campylobacter	Small intestine	Avian		animal	1
+fresh	Campylobacter	Small intestine	Canine		animal	1
+fresh	Campylobacter	Small intestine	Ovine		animal	1
+fresh	Campylobacter	Stomach content	Capra hircus	not provided	animal	1
+fresh	Campylobacter	Stomach content	Ovis aries	not provided	animal	1
+fresh	Campylobacter	Tissue	Canine		animal	1
+fresh	Campylobacter	Tissue large intestine	Porcine		animal	1
+fresh	Campylobacter	Vaginal swab	Canine		animal	1
+fresh	Campylobacter	Water Unit			environmental	1
+fresh	Campylobacter	Whole Chicken			food	1
+fresh	Campylobacter	Wy State Vet lab	Bison		animal	1
+fresh	Campylobacter	algae pond scum			environmental	1
+fresh	Campylobacter	algae pond scum at fincastle reservoir			environmental	1
+fresh	Campylobacter	blood	Bovine		animal	1
+fresh	Campylobacter	blood	not provided	not provided	human	1
+fresh	Campylobacter	ceca	poultry		animal	1
+fresh	Campylobacter	chicken breasts			food	1
+fresh	Campylobacter	chicken chicken gizzard			food	1
+fresh	Campylobacter	chicken gizzard			food	1
+fresh	Campylobacter	chicken leg			food	1
+fresh	Campylobacter	chicken livers			food	1
+fresh	Campylobacter	chicken livers	not provided	not provided	food	1
+fresh	Campylobacter	chicken thigh	not provided	not provided	food	1
+fresh	Campylobacter	colon	Canis lupus familiaris		animal	1
+fresh	Campylobacter	environmental (uknown)			environmental	1
+fresh	Campylobacter	fecal stool			human	1
+fresh	Campylobacter	feces	Bos taurus	Campylobacteriosis	animal	1
+fresh	Campylobacter	feces	Bovine	not provided	animal	1
+fresh	Campylobacter	feces	Canine		animal	1
+fresh	Campylobacter	feces	Porcine		animal	1
+fresh	Campylobacter	feces	not provided	not provided	animal	1
+fresh	Campylobacter	feces	poultry		animal	1
+fresh	Campylobacter	feces sow	porcine		animal	1
+fresh	Campylobacter	ground turkey			animal	1
+fresh	Campylobacter	intestine	Bovine		animal	1
+fresh	Campylobacter	lagoon			environmental	1
+fresh	Campylobacter	liver	Bos taurus		animal	1
+fresh	Campylobacter	liver	Canis lupus familiaris		animal	1
+fresh	Campylobacter	liver and intestine	Bovine		animal	1
+fresh	Campylobacter	milk	Bos taurus		animal	1
+fresh	Campylobacter	other			human	1
+fresh	Campylobacter	placenta	Ovine		animal	1
+fresh	Campylobacter	placenta	Ovis aries	not provided	animal	1
+fresh	Campylobacter	poultry			food	1
+fresh	Campylobacter	raw chicken giblets			food	1
+fresh	Campylobacter	rectal swab			animal	1
+fresh	Campylobacter	small intestine	poultry		animal	1
+fresh	Campylobacter	stool			animal	1
+fresh	Campylobacter	stool	Ovine		animal	1
+fresh	Campylobacter	swab			human	1
+fresh	Campylobacter	whole blood	Homo sapiens	not provided	human	1
+fresh	Campylobacter	young chicken carcass			environmental	1
+fresh	Klebsiella	UTI	Homo sapiens		human	130
+fresh	Klebsiella	hospital wastewater			environmental	88
+fresh	Klebsiella	mWWTPs outlet			environmental	63
+fresh	Klebsiella	mWWTPs inflow			environmental	54
+fresh	Klebsiella	river downstream			environmental	17
+fresh	Klebsiella	Surface Water Isolate			environmental	15
+fresh	Klebsiella	clinical isolate	Homo sapiens		human	15
+fresh	Klebsiella	not provided			environmental	14
+fresh	Klebsiella	river upstream			environmental	13
+fresh	Klebsiella	stream sediment			environmental	11
+fresh	Klebsiella	blood	Homo sapiens		human	8
+fresh	Klebsiella	chicken			animal	7
+fresh	Klebsiella	rectal swab	Felis catus		animal	5
+fresh	Klebsiella	freshwater stream sediment			environmental	4
+fresh	Klebsiella	wastewater			environmental	4
+fresh	Klebsiella		Homo sapiens		human	2
+fresh	Klebsiella	garam masala hot spice mixture			food	2
+fresh	Klebsiella	Mint			environmental	1
+fresh	Klebsiella	Neelandan Mango			environmental	1
+fresh	Klebsiella	Primary Health center wastewater			environmental	1
+fresh	Klebsiella	chicken feces	Gallus gallus		animal	1
+fresh	Klebsiella	food			food	1
+fresh	Klebsiella	human			human	1
+fresh	Klebsiella	river water			environmental	1
+fresh	Klebsiella	swine			animal	1
+fresh	Vibrio_alginolyticus		Homo sapiens		human	46
+fresh	Vibrio_alginolyticus		not provided	not provided	human	40
+fresh	Vibrio_alginolyticus	wound	Homo sapiens		human	32
+fresh	Vibrio_alginolyticus	ear	Homo sapiens		human	16
+fresh	Vibrio_alginolyticus	stool	Homo sapiens		human	11
+fresh	Vibrio_alginolyticus	shrimp			food	6
+fresh	Vibrio_alginolyticus	wound	not provided	not provided	human	6
+fresh	Vibrio_alginolyticus	water			environmental	5
+fresh	Vibrio_alginolyticus	estuarine water			environmental	4
+fresh	Vibrio_alginolyticus	marine surface water			environmental	4
+fresh	Vibrio_alginolyticus	stool			human	4
+fresh	Vibrio_alginolyticus	water-sediment			environmental	4
+fresh	Vibrio_alginolyticus	Water at 0.3 m depth			environmental	3
+fresh	Vibrio_alginolyticus	Water: Shrimp farm			environmental	3
+fresh	Vibrio_alginolyticus	other	Homo sapiens		human	3
+fresh	Vibrio_alginolyticus	Frozen Shrimp			food	2
+fresh	Vibrio_alginolyticus	USA			human	2
+fresh	Vibrio_alginolyticus	Unkown			human	2
+fresh	Vibrio_alginolyticus	blood	not provided	not provided	human	2
+fresh	Vibrio_alginolyticus	ear	not provided	not provided	human	2
+fresh	Vibrio_alginolyticus	sputum	Homo sapiens		human	2
+fresh	Vibrio_alginolyticus	swab	not provided	not provided	human	2
+fresh	Vibrio_alginolyticus		Scylla serrata (mud crab)		animal	1
+fresh	Vibrio_alginolyticus	Bronchial	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Crassostrea gigas			animal	1
+fresh	Vibrio_alginolyticus	Culture/Left ear	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	EAR CANAL	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Ear Swab	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Eastern oyster larvae from hatchery	Crassostrea virginica		animal	1
+fresh	Vibrio_alginolyticus	Leg	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Marine Oyster			environmental	1
+fresh	Vibrio_alginolyticus	Other Left Ear	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	RIGHT KNEE	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Right leg	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Right thigh	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	Seawater from oyster bed			environmental	1
+fresh	Vibrio_alginolyticus	Shellfish			food	1
+fresh	Vibrio_alginolyticus	blood			human	1
+fresh	Vibrio_alginolyticus	blood	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	body fluid	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	ear			human	1
+fresh	Vibrio_alginolyticus	human ear	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	oyster			food	1
+fresh	Vibrio_alginolyticus	salmon			food	1
+fresh	Vibrio_alginolyticus	skin	Canthigaster valentini		animal	1
+fresh	Vibrio_alginolyticus	swab			human	1
+fresh	Vibrio_alginolyticus	swab	Homo sapiens		human	1
+fresh	Vibrio_alginolyticus	wound			human	1
+fresh	Enterococcus_faecalis	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	209
+fresh	Enterococcus_faecalis	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	206
+fresh	Enterococcus_faecalis	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	145
+fresh	Enterococcus_faecalis	Animal-Swine-Sow (cecal)	Sus scrofa		animal	115
+fresh	Enterococcus_faecalis	urine	Canis lupus familiaris		animal	68
+fresh	Enterococcus_faecalis	ground turkey			food	55
+fresh	Enterococcus_faecalis	pork			food	54
+fresh	Enterococcus_faecalis	Creek [ENVO:03501405]; Dairy farm [ENVO:03501416]	Not Applicable [GENEPIO:0001619]		environmental	48
+fresh	Enterococcus_faecalis	Wastewater treatment plant [ENVO:00002272]	Not Applicable [GENEPIO:0001619]		human	45
+fresh	Enterococcus_faecalis	Bos taurus [NCBITaxon:9913]; Fecal composite [GENEPIO:0004512]; Animal pen [ENVO:03501387]; Dairy farm [ENVO:03501416]	Bos taurus [NCBITaxon:9913]		animal	40
+fresh	Enterococcus_faecalis	urine	Felis catus		animal	36
+fresh	Enterococcus_faecalis	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	35
+fresh	Enterococcus_faecalis	urine			human	30
+fresh	Enterococcus_faecalis	pork chop			food	29
+fresh	Enterococcus_faecalis	Dairy - wash water			animal	22
+fresh	Enterococcus_faecalis	Pig (baby) - fecal			animal	22
+fresh	Enterococcus_faecalis	chicken			food	17
+fresh	Enterococcus_faecalis	cloacal swab			animal	17
+fresh	Enterococcus_faecalis	feces	cattle		animal	17
+fresh	Enterococcus_faecalis		Gyps fulvus		animal	16
+fresh	Enterococcus_faecalis	Dairy - fecal			animal	16
+fresh	Enterococcus_faecalis	feces	chicken		animal	16
+fresh	Enterococcus_faecalis	feces	swine		animal	15
+fresh	Enterococcus_faecalis	skin	Canis lupus familiaris		animal	14
+fresh	Enterococcus_faecalis	chicken			environmental	12
+fresh	Enterococcus_faecalis	Pig (sow) - fecal			animal	11
+fresh	Enterococcus_faecalis	Retail Chicken Liver			food	11
+fresh	Enterococcus_faecalis	feces	sheep		animal	11
+fresh	Enterococcus_faecalis	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	10
+fresh	Enterococcus_faecalis	Animal-Cattle-Heifer (cecal)	Bovine		animal	10
+fresh	Enterococcus_faecalis	Dairy - sediment sample from manure			animal	10
+fresh	Enterococcus_faecalis	Fish - Waste Pond			animal	9
+fresh	Enterococcus_faecalis	Swine manure			animal	9
+fresh	Enterococcus_faecalis	Raw Milk			food	8
+fresh	Enterococcus_faecalis	animal			animal	8
+fresh	Enterococcus_faecalis	wound	Canis lupus familiaris		animal	8
+fresh	Enterococcus_faecalis	yolk sac	Gallus gallus		animal	8
+fresh	Enterococcus_faecalis	Dairy farm [ENVO:03501416]; Agricultural Field [ENVO:00000114]; Agricultural soil [ENVO:00002259]	Not Applicable [GENEPIO:0001619]		environmental	7
+fresh	Enterococcus_faecalis	Pig rectum feces			animal	7
+fresh	Enterococcus_faecalis	Swine lagoon			animal	7
+fresh	Enterococcus_faecalis	wastewater			environmental	7
+fresh	Enterococcus_faecalis	yolk sac	Gallus gallus	Colibacillosis	animal	7
+fresh	Enterococcus_faecalis	Animal-Cattle-Steer (cecal)	Bovine		animal	6
+fresh	Enterococcus_faecalis	Dairy farm [ENVO:03501416]; Manure pit [ENVO:01001872]; Bos taurus [NCBITaxon:9913]; Fecal composite [GENEPIO:0004512]	Bos taurus [NCBITaxon:9913]		animal	6
+fresh	Enterococcus_faecalis	Ear Swab	Canis lupus familiaris		animal	6
+fresh	Enterococcus_faecalis	ear	Canis lupus familiaris		animal	6
+fresh	Enterococcus_faecalis	cat food			food	5
+fresh	Enterococcus_faecalis	milk			food	5
+fresh	Enterococcus_faecalis	pus			human	5
+fresh	Enterococcus_faecalis	skin swab	Canis lupus familiaris		animal	5
+fresh	Enterococcus_faecalis	yolk sac	Meleagris gallopavo f. domesticus		animal	5
+fresh	Enterococcus_faecalis		Homo sapiens		human	4
+fresh	Enterococcus_faecalis		chicken		environmental	4
+fresh	Enterococcus_faecalis	Incision	Canis lupus familiaris		animal	4
+fresh	Enterococcus_faecalis	Pig (nursery) - fecal			animal	4
+fresh	Enterococcus_faecalis	Raw pet food			food	4
+fresh	Enterococcus_faecalis	Skin Swab	Canis lupus familiaris		animal	4
+fresh	Enterococcus_faecalis	Uterine Swab	Equus caballus		animal	4
+fresh	Enterococcus_faecalis	chicken liver			food	4
+fresh	Enterococcus_faecalis	environmental			environmental	4
+fresh	Enterococcus_faecalis	feces	equine		animal	4
+fresh	Enterococcus_faecalis	wound swab			human	4
+fresh	Enterococcus_faecalis	Dairy Cattle			animal	3
+fresh	Enterococcus_faecalis	Ear swab	Canis lupus familiaris		animal	3
+fresh	Enterococcus_faecalis	Semen	Canis lupus familiaris		animal	3
+fresh	Enterococcus_faecalis	Wound Swab	Canis lupus familiaris		animal	3
+fresh	Enterococcus_faecalis	bone	Canis lupus familiaris		animal	3
+fresh	Enterococcus_faecalis	chicken heart			food	3
+fresh	Enterococcus_faecalis	feces	pigeon		animal	3
+fresh	Enterococcus_faecalis	hock	Gallus gallus		animal	3
+fresh	Enterococcus_faecalis	raw meat			food	3
+fresh	Enterococcus_faecalis	Abscess	Felis catus		animal	2
+fresh	Enterococcus_faecalis	Animal Intestine	Ovis aries	Watery mouth	animal	2
+fresh	Enterococcus_faecalis	Biopsy	Canis lupus familiaris		animal	2
+fresh	Enterococcus_faecalis	Incision Swab	Canis lupus familiaris		animal	2
+fresh	Enterococcus_faecalis	Monkey feces			animal	2
+fresh	Enterococcus_faecalis	Pig (grower) - fecal			animal	2
+fresh	Enterococcus_faecalis	Poultry (not specified)			animal	2
+fresh	Enterococcus_faecalis	Poultry litter			animal	2
+fresh	Enterococcus_faecalis	beef			food	2
+fresh	Enterococcus_faecalis	blood			human	2
+fresh	Enterococcus_faecalis	bronchoalveolar wash			human	2
+fresh	Enterococcus_faecalis	feces	camel		animal	2
+fresh	Enterococcus_faecalis	food			food	2
+fresh	Enterococcus_faecalis	hatchery	Gallus gallus		environmental	2
+fresh	Enterococcus_faecalis	skin	Felis catus		animal	2
+fresh	Enterococcus_faecalis	spleen	Gallus gallus	Colibacillosis	animal	2
+fresh	Enterococcus_faecalis	Abscess	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Bladder	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Bladder	Felis catus		animal	1
+fresh	Enterococcus_faecalis	Broiler cecum	Broiler		animal	1
+fresh	Enterococcus_faecalis	Broiler meat			food	1
+fresh	Enterococcus_faecalis	Bronchoalve. Lavage	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Cyst Swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Draining Tract Swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Duck meat			food	1
+fresh	Enterococcus_faecalis	Fish - Raceways			animal	1
+fresh	Enterococcus_faecalis	Fistula swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Frozen Raw Cat Food			food	1
+fresh	Enterococcus_faecalis	Gallbladder swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	HUMAN BREAST MILK			human	1
+fresh	Enterococcus_faecalis	Herder16	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder2	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder3	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder30	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder45	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder5	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder6	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Herder8	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Human stool sample	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	Khebab			food	1
+fresh	Enterococcus_faecalis	Nail Bed Swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Sheep - fecal			animal	1
+fresh	Enterococcus_faecalis	Table egg surface			food	1
+fresh	Enterococcus_faecalis	Thoracic swab	Mus musculus		animal	1
+fresh	Enterococcus_faecalis	Urinary swab	Felis catus		animal	1
+fresh	Enterococcus_faecalis	Urine (Cystocentesis)	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Urine Swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Uterine	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Uterine swab	Equus caballus		animal	1
+fresh	Enterococcus_faecalis	Uterus	Equus ferus caballus		animal	1
+fresh	Enterococcus_faecalis	Uterus	Felis catus		animal	1
+fresh	Enterococcus_faecalis	Vagina	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Wound Swab	Equus caballus		animal	1
+fresh	Enterococcus_faecalis	Wound swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	Yak18	yak		animal	1
+fresh	Enterococcus_faecalis	Yak31	yak		animal	1
+fresh	Enterococcus_faecalis	Yak34	yak		animal	1
+fresh	Enterococcus_faecalis	Yolk Sac	Gallus gallus		animal	1
+fresh	Enterococcus_faecalis	abdomen tissue	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	abscess	Carcharhinus melanopterus		animal	1
+fresh	Enterococcus_faecalis	anal gland	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	aquaculture water			animal	1
+fresh	Enterococcus_faecalis	aspirate	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	bone	Bos taurus		animal	1
+fresh	Enterococcus_faecalis	breast milk	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	catheter			human	1
+fresh	Enterococcus_faecalis	chicken			animal	1
+fresh	Enterococcus_faecalis	chicken gizzard			food	1
+fresh	Enterococcus_faecalis	chicken meat			animal	1
+fresh	Enterococcus_faecalis	cloacal swab	chicken		animal	1
+fresh	Enterococcus_faecalis	e-tube abscess	Felis catus		animal	1
+fresh	Enterococcus_faecalis	e-tube site	Felis catus		animal	1
+fresh	Enterococcus_faecalis	ear swab	canine		animal	1
+fresh	Enterococcus_faecalis	environmental			animal	1
+fresh	Enterococcus_faecalis	fallow deer (Dama dama) droppings			animal	1
+fresh	Enterococcus_faecalis	feces			human	1
+fresh	Enterococcus_faecalis	feces	Gallus gallus domesticus		animal	1
+fresh	Enterococcus_faecalis	feces from giant panda			environmental	1
+fresh	Enterococcus_faecalis	gill	Oncorhynchus mykiss	Incidental finding	animal	1
+fresh	Enterococcus_faecalis	intestinal tissue			animal	1
+fresh	Enterococcus_faecalis	intestine swab	Thamnophis sirtalis		animal	1
+fresh	Enterococcus_faecalis	liver	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	lung	Thamnophis sirtalis		animal	1
+fresh	Enterococcus_faecalis	lung and tracheal swab	Felis catus		animal	1
+fresh	Enterococcus_faecalis	lymph node swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	muscle	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	nasal	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	pathological material			human	1
+fresh	Enterococcus_faecalis	placenta	Equus caballus		animal	1
+fresh	Enterococcus_faecalis	raw pet food			environmental	1
+fresh	Enterococcus_faecalis	semen			human	1
+fresh	Enterococcus_faecalis	skin			animal	1
+fresh	Enterococcus_faecalis	skin	Bos taurus		animal	1
+fresh	Enterococcus_faecalis	skin	Negaprion brevirostris	abscess	animal	1
+fresh	Enterococcus_faecalis	skin	Oncorhynchus mykiss	Incidental finding	animal	1
+fresh	Enterococcus_faecalis	skin swab			human	1
+fresh	Enterococcus_faecalis	surgical incision site	Thamnophis sirtalis		animal	1
+fresh	Enterococcus_faecalis	swab	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	swab from an old intrauterine device			human	1
+fresh	Enterococcus_faecalis	swine			animal	1
+fresh	Enterococcus_faecalis	throat swabs			human	1
+fresh	Enterococcus_faecalis	urine			animal	1
+fresh	Enterococcus_faecalis	urine	Capra hircus		animal	1
+fresh	Enterococcus_faecalis	urine	Equus caballus		animal	1
+fresh	Enterococcus_faecalis	urine	Homo sapiens		human	1
+fresh	Enterococcus_faecalis	urine (Felis catus)			animal	1
+fresh	Enterococcus_faecalis	urine from nephrostomy tube			human	1
+fresh	Enterococcus_faecalis	urolith	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecalis	uterus	Felis catus		animal	1
+fresh	Enterococcus_faecalis	water			environmental	1
+fresh	Enterococcus_faecalis	wild bird			animal	1
+fresh	Enterococcus_faecalis	wild boar (Sus scrofa) droppings			animal	1
+fresh	Enterococcus_faecalis	wound	Equus caballus		animal	1
+fresh	Enterococcus_faecalis	wound	Felis catus		animal	1
+fresh	Enterococcus_faecium	feces	Homo sapiens		human	83
+fresh	Enterococcus_faecium	wastewater			environmental	64
+fresh	Enterococcus_faecium	Animal-Cattle-Dairy Cow (cecal)	Bovine		animal	20
+fresh	Enterococcus_faecium	soil			environmental	19
+fresh	Enterococcus_faecium	Animal-Swine-Market Swine (cecal)	Sus scrofa		animal	17
+fresh	Enterococcus_faecium	urine			human	14
+fresh	Enterococcus_faecium	Animal-Cattle-Heifer (cecal)	Bovine		animal	11
+fresh	Enterococcus_faecium	Animal-Cattle-Beef Cow (cecal)	Bovine		animal	10
+fresh	Enterococcus_faecium	Animal-Turkey-Young Turkey (cecal)	Meleagris gallopavo		animal	9
+fresh	Enterococcus_faecium	milk			food	9
+fresh	Enterococcus_faecium	sewage			environmental	9
+fresh	Enterococcus_faecium	Animal-Chicken-Young Chicken (cecal)	Gallus gallus		animal	8
+fresh	Enterococcus_faecium	Animal-Swine-Sow (cecal)	Sus scrofa		animal	8
+fresh	Enterococcus_faecium	Human blood	Homo sapiens		human	8
+fresh	Enterococcus_faecium	feces			human	7
+fresh	Enterococcus_faecium	Animal-Cattle-Steer (cecal)	Bovine		animal	6
+fresh	Enterococcus_faecium	poultry slaughterhouse			environmental	6
+fresh	Enterococcus_faecium	cat food			food	3
+fresh	Enterococcus_faecium	feces (Felis catus)			animal	3
+fresh	Enterococcus_faecium	pus			human	3
+fresh	Enterococcus_faecium	serous fluid			human	3
+fresh	Enterococcus_faecium	wound swab			human	3
+fresh	Enterococcus_faecium	Brukina			food	2
+fresh	Enterococcus_faecium	Salad			food	2
+fresh	Enterococcus_faecium	blood	dog		animal	2
+fresh	Enterococcus_faecium	bronchoalveolar wash			human	2
+fresh	Enterococcus_faecium	fruit			food	2
+fresh	Enterococcus_faecium	pork chop			food	2
+fresh	Enterococcus_faecium	urine	Homo sapiens	bacteriuria	human	2
+fresh	Enterococcus_faecium		duck		animal	1
+fresh	Enterococcus_faecium	"pooled liver, kidney, spleen"	Aves		animal	1
+fresh	Enterococcus_faecium	Fermented foods			food	1
+fresh	Enterococcus_faecium	Human urine	Homo sapiens		human	1
+fresh	Enterococcus_faecium	Khebab			food	1
+fresh	Enterococcus_faecium	Mastitis milk	Holstein Friesian cross breed lactating cow	mastitis	animal	1
+fresh	Enterococcus_faecium	Ovary Fluid	Chiloscyllium plagiosum	No History	animal	1
+fresh	Enterococcus_faecium	Poultry slaughterhouse			environmental	1
+fresh	Enterococcus_faecium	River			environmental	1
+fresh	Enterococcus_faecium	Veterinary Hospital Surface			environmental	1
+fresh	Enterococcus_faecium	abdominal fluid	dog		animal	1
+fresh	Enterococcus_faecium	abscess			human	1
+fresh	Enterococcus_faecium	bile			human	1
+fresh	Enterococcus_faecium	blood			human	1
+fresh	Enterococcus_faecium	bone sheath			human	1
+fresh	Enterococcus_faecium	cheese			food	1
+fresh	Enterococcus_faecium	chicken			food	1
+fresh	Enterococcus_faecium	chicken heart			food	1
+fresh	Enterococcus_faecium	chicken liver			food	1
+fresh	Enterococcus_faecium	coelomic swab	Gallus gallus domesticus		animal	1
+fresh	Enterococcus_faecium	end of CVC			human	1
+fresh	Enterococcus_faecium	fistule			human	1
+fresh	Enterococcus_faecium	ground turkey			food	1
+fresh	Enterococcus_faecium	intestine swab	Aves		animal	1
+fresh	Enterococcus_faecium	intestine swab	Gallus gallus domesticus		animal	1
+fresh	Enterococcus_faecium	other	Homo sapiens		human	1
+fresh	Enterococcus_faecium	pathological material			human	1
+fresh	Enterococcus_faecium	ready-to-eat meat product			food	1
+fresh	Enterococcus_faecium	swab	Gallus gallus domesticus		animal	1
+fresh	Enterococcus_faecium	swab from catheter insertion place			human	1
+fresh	Enterococcus_faecium	urine	Canis lupus familiaris		animal	1
+fresh	Enterococcus_faecium	vegetable			food	1
+fresh	Citrobacter_freundii	wastewater			environmental	113
+fresh	Citrobacter_freundii	chicken			animal	28
+fresh	Citrobacter_freundii	hospital sewage			environmental	23
+fresh	Citrobacter_freundii	mWWTP inflow			environmental	18
+fresh	Citrobacter_freundii	Gull			animal	16
+fresh	Citrobacter_freundii	mWWTP outflow			environmental	9
+fresh	Citrobacter_freundii	cattle			animal	8
+fresh	Citrobacter_freundii	feces	European rook		animal	6
+fresh	Citrobacter_freundii	Raw Milk			food	5
+fresh	Citrobacter_freundii	Water: Adjacent Shrimp farm			environmental	5
+fresh	Citrobacter_freundii	ready-to-eat meat product			food	5
+fresh	Citrobacter_freundii	river upstream			environmental	5
+fresh	Citrobacter_freundii	Hospital wastewater			environmental	4
+fresh	Citrobacter_freundii	wastewater influent			environmental	4
+fresh	Citrobacter_freundii	feces	Canis lupus familiaris		animal	3
+fresh	Citrobacter_freundii	rectal swab	Felis catus		animal	3
+fresh	Citrobacter_freundii	river downstream			environmental	3
+fresh	Citrobacter_freundii		wild bird		animal	2
+fresh	Citrobacter_freundii	Environment			environmental	2
+fresh	Citrobacter_freundii	River's water			environmental	2
+fresh	Citrobacter_freundii	cilantro			food	2
+fresh	Citrobacter_freundii	cow			animal	2
+fresh	Citrobacter_freundii	fish			animal	2
+fresh	Citrobacter_freundii	goat			animal	2
+fresh	Citrobacter_freundii	urine			human	2
+fresh	Citrobacter_freundii	wastewater effluent			environmental	2
+fresh	Citrobacter_freundii	water			environmental	2
+fresh	Citrobacter_freundii		wild animal		animal	1
+fresh	Citrobacter_freundii	Beetroot			environmental	1
+fresh	Citrobacter_freundii	Endotracheal wash	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Citrobacter_freundii	Environment, poultry farm			environmental	1
+fresh	Citrobacter_freundii	Hospital Wastewater			environmental	1
+fresh	Citrobacter_freundii	Poutry			animal	1
+fresh	Citrobacter_freundii	Raw fish			food	1
+fresh	Citrobacter_freundii	Rectal swab			human	1
+fresh	Citrobacter_freundii	WWTP Effluent water flow			environmental	1
+fresh	Citrobacter_freundii	Wastewater spill in the urban area of Cordoba city			environmental	1
+fresh	Citrobacter_freundii	cattle feed			food	1
+fresh	Citrobacter_freundii	environmental			environmental	1
+fresh	Citrobacter_freundii	feces	Agama agama		animal	1
+fresh	Citrobacter_freundii	food			food	1
+fresh	Citrobacter_freundii	ground beef			food	1
+fresh	Citrobacter_freundii	ground pork			food	1
+fresh	Citrobacter_freundii	kidney	Cyprinus carpio		animal	1
+fresh	Citrobacter_freundii	liver	Cyprinus carpio		animal	1
+fresh	Citrobacter_freundii	not provided			environmental	1
+fresh	Citrobacter_freundii	raw pet food			environmental	1
+fresh	Citrobacter_freundii	surface water			environmental	1
+fresh	Citrobacter_freundii	throat swabs			human	1
+fresh	Citrobacter_freundii	throat swabs	Homo sapiens		human	1
+fresh	Citrobacter_freundii	vegetables			food	1
+fresh	Aeromonas_veronii	Water: Adjacent Shrimp farm			environmental	10
+fresh	Aeromonas_veronii	China:fujian			human	9
+fresh	Aeromonas_veronii	kidney	Cyprinus rubrofuscus	not provided	animal	6
+fresh	Aeromonas_veronii	salmon			food	6
+fresh	Aeromonas_veronii	shrimp			food	6
+fresh	Aeromonas_veronii	Tilapia			food	5
+fresh	Aeromonas_veronii	Nose	Cyprinus rubrofuscus	not provided	animal	2
+fresh	Aeromonas_veronii	River's water			environmental	2
+fresh	Aeromonas_veronii	fish			food	2
+fresh	Aeromonas_veronii	kidney	Micropterus salmoides	not provided	animal	2
+fresh	Aeromonas_veronii	seafood			food	2
+fresh	Aeromonas_veronii		Oryzias latipes		animal	1
+fresh	Aeromonas_veronii	Coelom	Serrasalmidae		animal	1
+fresh	Aeromonas_veronii	Coelomic	Carassius auratus	not provided	animal	1
+fresh	Aeromonas_veronii	Coelomic	Gambusia affinis	not provided	animal	1
+fresh	Aeromonas_veronii	Disc	Potamotrygon motoro	not provided	animal	1
+fresh	Aeromonas_veronii	Gill (Lepomis auritus)	Lepomis auritus	No History	animal	1
+fresh	Aeromonas_veronii	Gills (Lepomis auritus)	Lepomis auritus	No History	animal	1
+fresh	Aeromonas_veronii	Oropharyngeal swab			human	1
+fresh	Aeromonas_veronii	Oyster (Magallana gigas)			food	1
+fresh	Aeromonas_veronii	Scales	Cyprinus rubrofuscus	not provided	animal	1
+fresh	Aeromonas_veronii	Tialapia			food	1
+fresh	Aeromonas_veronii	Ulcer	Cyprinus rubrofuscus	not provided	animal	1
+fresh	Aeromonas_veronii	brain	Carassius auratus	not provided	animal	1
+fresh	Aeromonas_veronii	brain	Fresh water fish		animal	1
+fresh	Aeromonas_veronii	brain and kidney	Ictalurus furcatus		animal	1
+fresh	Aeromonas_veronii	brain, kidney	Ictalurus punctatus	Enteric Septicemia of Catfish	animal	1
+fresh	Aeromonas_veronii	feces			human	1
+fresh	Aeromonas_veronii	gill	Carassius auratus	not provided	animal	1
+fresh	Aeromonas_veronii	gill	Cyprinus carpio		animal	1
+fresh	Aeromonas_veronii	gill	Micropterus salmoides	not provided	animal	1
+fresh	Aeromonas_veronii	kidney	Cyprinus rubrofuscus		animal	1
+fresh	Aeromonas_veronii	kidney	Ictalurus punctatus		animal	1
+fresh	Aeromonas_veronii	kidney	Lates calcarifer		animal	1
+fresh	Aeromonas_veronii	skin	Cyprinus rubrofuscus	not provided	animal	1
+fresh	Aeromonas_veronii	skin	Toxotes		animal	1
+fresh	Aeromonas_veronii	stool	Homo sapiens		human	1
+fresh	Aeromonas_veronii	swab	Cyprinus rubrofuscus	not provided	animal	1
+fresh	Aeromonas_veronii	tilapia			food	1
+fresh	Aeromonas_veronii	wound	Cyprinus rubrofuscus	not provided	animal	1
+fresh	Pseudomonas_aeruginosa	wastewater			environmental	16
+fresh	Pseudomonas_aeruginosa	ear	Canis lupus familiaris	not provided	animal	7
+fresh	Pseudomonas_aeruginosa	Dental caries	Homo sapiens		human	4
+fresh	Pseudomonas_aeruginosa	Hospital Wastewater			environmental	4
+fresh	Pseudomonas_aeruginosa	Raw Milk			food	4
+fresh	Pseudomonas_aeruginosa	swab	Canis lupus familiaris	not provided	animal	3
+fresh	Pseudomonas_aeruginosa	Vaginal Swab	Equus caballus		animal	2
+fresh	Pseudomonas_aeruginosa	skin	Canis lupus familiaris	not provided	animal	2
+fresh	Pseudomonas_aeruginosa		Feline sp.		animal	1
+fresh	Pseudomonas_aeruginosa	Coconut meat [FOODON:00003856]; Ready-to-eat (RTE) [FOODON:03316636]; Food (chunks) [FOODON:00004555]; Food (frozen) [FOODON:03302148]; Retail environment [ENVO:01001448]			food	1
+fresh	Pseudomonas_aeruginosa	Ear swab	Canis lupus familiaris		animal	1
+fresh	Pseudomonas_aeruginosa	Faucet			environmental	1
+fresh	Pseudomonas_aeruginosa	Plastic cover table			environmental	1
+fresh	Pseudomonas_aeruginosa	Water from shrimp farm			environmental	1
+fresh	Pseudomonas_aeruginosa	brain	Capra hircus		animal	1
+fresh	Pseudomonas_aeruginosa	bronchoalveolar lavage			animal	1
+fresh	Pseudomonas_aeruginosa	ear swab	canine		animal	1
+fresh	Pseudomonas_aeruginosa	freshwater			environmental	1
+fresh	Pseudomonas_aeruginosa	hospital	Homo sapiens		human	1
+fresh	Pseudomonas_aeruginosa	middle ear	Canis lupus familiaris	not provided	animal	1
+fresh	Pseudomonas_aeruginosa	milk	Bos taurus		animal	1
+fresh	Pseudomonas_aeruginosa	nasal	Canis lupus familiaris	not provided	animal	1
+fresh	Pseudomonas_aeruginosa	nasal swab from veterinarian	Homo sapiens		human	1
+fresh	Pseudomonas_aeruginosa	rectal swab from veterinarian	Homo sapiens		human	1
+fresh	Pseudomonas_aeruginosa	rectal swab from veterinarian nurse	Homo sapiens		human	1
+fresh	Pseudomonas_aeruginosa	urine	Canis lupus familiaris	not provided	animal	1
+fresh	Pseudomonas_aeruginosa	wound swab			animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris		animal	40
+fresh	Enterobacter_hormaechei	Raw Milk			food	35
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris		animal	24
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	urinary tract infection	animal	22
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris		animal	20
+fresh	Enterobacter_hormaechei	rectal swab	Felis catus		animal	15
+fresh	Enterobacter_hormaechei	Feces (Canis lupus familiaris)			animal	12
+fresh	Enterobacter_hormaechei	wastewater			environmental	12
+fresh	Enterobacter_hormaechei	Soil surface			environmental	10
+fresh	Enterobacter_hormaechei	urine	Felis catus		animal	10
+fresh	Enterobacter_hormaechei	Wound swab	Canis lupus familiaris		animal	8
+fresh	Enterobacter_hormaechei	clinical	Homo sapiens		human	8
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	cystitis	animal	8
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	UTI	animal	6
+fresh	Enterobacter_hormaechei	urine	Felis catus	urinary tract infection	animal	5
+fresh	Enterobacter_hormaechei	ear	Canis lupus familiaris		animal	4
+fresh	Enterobacter_hormaechei	environmental swab			environmental	4
+fresh	Enterobacter_hormaechei	hospital	Homo sapiens		human	4
+fresh	Enterobacter_hormaechei	sewage			environmental	4
+fresh	Enterobacter_hormaechei	trachea	Canis lupus familiaris		animal	4
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	Wound Infection	animal	4
+fresh	Enterobacter_hormaechei	wound swab	Canis lupus familiaris	pyoderma	animal	4
+fresh	Enterobacter_hormaechei		wild animal		animal	3
+fresh	Enterobacter_hormaechei		wild bird		animal	3
+fresh	Enterobacter_hormaechei	Abscess	Canis lupus familiaris		animal	3
+fresh	Enterobacter_hormaechei	Endotracheal wash	Canis lupus familiaris		animal	3
+fresh	Enterobacter_hormaechei	Feces (Felis catus domesticus)			animal	3
+fresh	Enterobacter_hormaechei	bronchoalveolar lavage	Canis lupus familiaris		animal	3
+fresh	Enterobacter_hormaechei	ear	Canis lupus familiaris	Otitis	animal	3
+fresh	Enterobacter_hormaechei	muscle	Canis lupus familiaris		animal	3
+fresh	Enterobacter_hormaechei	nasal swab	Felis catus		animal	3
+fresh	Enterobacter_hormaechei	ready-to-eat meat product			food	3
+fresh	Enterobacter_hormaechei	surgical site	Canis lupus familiaris		animal	3
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	Urinary Tract Infection	animal	3
+fresh	Enterobacter_hormaechei	water			environmental	3
+fresh	Enterobacter_hormaechei		Homo sapiens		human	2
+fresh	Enterobacter_hormaechei	Bronchial lavage	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	Incision swab	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	Leg	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	Skin swab	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	Surgical site	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	abscess	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris	not provided	animal	2
+fresh	Enterobacter_hormaechei	throat swabs			human	2
+fresh	Enterobacter_hormaechei	throat swabs	Homo sapiens		human	2
+fresh	Enterobacter_hormaechei	urine	Capra hircus		animal	2
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	Pyodermatitis	animal	2
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	wound infection	animal	2
+fresh	Enterobacter_hormaechei	wound	Homo sapiens		human	2
+fresh	Enterobacter_hormaechei	wound swab	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei	wound swab tissue	Canis lupus familiaris		animal	2
+fresh	Enterobacter_hormaechei		livestock animal		animal	1
+fresh	Enterobacter_hormaechei	Abcess Swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abdominal Incision Tissue	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abdominal incision	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abdominal swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abscess Swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abscess fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abscess fluid from swelling	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Abscess swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Amana Lake	Inia geoffrensis		animal	1
+fresh	Enterobacter_hormaechei	Animal Intestine	Ovis aries	Watery mouth	animal	1
+fresh	Enterobacter_hormaechei	Ascitic Fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Avocado [FOODON:00003600]; Ready-to-eat (RTE) [FOODON:03316636]; Food (sliced) [FOODON:00002455]; Food (frozen) [FOODON:03302148];			food	1
+fresh	Enterobacter_hormaechei	BAL	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Enterobacter_hormaechei	Biopsy	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Bite Wound Tissue	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Bite wound	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Bite wound	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Bladder	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Bladder	Canis lupus familiaris	SSI	animal	1
+fresh	Enterobacter_hormaechei	Bladder	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Bladder swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Catheter tip	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Chronic wound abscess	Felis catus	Wound Infection	animal	1
+fresh	Enterobacter_hormaechei	Drain site swab	Canis lupus familiaris	Cellulitis	animal	1
+fresh	Enterobacter_hormaechei	Draining Tract Swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Draining tract	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Draining tract	Canis lupus familiaris	Deep pyoderma	animal	1
+fresh	Enterobacter_hormaechei	Draining tract	Canis lupus familiaris	foreign body infection	animal	1
+fresh	Enterobacter_hormaechei	Draining tract swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Ear swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Environment			environmental	1
+fresh	Enterobacter_hormaechei	Esophageal feeding tube	Felis catus	Esophageal stricture	animal	1
+fresh	Enterobacter_hormaechei	Feces (Canis lupus familiaris )			animal	1
+fresh	Enterobacter_hormaechei	Hair	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Hard palate	Felis catus	Ulcer	animal	1
+fresh	Enterobacter_hormaechei	Hip	Canis lupus familiaris	Wound	animal	1
+fresh	Enterobacter_hormaechei	Implant screw	Canis lupus familiaris	Tibial Plateau Leveling Osteotomy, left stifle effusion, arthrocentesis	animal	1
+fresh	Enterobacter_hormaechei	Incision	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Incision	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	Incision Dehiscence Tissue - R Thigh	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Incision Fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Incision Wound	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Incision site swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Incision site swab	Canis lupus familiaris	Surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	Indwelling suction	Canis lupus familiaris	Incidental finding	animal	1
+fresh	Enterobacter_hormaechei	L hip swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Larynx	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Left Ear Canal Excision Tissue	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Lining of Ventral Abdominal Incision Once Reopened	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Lung aspirate	Canis lupus familiaris	Bronchitis	animal	1
+fresh	Enterobacter_hormaechei	Mandible	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Mango (whole or parts) [FOODON:03000217]; Ready-to-eat (RTE) [FOODON:03316636]; Food (sliced) [FOODON:00002455]; Food (frozen) [FOODON:03302148];			food	1
+fresh	Enterobacter_hormaechei	Mass	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Mass	Canis lupus familiaris	Previous bite wounds	animal	1
+fresh	Enterobacter_hormaechei	Mouth	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Mouth swab	Felis catus	Infection	animal	1
+fresh	Enterobacter_hormaechei	Nasal Planum Tissue Biopsy	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Nasal biopsy	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Necrotizing tissue	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Open fracture biopsy	Canis lupus familiaris	Wound infection	animal	1
+fresh	Enterobacter_hormaechei	PEG Incision Site	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Paw swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Peach [FOODON:00002485]; Ready-to-eat (RTE) [FOODON:03316636]; Food (sliced) [FOODON:00002455]; Food (frozen) [FOODON:03302148];			food	1
+fresh	Enterobacter_hormaechei	Penile Amputation Discharge	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Peritoneal lavage	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Peritoneum	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Pharyngeal swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Physical	quail		animal	1
+fresh	Enterobacter_hormaechei	Pleural fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Prupucial Swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Rectum	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Scrotal mass swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Shenzhen Canine Rescue Center			animal	1
+fresh	Enterobacter_hormaechei	Skin scraping	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Skin swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Sponge (Environmental)			environmental	1
+fresh	Enterobacter_hormaechei	Surgery site swab	Canis lupus familiaris	Necrotic surgical site	animal	1
+fresh	Enterobacter_hormaechei	Surgical Wound Dehiscence	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Surgical incision	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Surgical incision	Felis catus	Abdominal mass	animal	1
+fresh	Enterobacter_hormaechei	Surgical site swab	Canis lupus familiaris	Surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	TPLO	Canis lupus familiaris	SSI	animal	1
+fresh	Enterobacter_hormaechei	Table			environmental	1
+fresh	Enterobacter_hormaechei	Tibia	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Toenail site swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Tracheal Wash	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Tracheal wash	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Tracheotomy tube swab	Canis lupus familiaris	BRONCHOPNEUMONIA	animal	1
+fresh	Enterobacter_hormaechei	URINE (Felis catus domesticus)			animal	1
+fresh	Enterobacter_hormaechei	Ureteral Stent	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Ureteral stent	Felis catus	Pyelonephritis	animal	1
+fresh	Enterobacter_hormaechei	Urethral calculus	Canis lupus familiaris	None provided	animal	1
+fresh	Enterobacter_hormaechei	Urethral stones/uroabdomen	Canis lupus familiaris	Uroabdomen	animal	1
+fresh	Enterobacter_hormaechei	Urinary Catheter	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	Uterine Swab	Equus caballus		animal	1
+fresh	Enterobacter_hormaechei	Uterine Swab	Equus caballus	not provided	animal	1
+fresh	Enterobacter_hormaechei	Uterus	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Vaginal Swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	Wastewater spill in the urban area of Cordoba city			environmental	1
+fresh	Enterobacter_hormaechei	Wound swab	Canis lupus familiaris	Infected wound	animal	1
+fresh	Enterobacter_hormaechei	Wound swab	Canis lupus familiaris	Infection	animal	1
+fresh	Enterobacter_hormaechei	Wound swab	Canis lupus familiaris	Wound	animal	1
+fresh	Enterobacter_hormaechei	abcess fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	abdominal fluid	Canis lupus familiaris	septic abdomen	animal	1
+fresh	Enterobacter_hormaechei	abdominal fluid	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	abscess	Canis lupus familiaris	abscess	animal	1
+fresh	Enterobacter_hormaechei	abscess	Canis lupus familiaris	post-operative infection	animal	1
+fresh	Enterobacter_hormaechei	airway	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Enterobacter_hormaechei	amputation incision	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	anal swabs			animal	1
+fresh	Enterobacter_hormaechei	anal swabs	animal		animal	1
+fresh	Enterobacter_hormaechei	bird feces			animal	1
+fresh	Enterobacter_hormaechei	bite wound swab	Felis catus	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	bite wound tissue	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	blood	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	blood	Homo sapiens		human	1
+fresh	Enterobacter_hormaechei	bone	Canis lupus familiaris	Incidental Finding	animal	1
+fresh	Enterobacter_hormaechei	borehole water			environmental	1
+fresh	Enterobacter_hormaechei	bronchoalveolar lavage	Canis lupus familiaris	not provided	animal	1
+fresh	Enterobacter_hormaechei	caudectomy wound swab	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	conjunctival swab	Canis lupus familiaris	conjunctivitis	animal	1
+fresh	Enterobacter_hormaechei	cornea	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	cow			food	1
+fresh	Enterobacter_hormaechei	ear	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	ear swab	Canis lupus familiaris	otitis	animal	1
+fresh	Enterobacter_hormaechei	ear swab	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	endotrach lavage	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Enterobacter_hormaechei	endotracheal wash	Canis lupus familiaris	pneumoniae	animal	1
+fresh	Enterobacter_hormaechei	eye	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	eye	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	fecal swab	Canis lupus familiaris	see description	animal	1
+fresh	Enterobacter_hormaechei	feces	Branta leucopsis		animal	1
+fresh	Enterobacter_hormaechei	food			food	1
+fresh	Enterobacter_hormaechei	gallbladder and bile	Canis lupus familiaris	cholecystitis	animal	1
+fresh	Enterobacter_hormaechei	hospital			human	1
+fresh	Enterobacter_hormaechei	incision	Canis lupus familiaris	SSI	animal	1
+fresh	Enterobacter_hormaechei	incision	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	incision swab	Canis lupus familiaris	Mass removal	animal	1
+fresh	Enterobacter_hormaechei	incision swab	Canis lupus familiaris	post-operative infection	animal	1
+fresh	Enterobacter_hormaechei	incision swab	Equus caballus	incision infection	animal	1
+fresh	Enterobacter_hormaechei	incision swab and tissue	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	incision tissue	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	intestine	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	leg swab	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	lung	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	lung	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Enterobacter_hormaechei	lung	Canis lupus familiaris	pneumonia	animal	1
+fresh	Enterobacter_hormaechei	lung	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	lung	Odocoileus virginianus		animal	1
+fresh	Enterobacter_hormaechei	mass	Felis catus	Pyodermatitis	animal	1
+fresh	Enterobacter_hormaechei	mediastinal mass	Canis lupus familiaris	Abscess	animal	1
+fresh	Enterobacter_hormaechei	nasal	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	nasal	Canis lupus familiaris	sinusitis	animal	1
+fresh	Enterobacter_hormaechei	nasal flush	Felis catus	not provided	animal	1
+fresh	Enterobacter_hormaechei	nasal swab	Felis catus	rhinitis	animal	1
+fresh	Enterobacter_hormaechei	nasal tissue	Canis lupus familiaris	nasal discharge	animal	1
+fresh	Enterobacter_hormaechei	not provided			environmental	1
+fresh	Enterobacter_hormaechei	paw wound swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	peg tube site	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	perineal exudate			human	1
+fresh	Enterobacter_hormaechei	peritoneal fluid	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	pleural effusion	Felis catus	Pyothorax	animal	1
+fresh	Enterobacter_hormaechei	pleural mass aspirate swab	Canis lupus familiaris	pleural abscess	animal	1
+fresh	Enterobacter_hormaechei	raw pet food			environmental	1
+fresh	Enterobacter_hormaechei	rectal	Homo sapiens		human	1
+fresh	Enterobacter_hormaechei	salivary tissue	Canis lupus familiaris	Sialocele/Sialadenitis	animal	1
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris	Enterocolitis	animal	1
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris	Pyoderma	animal	1
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris	Skin Infection	animal	1
+fresh	Enterobacter_hormaechei	skin	Canis lupus familiaris	skin ulcers	animal	1
+fresh	Enterobacter_hormaechei	skin	Capra aegagrus hircus		animal	1
+fresh	Enterobacter_hormaechei	skin	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	skin	Felis catus	Dermatitis	animal	1
+fresh	Enterobacter_hormaechei	skin	Felis catus	not provided	animal	1
+fresh	Enterobacter_hormaechei	skin	Felis catus	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	skin graft	Canis lupus familiaris	Wound infection	animal	1
+fresh	Enterobacter_hormaechei	skin lesion	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	skin swab	Canis lupus familiaris	dermatitis	animal	1
+fresh	Enterobacter_hormaechei	skin swab	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	skin swab	Canis lupus familiaris	subcutaneous mass	animal	1
+fresh	Enterobacter_hormaechei	sputum	Homo sapiens		human	1
+fresh	Enterobacter_hormaechei	sputum	Homo sapiens	Respiratory colonization	human	1
+fresh	Enterobacter_hormaechei	subcutaneous swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	surgical incision	Canis lupus familiaris	incision infection	animal	1
+fresh	Enterobacter_hormaechei	surgical site	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	swab	Canis lupus familiaris	not provided	animal	1
+fresh	Enterobacter_hormaechei	swab, urine	Felis catus	not provided	animal	1
+fresh	Enterobacter_hormaechei	tail	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	throat	Homo sapiens		human	1
+fresh	Enterobacter_hormaechei	tissue	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	trachea	Homo sapiens		human	1
+fresh	Enterobacter_hormaechei	tracheal swab	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	tracheal swab	Gallus gallus		animal	1
+fresh	Enterobacter_hormaechei	trans tracheael	Canis lupus familiaris	Pneumonia	animal	1
+fresh	Enterobacter_hormaechei	ulcerated dermal mass	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	Cystitis	animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	Urinary Tract Infections	animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	Urinary tract infection	animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	not provided	animal	1
+fresh	Enterobacter_hormaechei	urine	Canis lupus familiaris	otitis externa	animal	1
+fresh	Enterobacter_hormaechei	urine	Felis catus	Hematuria	animal	1
+fresh	Enterobacter_hormaechei	urine	Felis catus	Urinary Tract Infections	animal	1
+fresh	Enterobacter_hormaechei	urine	Homo sapiens	urinary tract infection	human	1
+fresh	Enterobacter_hormaechei	urine clean catch	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	urine clean catheter collection	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	urine cysto	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	urolith	Canis lupus familiaris		animal	1
+fresh	Enterobacter_hormaechei	uterine stump	Felis catus	pyometra	animal	1
+fresh	Enterobacter_hormaechei	uterine swab	Canis lupus familiaris	Pyometra	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	Degloving wound	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	Dermatitis	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	Thrombocytopenia	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	bite wound	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	not provided	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	surgical site infection	animal	1
+fresh	Enterobacter_hormaechei	wound	Canis lupus familiaris	wound	animal	1
+fresh	Enterobacter_hormaechei	wound	Felis catus		animal	1
+fresh	Enterobacter_hormaechei	wound	Felis catus	burn wound	animal	1
+fresh	Enterobacter_hormaechei	wound swab	Canis lupus familiaris	bite wound	animal	1
+fresh	Enterobacter_hormaechei	wound swab	Canis lupus familiaris	wound	animal	1
+fresh	Enterobacter_hormaechei	wound swab	Felis catus	pyoderma	animal	1
+fresh	Enterobacter_hormaechei	wound tissue	Canis lupus familiaris	bite wound	animal	1
+fresh	Enterobacter_hormaechei	wound tissue	Felis catus	bite wound	animal	1
+fresh	Serratia	wastewater			environmental	20
+fresh	Serratia	hospital	Homo sapiens		human	17
+fresh	Serratia	Raw Milk			food	4
+fresh	Serratia		Salmo salar		animal	3
+fresh	Serratia	semen	Bos taurus		animal	3
+fresh	Serratia	sink			environmental	3
+fresh	Serratia	throat	Homo sapiens		human	3
+fresh	Serratia	blood	Homo sapiens		human	2
+fresh	Serratia	sputum	Homo sapiens		human	2
+fresh	Serratia	Avocado [FOODON:00003600]; Ready-to-eat (RTE) [FOODON:03316636]; Food (sliced) [FOODON:00002455]; Food (frozen) [FOODON:03302148];			food	1
+fresh	Serratia	Environment-drain	bath1a		environmental	1
+fresh	Serratia	Environment-drain	bath1b		environmental	1
+fresh	Serratia	Environment-drain	scrub1a		environmental	1
+fresh	Serratia	Environment-drain	scrub2		environmental	1
+fresh	Serratia	Environment-drain	scrub3a		environmental	1
+fresh	Serratia	abdominal	Homo sapiens		human	1
+fresh	Serratia	bloodculture	Patient-5		human	1
+fresh	Serratia	bronchoalveolar aspirates	Homo sapiens		human	1
+fresh	Serratia	cunjuctival swab	Patient-9		human	1
+fresh	Serratia	endotracheal aspirate	Patient-31a		human	1
+fresh	Serratia	fermented food			food	1
+fresh	Serratia	intestines	fish		animal	1
+fresh	Serratia	rectal swab	Patient-11		human	1
+fresh	Serratia	rectal swab	Patient-12		human	1
+fresh	Serratia	rectal swab	Patient-13		human	1
+fresh	Serratia	rectal swab	Patient-14		human	1
+fresh	Serratia	rectal swab	Patient-15		human	1
+fresh	Serratia	rectal swab	Patient-16		human	1
+fresh	Serratia	rectal swab	Patient-17		human	1
+fresh	Serratia	rectal swab	Patient-18		human	1
+fresh	Serratia	rectal swab	Patient-19		human	1
+fresh	Serratia	rectal swab	Patient-20		human	1
+fresh	Serratia	rectal swab	Patient-21		human	1
+fresh	Serratia	rectal swab	Patient-22		human	1
+fresh	Serratia	rectal swab	Patient-23		human	1
+fresh	Serratia	rectal swab	Patient-24		human	1
+fresh	Serratia	rectal swab	Patient-25		human	1
+fresh	Serratia	rectal swab	Patient-26		human	1
+fresh	Serratia	rectal swab	Patient-27		human	1
+fresh	Serratia	rectal swab	Patient-28		human	1
+fresh	Serratia	rectal swab	Patient-29		human	1
+fresh	Serratia	rectal swab	Patient-30		human	1
+fresh	Serratia	rectal swab	Patient-31b		human	1
+fresh	Serratia	rectal swab	Patient-32		human	1
+fresh	Serratia	rectal swab	Patient-33		human	1
+fresh	Serratia	rectal swab	Patient-34		human	1
+fresh	Serratia	rectal swab	Patient-35		human	1
+fresh	Serratia	rectal swab	Patient-36		human	1
+fresh	Serratia	rectal swab	Patient-37		human	1
+fresh	Serratia	rectal swab	Patient-38		human	1
+fresh	Serratia	rectal swab	Patient-39		human	1
+fresh	Serratia	rectal swab	Patient-41		human	1
+fresh	Serratia	rectal swab	Patient-42		human	1
+fresh	Serratia	rectal swab	Patient-43		human	1
+fresh	Serratia	rectal swab	Patient-44		human	1
+fresh	Serratia	rectal swab	Patient-46		human	1
+fresh	Serratia	rectal swab	Patient-47		human	1
+fresh	Serratia	rectal swab	Patient-48		human	1
+fresh	Serratia	rectal swab	Patient-49		human	1
+fresh	Serratia	rectal swab	Patient-57		human	1
+fresh	Serratia	rectal swab	Patient-58		human	1
+fresh	Serratia	rectal swab	Patient-6a		human	1
+fresh	Serratia	rectal swab	Patient-6b		human	1
+fresh	Serratia	rectal swab	Patient-7		human	1
+fresh	Serratia	rectal swab	Patient-8a		human	1
+fresh	Serratia	rectal swab	Patient-8b		human	1
+fresh	Serratia	sputum	Patient-10		human	1
+fresh	Serratia	sputum	Patient-3		human	1
+fresh	Serratia	sputum	Patient-56		human	1
+fresh	Serratia	tracheal aspirate			human	1
+fresh	Serratia	tracheal aspirate	Homo sapiens		human	1
+fresh	Serratia	urine	Homo sapiens		human	1
+fresh	Serratia	urine	canine		animal	1
+fresh	Serratia	ventilator touch screen			environmental	1

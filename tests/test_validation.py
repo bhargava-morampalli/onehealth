@@ -68,9 +68,11 @@ def test_imp_benchmark_drains_without_a_setting_go_to_review(imp_validation):
     # The paper could not classify 9 "drain drainage" samples, and v3 called them Human from
     # their host. v4 sends a fixture without a setting to review, so they now agree with the
     # curation, and only 3 environmental samples (stool, host Homo sapiens) are called Human.
+    # v8 adds a fourth: one record described only as "hospital", which the curators place in
+    # the hospital environment. In NCBI's records that value is a patient's in 328 of 328.
     assert imp_validation.count(truth="Unclassified") == 9
     assert imp_validation.count("Unclassified", "Unclassified") == 9
-    assert imp_validation.count("Environmental", "Human") == 3
+    assert imp_validation.count("Environmental", "Human") == 4
 
 
 def test_ncbi_clinical_isolates_are_never_environmental_or_food(lexicon):

@@ -14,7 +14,7 @@ import yaml
 from onehealth.constants import HEALTHCARE_NO, HEALTHCARE_YES, L1_VALUES, SEED_LEXICON_VERSION
 from onehealth.errors import InputError
 from onehealth.io_tsv import read_text
-from onehealth.taxonomy import KINDS, taxon_kind
+from onehealth.taxonomy import ANIMAL, KINDS, animal_name_within, taxon_kind
 from onehealth.text import contains_phrase, is_unknown_value, tokenize
 
 # Metadata fields a rule may read (keys of io_tsv.metadata_view).
@@ -37,6 +37,9 @@ class LexiconRule:
     # "animal" or "human": the rule also matches a field whose whole value is a name
     # NCBI Taxonomy gives to an animal, or to people (onehealth.taxonomy).
     taxonomy: str = ""
+    # With taxonomy "animal": the name may be anywhere in the field, not the whole of it
+    # or its end. For a rule that reads source text ("stool (Odocoileus hemionus)").
+    within: bool = False
     # The rule says whose specimen it is ("human feces") and nothing else: it decides
     # Human or Animal for a specimen rule that matched the same row, and is ignored
     # everywhere else ("human contact surface" is not a person).
@@ -162,6 +165,7 @@ def _parse_rule(item: Any, number: int, path: Path) -> LexiconRule:
         host_dependent=bool(item.get("host_dependent", False)),
         note=str(item.get("note") or ""),
         taxonomy=_taxonomy(item.get("taxonomy"), where),
+        within=_within(item, where),
         specimen_only=bool(item.get("specimen_only", False)),
         no_host=bool(item.get("no_host", False)),
         setting_of=_setting_of(item.get("setting_of"), where),
@@ -176,6 +180,13 @@ def _setting_of(value: Any, where: str) -> str:
     if isinstance(value, bool) or kind != "animal":
         raise InputError(f"{where}: setting_of must be animal, not {value!r}")
     return kind
+
+
+def _within(item: dict, where: str) -> bool:
+    within = bool(item.get("within", False))
+    if within and str(item.get("taxonomy") or "").strip().lower() != ANIMAL:
+        raise InputError(f"{where}: within needs taxonomy: {ANIMAL}")
+    return within
 
 
 def _taxonomy(value: Any, where: str) -> str:
@@ -222,7 +233,10 @@ def match_rules(record: dict[str, str], lexicon: Lexicon) -> list[RuleHit]:
             matched = tokens if tokens in rule.exact else None
             if matched is None:
                 matched = next((phrase for phrase in rule.phrases if contains_phrase(list(tokens), phrase)), None)
-            if matched is None and rule.taxonomy and taxon_kind(record.get(field, "")) == rule.taxonomy:
+            if matched is None and rule.within:
+                name = animal_name_within(record.get(field, ""))
+                matched = tuple(name.split()) if name else None
+            elif matched is None and rule.taxonomy and taxon_kind(record.get(field, "")) == rule.taxonomy:
                 matched = tokens
             if matched is not None:
                 hits.append(RuleHit(rule=rule, field=field, matched=" ".join(matched)))
