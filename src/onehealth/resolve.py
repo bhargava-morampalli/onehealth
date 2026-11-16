@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from onehealth.constants import (
@@ -36,16 +37,67 @@ def load_local_metadata(path: Path | None) -> list[dict[str, str]]:
     return rows
 
 
+# Not an answer about an ID: the lookup did not happen, or NCBI did not reply. A later run
+# should try these again, and classify must not read them as "this record has no source".
+INTERRUPTED = "interrupted"
+NCBI_ERROR = "ncbi_error"
+NO_NETWORK = "missing_metadata"
+PDT_UNRESOLVED = "pdt_unresolved"
+NOT_LOOKED_UP = (INTERRUPTED, NCBI_ERROR, NO_NETWORK)
+# IDs looked up between two checkpoints: five requests of a hundred.
+CHUNK = 500
+
+
+def reason_kind(reason: str | None) -> str:
+    """A resolve_reason without its detail: "ncbi_error:HTTP 500 ..." is "ncbi_error"."""
+    return (reason or "").split(":", 1)[0].strip()
+
+
+def answered(row: dict[str, str], pd_groups: list[str] | None = None) -> bool:
+    """Whether an earlier run's row settles its ID, so that --resume need not look it up again.
+
+    Settled: it resolved, or NCBI said the ID does not exist, has no BioSample or has
+    several. Not settled: the run was stopped, NCBI gave an error, there was no network.
+    A PDT that was not found is tried again only when the run now names a Pathogen
+    Detection organism group to look in.
+    """
+    kind = reason_kind(row.get("resolve_reason"))
+    if not kind or kind in NOT_LOOKED_UP:
+        return False
+    if kind == PDT_UNRESOLVED and pd_groups:
+        return False
+    return (row.get("resolve_status") or "") in {"ok", "review"}
+
+
+def earlier_answers(rows: list[dict[str, str]], pd_groups: list[str] | None = None) -> dict[str, dict[str, str]]:
+    """The settled rows of an earlier output, by query ID (the first row of each)."""
+    kept: dict[str, dict[str, str]] = {}
+    for row in rows:
+        key = (row.get("query_id") or "").strip().upper()
+        if key and key not in kept and answered(row, pd_groups):
+            kept[key] = row
+    return kept
+
+
 def resolve_ids(
     ids: list[str],
     local_rows: list[dict[str, str]] | None = None,
     client: NCBIClient | None = None,
     allow_network: bool = False,
     pd_groups: list[str] | None = None,
+    previous: dict[str, dict[str, str]] | None = None,
+    checkpoint: Callable[[list[dict[str, str]], int, int], None] | None = None,
 ) -> list[dict[str, str]]:
     """One row per ID, in order. `pd_groups` (e.g. ["Klebsiella"]) looks PDTs up in those
-    Pathogen Detection organism groups' metadata before trying anything else for them."""
+    Pathogen Detection organism groups' metadata before trying anything else for them.
+
+    `previous` holds the settled rows of an earlier run (earlier_answers): an ID found
+    there is not looked up again. `checkpoint` is called after every CHUNK of IDs looked
+    up at NCBI with (all rows, IDs done, IDs to do), so a caller can save what there is;
+    a row still to be looked up has an empty resolve_reason.
+    """
     index = _index_local(local_rows or [])
+    previous = previous or {}
     resolved: list[dict[str, str]] = []
     online: list[tuple[dict[str, str], ParsedId]] = []  # rows to look up at NCBI, filled in place below
     for raw in ids:
@@ -63,6 +115,11 @@ def resolve_ids(
             row["resolve_reason"] = "local_metadata"
             resolved.append(row)
             continue
+        earlier = previous.get(row["query_id"].strip().upper())
+        if earlier is not None:
+            # Answered by an earlier run: the row as that run wrote it.
+            resolved.append({**row, **earlier})
+            continue
         if parsed.id_type == "unknown" or not parsed.normalized:
             row["resolve_status"] = "review"
             row["resolve_reason"] = "unknown_id"
@@ -75,13 +132,14 @@ def resolve_ids(
             continue
         if not allow_network or client is None:
             row["resolve_status"] = "review"
-            row["resolve_reason"] = "missing_metadata"
+            row["resolve_reason"] = NO_NETWORK
             resolved.append(row)
             continue
         resolved.append(row)
         online.append((row, parsed))
     if online and client is not None:
-        _resolve_online(online, client, pd_groups or [])
+        saved = (lambda done, total: checkpoint(resolved, done, total)) if checkpoint else None
+        _resolve_online(online, client, pd_groups or [], saved)
     return resolved
 
 
@@ -105,30 +163,44 @@ def _pathogen_detection(online: list[tuple[dict[str, str], ParsedId]], client: N
 # an object should be, a missing key).
 _REPLY_ERRORS = (HttpError, ValueError, AttributeError, TypeError, KeyError, IndexError)
 
-INTERRUPTED = "interrupted"
-
-
-def _resolve_online(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, pd_groups: list[str]) -> None:
+def _resolve_online(
+    online: list[tuple[dict[str, str], ParsedId]],
+    client: NCBIClient,
+    pd_groups: list[str],
+    checkpoint: Callable[[int, int], None] | None = None,
+) -> None:
     """Look rows up at NCBI, filling each row in place.
 
     Assembly and BioSample reports are fetched many per request. Whatever a batch does
     not answer cleanly is looked up on its own, exactly as a single ID always was, so
     batching changes the number of requests, not the result.
 
+    The IDs are taken CHUNK at a time, and `checkpoint` is called after each chunk, so a
+    run that is killed has saved all but its last chunk. The Pathogen Detection tables
+    are read once, before the first chunk, for every PDT.
+
     Ctrl-C stops the lookups but not the run: rows already answered keep their result, the
     rest are marked `interrupted`, and the caller still gets every row to write out.
     """
     try:
-        _lookup(online, client, pd_groups)
+        targets = _pathogen_detection(online, client, pd_groups)
+        for start in range(0, len(online), CHUNK):
+            _lookup(online[start : start + CHUNK], client, targets)
+            if checkpoint is not None:
+                checkpoint(min(start + CHUNK, len(online)), len(online))
     except KeyboardInterrupt:
-        for row, _ in online:
-            if not row["resolve_reason"]:
-                row["resolve_status"] = "review"
-                row["resolve_reason"] = INTERRUPTED
+        mark_interrupted(row for row, _ in online)
 
 
-def _lookup(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, pd_groups: list[str]) -> None:
-    targets = _pathogen_detection(online, client, pd_groups)
+def mark_interrupted(rows) -> None:
+    """Rows not yet looked up (no resolve_reason) go to review as `interrupted`."""
+    for row in rows:
+        if not row.get("resolve_reason"):
+            row["resolve_status"] = "review"
+            row["resolve_reason"] = INTERRUPTED
+
+
+def _lookup(online: list[tuple[dict[str, str], ParsedId]], client: NCBIClient, targets: dict[str, dict[str, str]]) -> None:
     genomes = client.genome_reports(parsed.normalized for _, parsed in online if parsed.id_type == "assembly")
     found: list[tuple[dict[str, str], dict[str, str], str]] = []
     for row, parsed in online:
@@ -155,7 +227,7 @@ def _ncbi_error(row: dict[str, str], exc: Exception, client: NCBIClient) -> None
     text = str(exc) if isinstance(exc, (HttpError, ValueError)) else f"unexpected reply ({type(exc).__name__}: {exc})"
     message = text.replace(client.api_key, "***") if client.api_key else text
     row["resolve_status"] = "review"
-    row["resolve_reason"] = f"ncbi_error:{message}"
+    row["resolve_reason"] = f"{NCBI_ERROR}:{message}"
 
 
 def _finish(row: dict[str, str], fetched: dict[str, str]) -> None:
@@ -305,7 +377,7 @@ def _find_biosample(
             # Only works when NCBI assembled the genome itself and named it after the PDT.
             biosamples = client.pdt_to_biosample(parsed.normalized)
         if not biosamples:
-            return {"resolve_status": "review", "resolve_reason": "pdt_unresolved"}, ""
+            return {"resolve_status": "review", "resolve_reason": PDT_UNRESOLVED}, ""
         out["resolve_reason"] = "ncbi_pdt"
     else:
         return {"resolve_status": "review", "resolve_reason": "unknown_id"}, ""

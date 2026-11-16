@@ -6,10 +6,12 @@ import argparse
 import math
 import os
 import sys
+import time
+from collections import Counter
 from pathlib import Path
 
 from onehealth import __version__
-from onehealth.classify import classify_fieldnames, classify_rows
+from onehealth.classify import UNRESOLVED, classify_fieldnames, classify_rows
 from onehealth.constants import (
     HOST_ALIASES,
     HOST_DISEASE_ALIASES,
@@ -32,9 +34,22 @@ from onehealth.lexicon import load_lexicon
 from onehealth.ncbi import NCBIClient
 from onehealth.overrides import load_overrides, unmatched_overrides
 from onehealth.plot import plot_counts
-from onehealth.resolve import INTERRUPTED, load_local_metadata, resolve_ids
+from onehealth.resolve import (
+    INTERRUPTED,
+    NCBI_ERROR,
+    NOT_LOOKED_UP,
+    earlier_answers,
+    load_local_metadata,
+    mark_interrupted,
+    reason_kind,
+    resolve_ids,
+)
 from onehealth.review import GROUP_FIELDS, load_decisions, review_groups, unused_decisions
 from onehealth.summarize import summarize, summary_fieldnames
+
+
+# resolve saves what it has at most this often while it looks IDs up at NCBI.
+CHECKPOINT_SECONDS = 30.0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,6 +94,9 @@ def _build_parser() -> argparse.ArgumentParser:
                            help="Optional NCBI API key (default: the NCBI_API_KEY environment variable, which keeps "
                            "the key out of your shell history)")
     resolve_p.add_argument("--review", type=Path, help="Review-queue TSV (default: <out>.review.tsv)")
+    resolve_p.add_argument("--resume", action="store_true",
+                           help="Keep the answers already in the --out file from an earlier run and look up only the "
+                           "IDs it did not answer: those not in it, stopped before, or refused by NCBI with an error")
     resolve_p.add_argument(
         "--pd-organism",
         type=_names,
@@ -252,23 +270,59 @@ def cmd_resolve(args: argparse.Namespace) -> int:
         client = NCBIClient(email=args.email, api_key=api_key, log=lambda note: print(f"resolve: {note}", file=sys.stderr))
     elif args.pd_organism:
         print("warning: --pd-organism needs NCBI, so it has no effect with --no-network", file=sys.stderr)
-    rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network, pd_groups=list(args.pd_organism))
-    # Union over all rows, so optional cluster/plasmid columns survive even when
-    # the first row has none.
-    extra = sorted({key for row in rows for key in row} - set(RESOLVE_FIELDS))
-    fieldnames = [*RESOLVE_FIELDS, *extra]
-    write_tsv(args.out, rows, fieldnames)
-    _write_review(args.review or _sidecar(args.out, "review"), rows, fieldnames, status_field="resolve_status")
+    previous: dict[str, dict[str, str]] = {}
+    if args.resume:
+        if args.out.is_file():
+            previous = earlier_answers(read_tsv(args.out), list(args.pd_organism))
+            kept = sum(1 for raw in ids if raw.strip().upper() in previous)
+            print(f"resolve: {kept} of {len(ids)} IDs were answered by the earlier run in {args.out} and are not "
+                  "looked up again", file=sys.stderr)
+        else:
+            print(f"resolve: --resume found no earlier output at {args.out}; every ID is looked up", file=sys.stderr)
+    review_path = args.review or _sidecar(args.out, "review")
+
+    def write(rows: list[dict[str, str]]) -> None:
+        # Union over all rows, so optional cluster/plasmid columns survive even when
+        # the first row has none.
+        extra = sorted({key for row in rows for key in row} - set(RESOLVE_FIELDS))
+        fieldnames = [*RESOLVE_FIELDS, *extra]
+        write_tsv(args.out, rows, fieldnames)
+        _write_review(review_path, rows, fieldnames, status_field="resolve_status")
+
+    saved_at = time.monotonic()
+
+    def checkpoint(rows: list[dict[str, str]], done: int, total: int) -> None:
+        """Save what there is, at most every CHECKPOINT_SECONDS: a killed run keeps it, and --resume goes on from it."""
+        nonlocal saved_at
+        if done >= total or time.monotonic() - saved_at < CHECKPOINT_SECONDS:
+            return
+        snapshot = [dict(row) for row in rows]
+        mark_interrupted(snapshot)  # not looked up yet: the same words a stopped run leaves
+        write(snapshot)
+        saved_at = time.monotonic()
+        print(f"resolve: {done} of {total} IDs looked up at NCBI; saved to {args.out}", file=sys.stderr)
+
+    rows = resolve_ids(ids, local_rows=local, client=client, allow_network=allow_network, pd_groups=list(args.pd_organism),
+                       previous=previous, checkpoint=checkpoint)
+    write(rows)
     _print_counts("resolve", rows, "resolve_status")
     unresolved = sum(1 for row in rows if row.get("resolve_reason") == "pdt_unresolved")
     if unresolved and allow_network and not args.pd_organism:
         print(f"resolve: {unresolved} PDT IDs were not found by assembly name; pass --pd-organism (for example "
               "Klebsiella) to look them up in NCBI Pathogen Detection's own table", file=sys.stderr)
+    again = "run the same command with --resume to look up only those"
+    failed = sum(1 for row in rows if reason_kind(row.get("resolve_reason")) == NCBI_ERROR)
+    if failed:
+        # Not a property of the records: NCBI did not answer. Loud, because nothing else in a
+        # pipeline would say so, and classify could only send these rows to review.
+        print(f"warning: NCBI gave no usable answer for {failed} of {len(rows)} IDs (resolve_reason "
+              f"'{NCBI_ERROR}:...'); nothing is known about them. They are listed in {review_path}; {again}",
+              file=sys.stderr)
     interrupted = sum(1 for row in rows if row.get("resolve_reason") == INTERRUPTED)
     if interrupted:
         # What NCBI had already answered is in the output; the rest is in the review file.
         print(f"resolve: stopped before {interrupted} of {len(rows)} IDs were looked up; they are marked "
-              f"'{INTERRUPTED}' in {args.out} and listed in the review file", file=sys.stderr)
+              f"'{INTERRUPTED}' in {args.out} and listed in the review file; {again}", file=sys.stderr)
         return 130
     return 0
 
@@ -287,6 +341,18 @@ def cmd_classify(args: argparse.Namespace) -> int:
     groups_path = args.review_groups or _sidecar(args.out, "review_groups")
     write_tsv(groups_path, groups, GROUP_FIELDS)
     _print_counts("classify", classified, "classify_status")
+    unresolved = Counter(row["classify_reason"].split(":", 1)[1] for row in classified
+                         if row.get("classify_reason", "").startswith(UNRESOLVED + ":"))
+    if unresolved:
+        # resolve could not get these records, so nothing is known of their source. That is not
+        # the same as a record with no source, and a rerun of resolve may still find them.
+        total = sum(unresolved.values())
+        listed = ", ".join(f"{reason} {n}" for reason, n in unresolved.most_common())
+        retry = sum(n for reason, n in unresolved.items() if reason in NOT_LOOKED_UP)
+        print(f"warning: {total} of {len(classified)} rows were not resolved at NCBI ({listed}). They are in review "
+              f"as '{UNRESOLVED}:<reason>': their source is unknown, not missing."
+              + (f" {retry} of them were never looked up or got an error; run resolve again with --resume before "
+                 "comparing sources." if retry else ""), file=sys.stderr)
     if groups:
         print(f"classify: the review rows hold {len(groups)} distinct source texts, listed with their row counts in "
               f"{groups_path}", file=sys.stderr)

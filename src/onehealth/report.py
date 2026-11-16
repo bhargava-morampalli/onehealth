@@ -923,6 +923,10 @@ def build_report(
         quality.append("The table lists no isolates.")
     if dataset.unclassified:
         quality.append(f"{dataset.unclassified} isolates have no source class and are excluded from source comparisons.")
+    if dataset.unresolved:
+        quality.append(f"{dataset.unresolved} of them were never resolved at NCBI (the lookup failed or was stopped, or "
+                       "NCBI has no such record), so their source is unknown, not missing. Run resolve again with "
+                       "--resume before comparing sources.")
     if dataset.duplicates:
         quality.append(f"{dataset.duplicates} rows repeated an isolate already listed (same BioSample or ID) and were "
                        "collapsed.")

@@ -31,6 +31,7 @@ Anything else, such as a BioProject (`PRJNA…`), goes to review as `unknown_id`
 | `--email` | Your contact address, sent to NCBI E-utilities as NCBI asks. |
 | `--api-key` | An [NCBI API key](https://account.ncbi.nlm.nih.gov/settings/). Raises the request rate from 3 to 10 per second. Without the option, the key is taken from the `NCBI_API_KEY` environment variable, which keeps it out of your shell history. |
 | `--pd-organism` | Pathogen Detection organism group(s) of your PDT IDs, comma-separated, for example `Klebsiella` or `Escherichia_coli_Shigella`. |
+| `--resume` | Keep the answers already in the `--out` file from an earlier run, and look up only the IDs it did not answer; see [Stopping, failing and finishing a run](#stopping-failing-and-finishing-a-run). |
 | `--review` | Where to write the review queue (default `<out>.review.tsv`). |
 
 ## How IDs are looked up
@@ -45,8 +46,6 @@ Anything else, such as a BioProject (`PRJNA…`), goes to review as `unknown_id`
 Anything a batch does not answer cleanly is looked up on its own. If NCBI sends an error or a garbled reply for one ID, after a few retries that ID goes to review as `ncbi_error:<message>` and the run continues. The same goes for a reply that is well-formed but not shaped as NCBI documents it (`ncbi_error:unexpected reply ...`). Your API key is never written into the table.
 
 A BioSample read from E-utilities is searched for by its accession, and the record that comes back is used only if it carries that accession. A search of all fields can land on another sample that merely mentions it.
-
-**Stopping a run.** Ctrl-C stops the lookups, not the run: what NCBI has already answered is written to the output, the IDs not yet looked up are marked `interrupted` and listed in the review queue, and `resolve` exits with status 130. Before, a run stopped part-way wrote nothing.
 
 Standard missing-value words in NCBI's fields (`missing`, `not collected`, `not provided`, ...) are left blank in the output.
 
@@ -63,6 +62,37 @@ This streams the group's current metadata table from NCBI's FTP site, which list
 - **Group names** are as listed at <https://ftp.ncbi.nlm.nih.gov/pathogen/Results/>, in any case. A misspelt name stops the run with suggestions.
 - **PDTs the table does not list** still get the assembly-name lookup.
 
+## Stopping, failing and finishing a run
+
+A long list takes a while, and NCBI is not always there. Three things can keep an ID from being looked up, and none of them says anything about the record:
+
+| What happened | `resolve_reason` | What `resolve` does |
+|---|---|---|
+| You pressed Ctrl-C | `interrupted` | Stops the lookups, not the run: what NCBI has already answered is written, the rest is marked, and the exit status is 130. |
+| NCBI gave an error or a garbled reply for the ID, after retries | `ncbi_error:<message>` | Goes on with the other IDs, and warns at the end how many got no answer. |
+| The run was killed (a power cut, a job that ran out of time) | `interrupted` | Nothing at that moment. But while it looks IDs up, `resolve` saves the table every 30 seconds, with the IDs still to do marked, so the file holds all but the last half minute. |
+
+In each case the output is a whole table, with one row per ID. Finish it with the same command and `--resume`:
+
+```bash
+onehealth resolve ids.txt -o work/resolved.tsv --email you@example.com --resume
+```
+
+`--resume` reads the earlier `work/resolved.tsv`, keeps every ID that run settled, and looks up only the rest. It can be repeated until nothing is left.
+
+- **Settled, and not looked up again:** an ID that resolved, and an ID NCBI answered about: no such record, no BioSample, several BioSamples, not an ID.
+- **Looked up again:** `interrupted`, `ncbi_error`, `missing_metadata` (the earlier run had `--no-network`), and any ID that is not in the earlier file.
+- **A PDT that was not found** (`pdt_unresolved`) is looked up again only when the command now has `--pd-organism`. If every PDT is settled, the Pathogen Detection table is not downloaded again.
+- **`--metadata` is still read first**, so a row you have added there since wins over the earlier answer.
+- **The result is the table one uninterrupted run would give.**
+
+Without `--resume`, an existing output file is not read, and every ID is looked up again.
+
+The table is written to a temporary file that then takes the place of the old one, so a run that dies while writing leaves the earlier table whole.
+
+!!! warning "Not looked up is not the same as no source"
+    A row with one of these three reasons has an empty `isolation_source` and `host` because nothing was fetched, not because the record has none. [`classify`](classify.md#classify_reason) keeps the two apart: it sends such a row to review as `unresolved:<reason>` and warns, where a record that was fetched and has no source is `missing_source`. Finish the run with `--resume` before you compare sources.
+
 ## Output
 
 `resolve` writes one row per input ID, in the input order:
@@ -77,26 +107,28 @@ Rows with `resolve_status` = `review` are also written to the review queue. Dupl
 
 ### resolve_status and resolve_reason
 
-| Status | Reason | Meaning |
-|---|---|---|
-| ok | `local_metadata` | Found in `--metadata` |
-| ok | `ncbi` | BioSample found at NCBI |
-| ok | `ncbi_assembly` | Assembly found, then its BioSample |
-| ok | `ncbi_sra` | SRA accession found, then its BioSample |
-| ok | `ncbi_pdt` | PDT found, then its BioSample |
-| review | `local_metadata_conflict` | Two different rows in `--metadata` for this ID |
-| review | `unknown_id` | Not an ID type `resolve` knows |
-| review | `sra_study_ambiguous` | An SRA study covers many samples |
-| review | `missing_metadata` | Not in `--metadata`, and `--no-network` was given |
-| review | `assembly_not_found` | NCBI has no such assembly |
-| review | `assembly_no_biosample` | The assembly has no BioSample |
-| review | `sra_no_biosample` | The SRA accession has no BioSample |
-| review | `pdt_unresolved` | The PDT was found neither in the Pathogen Detection table nor by assembly name |
-| review | `multiple_biosamples` | The ID points to several BioSamples, listed in `biosample` |
-| review | `biosample_not_found` | NCBI has no record for the BioSample |
-| review | `ncbi_incomplete` | NCBI's answer had no single BioSample |
-| review | `ncbi_error:<message>` | NCBI failed for this ID; the message says how |
-| review | `interrupted` | The run was stopped (Ctrl-C) before this ID was looked up |
+The last column says whether `--resume` looks the ID up again.
+
+| Status | Reason | Meaning | Again with `--resume` |
+|---|---|---|---|
+| ok | `local_metadata` | Found in `--metadata` | no |
+| ok | `ncbi` | BioSample found at NCBI | no |
+| ok | `ncbi_assembly` | Assembly found, then its BioSample | no |
+| ok | `ncbi_sra` | SRA accession found, then its BioSample | no |
+| ok | `ncbi_pdt` | PDT found, then its BioSample | no |
+| review | `local_metadata_conflict` | Two different rows in `--metadata` for this ID | read again from `--metadata` |
+| review | `unknown_id` | Not an ID type `resolve` knows | no |
+| review | `sra_study_ambiguous` | An SRA study covers many samples | no |
+| review | `assembly_not_found` | NCBI has no such assembly | no |
+| review | `assembly_no_biosample` | The assembly has no BioSample | no |
+| review | `sra_no_biosample` | The SRA accession has no BioSample | no |
+| review | `pdt_unresolved` | The PDT was found neither in the Pathogen Detection table nor by assembly name | with `--pd-organism` |
+| review | `multiple_biosamples` | The ID points to several BioSamples, listed in `biosample` | no |
+| review | `biosample_not_found` | NCBI has no record for the BioSample | no |
+| review | `ncbi_incomplete` | NCBI's answer had no single BioSample | no |
+| review | `missing_metadata` | Not in `--metadata`, and `--no-network` was given | **yes** |
+| review | `ncbi_error:<message>` | NCBI failed for this ID; the message says how | **yes** |
+| review | `interrupted` | The run was stopped or killed before this ID was looked up | **yes** |
 
 ## Rate limits
 

@@ -125,7 +125,8 @@ The input columns, followed by:
 | `animal-feed`, `fixture-no-setting` | review | A rule that sends matches to review: animal feed, or a fixture such as a drain or sink named without its setting |
 | `taxon_only_source` | review | `isolation_source` is only a scientific name, and nothing else decides |
 | `unknown_source` | review | `isolation_source` is a missing-value word, and nothing else decides |
-| `missing_source` | review | No isolation source and no host |
+| `missing_source` | review | No isolation source and no host: the record gives neither |
+| `unresolved:<resolve reason>`, e.g. `unresolved:ncbi_error` | review | No isolation source and no host because [`resolve`](resolve.md#stopping-failing-and-finishing-a-run) could not get the record: NCBI gave an error, the run was stopped, or NCBI has no such record. The source is unknown, not missing |
 | `unmatched` | review | No rule matched |
 | `override_empty`, `override_conflict`, `override_invalid_l1`, `override_invalid_healthcare`, `override_invalid_paper_rollup` | review | A problem with the override for this row |
 

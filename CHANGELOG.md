@@ -2,6 +2,30 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
+## 16 November 2026: a `resolve` run can be finished, and a failed lookup no longer looks like a record with no source ([#17](https://github.com/bhargava-morampalli/onehealth/pull/17))
+
+No class changes: the lexicon is still version 8.
+
+### A lookup that did not happen is not "no source"
+
+When NCBI gave an error for an ID, or a run was stopped, `resolve` sent the ID to review with an empty `isolation_source` and `host`. `classify` then gave the row the reason `missing_source`, the same as a BioSample whose submitter gave neither. A study run during an NCBI outage would count those isolates as records without a source, and nothing said otherwise.
+
+- **`classify` keeps the two apart.** A row `resolve` could not get a record for is in review as `unresolved:<reason>`: `unresolved:ncbi_error`, `unresolved:interrupted`, `unresolved:biosample_not_found`. `missing_source` now means only what it says: the record was fetched and gives no source and no host.
+- **`classify` warns**, with the count by reason, and says how many were never looked up and can be tried again.
+- **`resolve` warns** at the end of a run when NCBI gave no usable answer for some IDs. Before, that was visible only in the review file.
+- **`report`** says under Data quality how many isolates without a class were never resolved.
+- A row with a source is classified as before, whatever `resolve` said, and an override still wins.
+
+### `resolve --resume` finishes an earlier run
+
+A rerun looked every ID up again. For a list of tens of thousands, or PDTs from a 900 MB table, an interruption near the end cost the whole run.
+
+- **`--resume`** reads the earlier output, keeps every ID that run settled, and looks up only the rest: IDs that were `interrupted`, got an `ncbi_error`, had no network, or are new. An ID NCBI answered about (no such record, several BioSamples) is not asked again. The result is the table one uninterrupted run would give.
+- **A PDT that was not found** is looked up again only when the command now names `--pd-organism`. When every PDT is settled, the Pathogen Detection table is not downloaded again.
+- **A killed run keeps its work.** While it looks IDs up, `resolve` saves the table every 30 seconds, with the IDs still to do marked `interrupted`. Before, only Ctrl-C saved anything; a power cut or a job that ran out of time left nothing.
+- **Every table is written whole or not at all**: to a temporary file that then takes the place of the old one. This holds for every command. A run that dies while writing leaves the earlier file as it was.
+- Ctrl-C and the NCBI-error warning now say to run the same command with `--resume`.
+
 ## 16 November 2026: 0.3.0, a meat species with no host is food; animals named in the text (lexicon v8) ([#16](https://github.com/bhargava-morampalli/onehealth/pull/16))
 
 **This version changes what some classes mean again**, in the same direction as 0.2.0: where NCBI's records show a convention, `onehealth` follows it. Results made with 0.2.x (lexicon v7) are not comparable class for class. The Definitions page has the figures.
