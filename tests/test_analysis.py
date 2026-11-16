@@ -652,3 +652,98 @@ def test_fractional_distances_are_recognised():
     assert not A.fractional_distances(np.zeros((0, 0)))
     with_missing = np.array([[0.0, np.nan], [np.nan, 0.0]])
     assert not A.fractional_distances(with_missing)
+
+
+# --- linkage on thousands of close relatives: the fast paths give the numbers of the plain one ------------
+
+
+def _close_relatives(n: int, seed: int, share: float = 0.5, close: float = 0.6):
+    """n isolates, about half in one cluster whose pairs are mostly within 21 SNPs, some with no class."""
+    rng = np.random.default_rng(seed)
+    matrix = np.full((n, n), 400.0)
+    big = int(n * share)
+    start = 0
+    for size in [big, *([3] * ((n - big) // 3))]:
+        block = np.where(rng.random((size, size)) < close, rng.integers(0, 21, (size, size)), rng.integers(30, 90, (size, size)))
+        block = np.triu(block, 1).astype(float)
+        matrix[start : start + size, start : start + size] = block + block.T
+        start += size
+    np.fill_diagonal(matrix, 0.0)
+    sources = rng.choice(["Human", "Animal", "Environmental", "Unclassified"], size=n, p=[0.5, 0.25, 0.15, 0.1])
+    rows = [_row(i, sources[i], host_id=f"P{i // 2}" if i % 5 == 0 else "", date=f"{2018 + i % 4}-01-01") for i in range(n)]
+    return A.build_dataset(rows), [f"ISO{i}" for i in range(n)], matrix
+
+
+def test_clusters_at_every_threshold_in_one_pass_are_the_clusters_of_each_threshold():
+    rng = np.random.default_rng(4)
+    n = 300
+    a, b = np.triu_indices(n, k=1)
+    keep = rng.random(len(a)) < 0.02
+    a, b = a[keep], b[keep]
+    d = rng.integers(0, 120, len(a)).astype(float)
+    thresholds = [0, 1, 2, 5, 10, 20, 21, 50, 100]
+    together = A._components_by_threshold(n, a, b, d, thresholds)
+    for t in thresholds:
+        assert np.array_equal(together[t], A._components(n, a[d <= t], b[d <= t])), t
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_counting_events_with_matrix_products_gives_the_counts_of_pair_by_pair(seed):
+    dataset, names, matrix = _close_relatives(260, seed)
+    isolates, index, _ = A._matched_isolates(dataset, names, matrix)
+    a, b, d = A._close_pairs(matrix, index, 21)
+    clusters = A._components(len(isolates), a, b)
+    groups = ["Human", "Animal", "Environmental"]
+    src = np.array([groups.index(iso.source) if iso.source in groups else -1 for iso in isolates])
+    rng = np.random.default_rng(seed)
+    labellings = np.stack([src] + [rng.permutation(src) for _ in range(40)])
+    fast, plain = A._EventCounter(a, b, clusters, 3), A._EventCounter(a, b, clusters, 3, dense=False)
+    assert len(fast.blocks) == 1 and len(fast.blocks[0][0]) == 130  # the large cluster went the matrix way
+    assert not plain.blocks and len(fast.a) < len(plain.a)
+    assert np.array_equal(fast.counts(labellings), plain.counts(labellings))
+    assert fast.counts(labellings).sum() > 0
+
+
+def test_linkage_gives_the_same_result_whichever_way_the_events_are_counted(monkeypatch):
+    dataset, names, matrix = _close_relatives(240, 7)
+    fast = A.linkage(dataset, names, matrix, threshold=21, permutations=300, seed=5, strata=("year",))
+    monkeypatch.setattr(A, "DENSE_MIN", 10**9)  # no cluster is large: every pair is counted one by one
+    plain = A.linkage(dataset, names, matrix, threshold=21, permutations=300, seed=5, strata=("year",))
+    assert fast.events == plain.events and fast.sweep == plain.sweep and fast.linked_fraction == plain.linked_fraction
+    assert any(row["events"] for row in fast.events) and all(0 < row["p"] <= 1 for row in fast.events)
+
+
+def test_linkage_tables_match_a_plain_reading_of_the_pairs():
+    """Clusters, their pairs, linked isolates and cross-source pairs, recomputed one pair at a time."""
+    dataset, names, matrix = _close_relatives(150, 11)
+    result = A.linkage(dataset, names, matrix, threshold=21, permutations=0)
+    isolates, index, _ = A._matched_isolates(dataset, names, matrix)
+    a, b, d = A._close_pairs(matrix, index, 21)
+    clusters = A._components(len(isolates), a, b)
+    hosts = [iso.host_id for iso in isolates]
+    pairs = [(x, y, dist) for x, y, dist in zip(a.tolist(), b.tolist(), d.tolist()) if not (hosts[x] and hosts[x] == hosts[y])]
+
+    members: dict[int, list[int]] = {}
+    for i, cid in enumerate(clusters.tolist()):
+        members.setdefault(cid, []).append(i)
+    expected = {}
+    for cid, inside in members.items():
+        if len(inside) > 1:
+            edges = [(inside.index(x), inside.index(y), dist) for x, y, dist in pairs if clusters[x] == cid]
+            expected[cid] = ([isolates[i].key for i in inside], edges)
+    assert {row["cluster"]: (row["members"], row["edges"]) for row in result.clusters} == expected
+    assert len(expected) > 5 and max(len(m) for m, _ in expected.values()) == 75
+
+    crossing = [(isolates[x].key, isolates[y].key, dist) for x, y, dist in pairs
+                if isolates[x].source and isolates[y].source and isolates[x].source != isolates[y].source]
+    assert [(e["isolate_a"], e["isolate_b"], e["snps"]) for e in result.cross_edges] == crossing
+
+    near: dict[int, set[str]] = {}
+    for x, y, _ in pairs:
+        if isolates[y].source:
+            near.setdefault(x, set()).add(isolates[y].source)
+        if isolates[x].source:
+            near.setdefault(y, set()).add(isolates[x].source)
+    for row in result.linked_fraction:
+        count = sum(1 for i, iso in enumerate(isolates) if iso.source == row["from_source"] and row["to_source"] in near.get(i, ()))
+        assert row["with_close_relative"] == count, row

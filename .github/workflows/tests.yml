@@ -1,5 +1,6 @@
 # Runs the whole test suite on every pull request and push to main, on each Python version
-# the package supports (requires-python in pyproject.toml). The documentation workflow only
+# the package supports (requires-python in pyproject.toml). A second job installs the built
+# wheel in an empty environment and runs it, as a user would. The documentation workflow only
 # runs tests/test_docs.py.
 name: Tests
 
@@ -32,3 +33,31 @@ jobs:
         run: uv sync --locked --extra dev
       - name: Test
         run: uv run pytest -q
+
+  package:
+    # What "pip install" gives a user: the built wheel in an empty environment, run from
+    # another directory, so nothing can be read from the source tree. This fails when a
+    # data file (the lexicon, the table of animal names) is left out of the package.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Build the wheel
+        run: uv build --out-dir dist
+      - name: Install it in an empty environment
+        run: |
+          uv venv "$RUNNER_TEMP/clean"
+          uv pip install --python "$RUNNER_TEMP/clean/bin/python" dist/*.whl
+      - name: Run it from another directory
+        run: |
+          cp examples/metadata.tsv "$RUNNER_TEMP/metadata.tsv"
+          cd "$RUNNER_TEMP"
+          printf 'query_id\thost\tisolation_source\nT1\tgull\tfeces\nT2\t\tpigeon stool\n' > taxonomy.tsv
+          clean/bin/onehealth --version
+          clean/bin/onehealth classify metadata.tsv -o classified.tsv
+          clean/bin/onehealth classify taxonomy.tsv -o taxonomy_classified.tsv
+          test "$(grep -c Animal taxonomy_classified.tsv)" = 2
+          clean/bin/onehealth report classified.tsv -o report
+          test -s report/report.html
