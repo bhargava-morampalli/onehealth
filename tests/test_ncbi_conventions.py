@@ -212,6 +212,8 @@ def test_ncbi_records_a_meat_species_with_no_host_as_food(lexicon):
         "salmon": (55, 56), "animal cattle": (51, 53), "lamb": (15, 15), "bison": (2, 2),
     }
     assert (sum(f for f, _ in food.values()), sum(n for _, n in food.values())) == (3079, 3190)  # 96.5%
+    # A word without this evidence still means the animal.
+    assert _labels("cattle", exact=True, no_host=True) == {"animal": 46}
 
 
 # --- other v7 changes ------------------------------------------------------------------------------

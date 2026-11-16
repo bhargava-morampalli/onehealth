@@ -22,7 +22,7 @@ The input can be the output of [`resolve`](resolve.md) or your own metadata tabl
 `classify` prints how many rows were classified and which lexicon version was used.
 
 !!! warning "The classes follow NCBI"
-    A record's own `source_type` is its class, farm settings are Environmental, `chicken` on its own with no host is Food, and a specimen with no host is Human. [Definitions](../guides/definitions.md) gives the numbers behind each of these and says how to choose differently for your study.
+    A record's own `source_type` is its class, farm settings are Environmental, a meat species with no host (`chicken`, `fish`, `poultry`) is Food, and a specimen with no host is Human. [Definitions](../guides/definitions.md) gives the numbers behind each of these and says how to choose differently for your study.
 
 ## The classes
 
@@ -71,13 +71,13 @@ A table with none of these columns stops with an error, because every row would 
 
 Body sites and specimens (blood, urine, faeces, wound, tissue, catheter, "clinical") occur in any host:
 
-- With an animal host or an animal word (`pig faeces`, urine from *Canis lupus familiaris*), the row is **Animal**.
+- With an animal host or an animal word (`pig faeces`, urine from *Canis lupus familiaris*), the row is **Animal**. With no host, any name NCBI Taxonomy gives to an animal counts as the word: `stool (Odocoileus hemionus)`, `pigeon stool`, `giant panda feces`.
 - With a human host, or the word `human` in its own text (`human feces`, `Human, blood culture`), it is **Human**. The word counts only for a specimen: `human contact surface` is not a person.
 - If another field names food, an environment or a laboratory, it goes to review as `host_source_conflict`, unless that field is `source_type`, which decides (above). Words in the specimen's own text do not count: `stool from a food handler` is still Human.
 - With both an animal and a human, it goes to review as `host_source_conflict`.
-- With no host, and a food named in the same text (`pork blood sausage`), it goes to review as `specimen_or_food`: the specimen word is an ingredient as likely as a sample.
+- With no host, and a food named in the same text (`pork blood sausage`, `oyster homogenized tissue dilution`), it goes to review as `specimen_or_food`: the specimen word is an ingredient as likely as a sample.
 - With a host the lexicon does not recognise, such as a plant, it goes to review as `host_unrecognised`. Any animal NCBI Taxonomy names is recognised, not only those on the lexicon's word list; see [Hosts by taxonomy](../guides/lexicon.md#hosts-by-taxonomy).
-- With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls. NCBI's submitters mean a person by such a record in 96.7% of 15,235 benchmark records ([Definitions](../guides/definitions.md#4-a-specimen-with-no-host-is-a-persons)).
+- With no host at all, it is **Human**, and the reason ends in `+no_host` so you can count these calls. NCBI's submitters mean a person by such a record in 98.0% of 15,290 benchmark records ([Definitions](../guides/definitions.md#4-a-specimen-with-no-host-is-a-persons)).
 - With no host at all in a record its submitter filed as not clinical, it goes to review as `no_host_env_package`. That is the BioSample package `Pathogen.env` ("Pathogen: environmental/food/other"), or `epi_type` `environmental/other` in a Pathogen Detection table. `feces` or `wound` in such a record is often an animal's. In a sample of 159,045 NCBI Pathogen Detection records, 586 specimens had no host and a known package, and 199 of them (34%) were filed this way. Any other package, or no package column, keeps the Human default.
 
 ### Values that are not evidence
@@ -109,8 +109,10 @@ The input columns, followed by:
 | a rule id, e.g. `hospital-drain` | ok | That lexicon rule matched |
 | `<specimen rule>+<host rule>`, e.g. `specimens+human-host` | ok | A specimen, classed by its host |
 | `<specimen rule>+no_host` | ok | A specimen with no host, defaulted to Human |
+| `specimens+animal-name-in-specimen` | ok | A specimen with no host whose text names an animal NCBI Taxonomy knows |
 | `farm-environment+<host rule>` | ok | A farm or barn, classed by its host |
-| `meat-species-no-host` | ok | `chicken` or `turkey` on its own, with no host: Food |
+| `carcass+<host rule>`, `sampling-material+<host rule>`, `animal-sites+human-host` | ok | A carcass, a bare swab or an intestine, classed by its host |
+| `meat-species-no-host` | ok | A meat species (`chicken`, `turkey`, `fish`, `poultry`, `salmon`, `beef`, `lamb`) in the text, with no host: Food |
 | `source_type` | ok | NCBI's `source_type` decided where the free text could not |
 | `source_type_over_text` | ok | NCBI's `source_type` decided although the free text said something else |
 | `override` | ok | An override for this isolate decided |
@@ -127,13 +129,14 @@ The input columns, followed by:
 | `unmatched` | review | No rule matched |
 | `override_empty`, `override_conflict`, `override_invalid_l1`, `override_invalid_healthcare`, `override_invalid_paper_rollup` | review | A problem with the override for this row |
 
-Three things are not a `host_source_conflict`:
+Four things are not a `host_source_conflict`:
 
 - a healthcare-environment source with a human host is classified as healthcare environment, because submitters often record *Homo sapiens* as the host of hospital sink and surface swabs;
 - manure, litter or bedding with an animal host is Environmental: the host names the animals it came from;
-- a farm, barn or poultry shed with a host is classified by the host: the host is what was sampled there.
+- a farm, barn or poultry shed with a host is classified by the host: the host is what was sampled there;
+- a carcass, a bare `swab` or an intestine with a host is classified by the host too: `carcass swab` with host porcine is Animal, and `swab` with host *Homo sapiens* is Human.
 
-The last two follow NCBI's records; see [Definitions](../guides/definitions.md#2-farm-settings).
+The last three follow NCBI's records; see [Definitions](../guides/definitions.md#2-farm-settings).
 
 ## Overrides
 
