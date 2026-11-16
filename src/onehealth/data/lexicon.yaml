@@ -150,14 +150,6 @@ rules:
       # v7: an animal whose name holds an environment word.
       - water buffalo
       - water buffaloes
-      # v8: alive, so not meat, whatever the no-host rule for meat species says.
-      - live chicken
-      - live chickens
-      - live poultry
-      - live bird
-      - live birds
-      - live animal
-      - live animals
     l1: Animal
     healthcare_environment: "no"
     priority: 88
@@ -756,6 +748,8 @@ rules:
       - guts
       - dropping
       - droppings
+      - air sac
+      - air sacs
     l1: Animal
     healthcare_environment: "no"
     priority: 79
@@ -765,6 +759,27 @@ rules:
       above the foods, so "pork (cecal content)" and "chicken gut" are the animal. v8: a
       person has an intestine too, so with a human host the host decides
       ("intestines of patients", host Homo sapiens, is Human).
+
+  # --- v8: alive, or a herd ---
+  - id: animal-alive
+    fields: [isolation_source, sample_type]
+    phrases:
+      - live chicken
+      - live chickens
+      - live poultry
+      - live bird
+      - live birds
+      - live animal
+      - live animals
+      - beef cattle
+      - beef calf
+      - beef calves
+      - beef herd
+    l1: Animal
+    healthcare_environment: "no"
+    priority: 79
+    note: >
+      v8. Not meat, whatever meat-species-no-host says of "chicken" or "beef" with no host.
 
   # --- v7: what animals leave behind, and where they are kept ---
   - id: animal-waste
