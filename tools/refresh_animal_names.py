@@ -165,17 +165,43 @@ def report(old_date: str, new_date: str, names: dict[str, tuple[list[str], list[
               "(a moth called `tip`), may need an entry in `_WORDS_NOT_NAMES` in `src/onehealth/taxonomy.py`.",
               "2. Run the tests. Tests that quote exact counts from the benchmark fail when the table changes a class; "
               "update the counts, and the documentation pages that quote them, if the change is right.",
-              "3. Add a line to `CHANGELOG.md` saying that the animal names now come from NCBI Taxonomy of this "
-              "date. If any class changes above, also raise the package version in `pyproject.toml` and "
-              "`src/onehealth/__init__.py`: results made before and after are then not comparable row for row.",
+              "3. `CHANGELOG.md` has a section for this refresh. If any class changes above, also raise the package "
+              "version in `pyproject.toml` and `src/onehealth/__init__.py`: results made before and after are then "
+              "not comparable row for row.",
               "4. `classify` prints the date of the table it used, so a methods section can name it either way."]
     return "\n".join(lines) + "\n"
+
+
+def changelog_entry(old_date: str, new_date: str, names: dict[str, tuple[list[str], list[str]]],
+                    changes: list[dict]) -> str:
+    """The changelog section for a refresh: what changed in the names, and in the classes."""
+    added = sum(len(a) for a, _ in names.values())
+    removed = sum(len(r) for _, r in names.values())
+    moved = sum(sum(result["changes"].values()) for result in changes)
+    lines = [f"## {new_date}: animal names from NCBI Taxonomy of {new_date}", "",
+             f"The table of animal names is rebuilt from NCBI Taxonomy of {new_date} (was {old_date or 'not recorded'}), "
+             f"by the monthly refresh: {added:,} names added and {removed:,} removed."]
+    if moved:
+        lines.append(f"In the benchmark datasets {moved:,} records change class; the pull request lists them. "
+                     "Results made before and after are not comparable row for row.")
+    else:
+        lines.append("No record of the benchmark datasets changes class.")
+    return "\n".join(lines) + "\n\n"
+
+
+def add_to_changelog(path: Path, entry: str) -> None:
+    """Put the entry first, before the newest section."""
+    text = path.read_text(encoding="utf-8")
+    at = text.find("\n## ")
+    at = len(text) if at < 0 else at + 1
+    path.write_text(text[:at] + entry + text[at:], encoding="utf-8")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Rebuild the table of animal names and report what it changes.")
     parser.add_argument("dump", nargs="?", help="new_taxdump.tar.gz (default: download it from NCBI)")
     parser.add_argument("--summary", type=Path, help="Write the report to this file (default: print it)")
+    parser.add_argument("--changelog", type=Path, help="Add a section about the refresh to this changelog (CHANGELOG.md)")
     args = parser.parse_args(argv)
 
     data, source = builder.read_dump(args.dump)
@@ -204,6 +230,8 @@ def main(argv: list[str] | None = None) -> int:
         changes = class_changes(old_table, new_table, load_lexicon(), datasets())
         TABLE.write_bytes(new_table.read_bytes())
     text = report(old_date, new_date, names, changes)
+    if args.changelog:
+        add_to_changelog(args.changelog, changelog_entry(old_date, new_date, names, changes))
     if args.summary:
         args.summary.write_text(text, encoding="utf-8")
     else:

@@ -8,7 +8,8 @@ No result changes.
 
 - **The first monthly refresh found that two tests wrote the table's date into the test**, so every refresh would fail them although nothing was wrong: on NCBI Taxonomy of 16 November 2026, 840 tests passed and these two failed on the date alone. They now read the date from the table that ships and check that `classify` prints it. With that table, the whole suite passes.
 - The lexicon guide and the tutorial no longer state a date or exact counts that a refresh would make wrong.
-- **A refresh raises the version only when classes change.** The report's checklist asked for a new version every time. It now asks for a changelog line every time, and a new version when a benchmark record changes class; `classify` prints the table's date either way.
+- **A refresh raises the version only when classes change.** The report's checklist asked for a new version every time; now only when a benchmark record changes class. `classify` prints the table's date either way.
+- **A refresh pull request writes its own changelog section**, with the counts of names added and removed and of records that change class. When its tests pass and no class changes, it can be merged as it is.
 
 ## 16 November 2026: lint and type checks in CI, and a monthly refresh of the animal names ([#19](https://github.com/bhargava-morampalli/onehealth/pull/19))
 

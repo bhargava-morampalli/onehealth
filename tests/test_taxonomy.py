@@ -390,6 +390,13 @@ def test_a_refresh_compares_the_names_and_the_classes_and_puts_the_shipped_table
     assert "Animal names from NCBI Taxonomy of 2025-11-14 (was 2025-11-01)" in text
     assert "| common names of chordates | 1 | 0 |" in text and "`feces`, host `gull`: Unclassified to Animal" in text
     assert "If any class changes above, also raise the package version" in text
+    entry = refresh.changelog_entry("2025-11-01", "2025-11-14", names, [result])
+    assert entry.startswith("## 2025-11-14: animal names from NCBI Taxonomy of 2025-11-14\n")
+    assert "1 names added and 0 removed" in entry and "3 records change class" in entry
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("# Changelog\n\nIntro.\n\n## Older\n\nText.\n", encoding="utf-8")
+    refresh.add_to_changelog(changelog, entry)
+    assert changelog.read_text(encoding="utf-8") == "# Changelog\n\nIntro.\n\n" + entry + "## Older\n\nText.\n"
     # The shipped table is in use again.
     assert taxonomy.table_date() == _shipped_date() and taxon_kind("European rook") == "animal"
 
