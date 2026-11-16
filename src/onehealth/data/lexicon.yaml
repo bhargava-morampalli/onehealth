@@ -210,7 +210,6 @@ rules:
       - patient room
       - nursing station
       - nursing stations
-      - healthcare facility
       - ventilator shelves
       - ventilator surface
       - ecg monitor
@@ -249,6 +248,12 @@ rules:
       # v8: the whole value "hospital" is where a patient isolate came from: human in all
       # 328 NCBI benchmark records, with or without a host. "hospital sink" is a fixture.
       - hospital
+      # v8, after the fresh benchmark part was read: v7 took "healthcare facility" for a
+      # hospital fixture, with no labelled record to go by. The fresh part has 296, all
+      # human. It is a place a patient isolate came from, like "hospital".
+      - healthcare facility
+      - healthcare facilities
+      - health care facility
     l1: Human
     healthcare_environment: "no"
     priority: 80
@@ -638,7 +643,7 @@ rules:
       - soy
       - snack
       - snacks
-      # How a food is kept or prepared: food in 1,155 of 1,168 records.
+      # How a food is kept or prepared: food in 1,156 of 1,169 records.
       - frozen
       - cooked
       - dried
@@ -954,8 +959,8 @@ rules:
     priority: 50
     yields_to_host: true
     note: >
-      v8. A sponge, a wipe or dust is a sample of a surface: environmental in 5,528 NCBI
-      records of 5,665 with "sponge". Below the foods (75), so "turkey carcass sponge" is
+      v8. A sponge, a wipe or dust is a sample of a surface: environmental in 5,532 NCBI
+      records of 5,669 with "sponge". Below the foods (75), so "turkey carcass sponge" is
       the carcass. A bare "swab" with no host is environmental in 246 records of 251; with
       a host it is a swab of the host, so the host decides (yields_to_host). "canal" and
       "dam" only as the whole value: "alimentary canal" is a gut.

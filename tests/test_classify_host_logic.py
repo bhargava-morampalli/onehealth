@@ -103,7 +103,7 @@ def test_source_type_disagreeing_with_host_is_settled_by_source_type(lexicon):
         ("breast milk", "", "Human"),
         ("retail chicken", "", "Food"),
         ("chicken air sac", "", "Animal"),
-        ("marine fish", "", "Animal"),
+        ("marine fish", "", "Food"),  # not Environmental (v2); with no host a fish is food (v8)
         ("dairy farm", "", "Environmental"),  # v7: a farm is environmental, as NCBI records it; never Food
         ("dairy products", "", "Food"),
     ],
