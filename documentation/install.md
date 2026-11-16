@@ -4,37 +4,45 @@
 
 ## Install
 
-No clone is needed. In a virtual environment, or any environment you use for analysis:
+In a virtual environment, or any environment you use for analysis:
 
 ```bash
-pip install "git+https://github.com/bhargava-morampalli/onehealth.git"
+pip install onehealth
 ```
 
-This installs the newest version and puts the `onehealth` command on your path.
+This installs the newest release from [PyPI](https://pypi.org/project/onehealth/) and puts the `onehealth` command on your path.
 
 ### A fixed version
 
-For a study, install one release and name it in your methods, so that the same command gives the same classes later. Releases are tagged `v` and the version number; the [tags page](https://github.com/bhargava-morampalli/onehealth/tags) lists them. Add `@` and the tag:
+For a study, install one version and name it in your methods, so that the same command gives the same classes later:
 
 ```bash
-pip install "git+https://github.com/bhargava-morampalli/onehealth.git@v0.2.0"
+pip install onehealth==0.4.0
 ```
 
-`onehealth --version` prints the installed version, and every classified row records the lexicon version that made the call (`lexicon_version`). The [changelog](changelog.md) says what each version changed; versions that change what a class means say so at the top of their entry.
+`onehealth --version` prints the installed version, `classify` prints the lexicon version and the date of its table of animal names, and every classified row records the lexicon version that made the call (`lexicon_version`). The [changelog](changelog.md) says what each version changed; versions that change what a class means say so at the top of their entry. Each release is also tagged on GitHub (`v0.4.0`), with its notes on the [releases page](https://github.com/bhargava-morampalli/onehealth/releases).
 
 ### As a command of its own
 
 [uv](https://docs.astral.sh/uv/) and [pipx](https://pipx.pypa.io/) install a command in an environment of its own, so that it does not meet the packages of your other projects:
 
 ```bash
-uv tool install "git+https://github.com/bhargava-morampalli/onehealth.git"
+uv tool install onehealth
 ```
 
 ```bash
-pipx install "git+https://github.com/bhargava-morampalli/onehealth.git"
+pipx install onehealth
 ```
 
-Both take `@v0.2.0` at the end of the address for a fixed version.
+Both take `==0.4.0` after the name for a fixed version.
+
+### The newest code, before a release
+
+```bash
+pip install "git+https://github.com/bhargava-morampalli/onehealth.git"
+```
+
+Add `@` and a tag (`@v0.4.0`) or a commit for a fixed one.
 
 ### From a clone, to change the code or run the tests
 

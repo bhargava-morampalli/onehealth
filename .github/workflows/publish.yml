@@ -1,0 +1,119 @@
+# Publishes onehealth to PyPI, so that "pip install onehealth" installs it.
+#
+# Run it by hand when main holds a version to release: Actions > Publish > Run workflow.
+# It publishes the version in pyproject.toml, and refuses one that is already on PyPI or
+# already tagged, or that has no section in CHANGELOG.md. In order:
+#
+#   1. build: run the tests, build the package, check it as PyPI will, and try the built
+#      wheel in an empty environment;
+#   2. publish: upload it to PyPI;
+#   3. release: tag the commit v<version> and create a GitHub Release whose notes are the
+#      version's section of CHANGELOG.md.
+#
+# Nothing is published unless every check passes, and nothing is tagged unless PyPI took it.
+# To release a new version: raise it in pyproject.toml and src/onehealth/__init__.py, run
+# "uv lock", add its section to CHANGELOG.md, merge, then run this workflow.
+#
+# PyPI accepts the upload through "trusted publishing": no password or token is stored in
+# GitHub. Once, before the first run, the owner of the PyPI account adds a publisher at
+# https://pypi.org/manage/account/publishing/ with: project name onehealth, owner
+# bhargava-morampalli, repository onehealth, workflow publish.yml, environment pypi.
+name: Publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Read the version
+        id: version
+        run: |
+          version="$(uv version --short)"
+          test "$(uv run --no-project python -c 'import sys; sys.path.insert(0, "src"); import onehealth; print(onehealth.__version__)')" = "$version" \
+            || { echo "::error::pyproject.toml and src/onehealth/__init__.py name different versions"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Refuse a version that is already published or tagged
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          status="$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/onehealth/$VERSION/json")"
+          if [ "$status" = 200 ]; then
+            echo "::error::onehealth $VERSION is already on PyPI. Raise the version before publishing."; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error::The tag v$VERSION already exists. Raise the version before publishing."; exit 1
+          fi
+      - name: Release notes from CHANGELOG.md
+        run: python3 tools/release_notes.py "${{ steps.version.outputs.version }}" > release-notes.md
+      - name: Run the tests
+        run: |
+          uv sync --locked --extra dev
+          uv run pytest -q
+      - name: Build
+        run: uv build --out-dir dist
+      - name: Check the package as PyPI will
+        run: uvx twine check --strict dist/*
+      - name: Try the built wheel in an empty environment
+        run: |
+          uv venv "$RUNNER_TEMP/clean"
+          uv pip install --python "$RUNNER_TEMP/clean/bin/python" dist/*.whl
+          cd "$RUNNER_TEMP"
+          test "$(clean/bin/onehealth --version)" = "onehealth ${{ steps.version.outputs.version }}"
+          printf 'query_id\thost\tisolation_source\nT1\tgull\tfeces\n' > one.tsv
+          clean/bin/onehealth classify one.tsv -o classified.tsv
+          grep -q Animal classified.tsv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: |
+            dist/
+            release-notes.md
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/onehealth/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write  # trusted publishing: PyPI checks a token GitHub issues for this run
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+      - uses: astral-sh/setup-uv@v6
+      - name: Upload to PyPI
+        run: uv publish --trusted-publishing always dist/*
+
+  release:
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+      - name: Tag the commit and create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "onehealth $VERSION" --notes-file release-notes.md dist/*

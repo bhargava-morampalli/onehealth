@@ -2,7 +2,24 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## 2026-11-16: animal names from NCBI Taxonomy of 2026-11-16
+## 16 November 2026: 0.4.0, the first release on PyPI
+
+`onehealth` installs with `pip install onehealth`, and a study can name its version: `pip install onehealth==0.4.0`. Each release is published to PyPI by a workflow, which also tags it on GitHub and writes its release notes from this changelog.
+
+**No class changes since 0.3.0.** The lexicon is still version 8. The table of animal names is now from NCBI Taxonomy of 16 November 2026: 24 names added, and no record of the benchmark datasets changes class. `classify` prints the lexicon version and the date of that table, for a methods section.
+
+What 0.4.0 adds since 0.3.0, with the details in the sections below:
+
+- **`resolve --resume`** finishes a run that was stopped, killed or met an NCBI error, and `resolve` saves its table every 30 seconds while it works.
+- **A failed lookup is not "no source".** A row that `resolve` could not get is in review as `unresolved:<reason>`, where it was `missing_source`; `classify` and `report` say how many there are. The class (Unclassified) is the same, the reason is new.
+- **The linkage test is about a hundred times faster** on thousands of close relatives, with identical results for the same seed.
+- **Every statistic in a report is checked** against R, scipy or the exact answer each time the tests run (0.2.1).
+- **Lint and type checks** run in CI, and a check that the built package installs and runs.
+- **A monthly refresh of the animal names** proposes a reviewed pull request when NCBI Taxonomy changes.
+- **A known limitation is documented**: an animal named alone in `isolation_source` with no host (`gull`) goes to review.
+- The package names its author without an email address.
+
+## 16 November 2026: animal names from NCBI Taxonomy of 2026-11-16
 
 The table of animal names is rebuilt from NCBI Taxonomy of 2026-11-16 (was 2026-11-14), by the monthly refresh: 24 names added and 0 removed.
 No record of the benchmark datasets changes class.

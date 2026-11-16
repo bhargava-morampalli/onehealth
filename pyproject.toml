@@ -1,7 +1,7 @@
 [project]
 name = "onehealth"
-version = "0.3.0"
-description = "Classify mixed NCBI isolate IDs into One Health source categories."
+version = "0.4.0"
+description = "Resolve NCBI isolate IDs, classify their isolation sources into One Health categories, and compare sources."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -9,6 +9,19 @@ authors = [
     { name = "bhargava-morampalli" }
 ]
 requires-python = ">=3.10"
+keywords = ["one health", "genomic epidemiology", "antimicrobial resistance", "NCBI", "BioSample", "isolation source"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dependencies = [
     "matplotlib>=3.8",
     "numpy>=1.24",
@@ -21,6 +34,12 @@ dependencies = [
 dev = ["pytest>=8.0", "scipy>=1.11", "ruff>=0.17,<0.18", "mypy>=2.4", "types-PyYAML>=6.0"]
 # The documentation site (mkdocs.yml); not needed to use onehealth.
 docs = ["mkdocs-material>=9.5"]
+
+[project.urls]
+Documentation = "https://bhargava-morampalli.github.io/onehealth/"
+Source = "https://github.com/bhargava-morampalli/onehealth"
+Changelog = "https://github.com/bhargava-morampalli/onehealth/blob/main/CHANGELOG.md"
+Issues = "https://github.com/bhargava-morampalli/onehealth/issues"
 
 [project.scripts]
 onehealth = "onehealth.cli:main"
