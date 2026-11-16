@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## 16 November 2026: 0.4.0, the first release on PyPI
+## 16 November 2026: 0.4.0, the first release on PyPI ([#23](https://github.com/bhargava-morampalli/onehealth/pull/23))
 
 `onehealth` installs with `pip install onehealth`, and a study can name its version: `pip install onehealth==0.4.0`. Each release is published to PyPI by a workflow, which also tags it on GitHub and writes its release notes from this changelog.
 
