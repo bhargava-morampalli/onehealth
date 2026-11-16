@@ -24,6 +24,10 @@ The table of animal names was a snapshot of NCBI Taxonomy from 14 November 2026,
 - **A monthly workflow** (`.github/workflows/taxonomy.yml`) runs it, runs the tests with the new table, and opens a pull request with the report. A new table changes classes only through a reviewed pull request and a new version. Opening the pull request needs a repository setting, described in the workflow and the lexicon guide.
 - Tried on NCBI Taxonomy of 16 November 2026: 24 new scientific names, and no class change in 170,816 benchmark records.
 
+### Also
+
+- `REVIEW.md` and `ROADMAP.md` are removed. They described the tool as of October 2026 (lexicon v2); their findings were fixed, and what changed since is in this changelog.
+
 ## 16 November 2026: install without a clone; the linkage test is about a hundred times faster on close relatives ([#18](https://github.com/bhargava-morampalli/onehealth/pull/18))
 
 No result changes: every number in a report is what it was.
