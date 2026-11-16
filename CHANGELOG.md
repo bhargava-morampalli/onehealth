@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: 0.3.0, a meat species with no host is food; animals named in the text (lexicon v8) (branch `lexicon-v8-animal-names-in-text-and-food-recall`)
+## 16 November 2026: 0.3.0, a meat species with no host is food; animals named in the text (lexicon v8) ([#16](https://github.com/bhargava-morampalli/onehealth/pull/16))
 
 **This version changes what some classes mean again**, in the same direction as 0.2.0: where NCBI's records show a convention, `onehealth` follows it. Results made with 0.2.x (lexicon v7) are not comparable class for class. The Definitions page has the figures.
 
