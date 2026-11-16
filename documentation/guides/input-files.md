@@ -12,6 +12,7 @@
 - **UTF-8.** A byte-order mark at the start is fine. Any other encoding stops with an error naming the byte, rather than being guessed. Excel's tab-delimited export may not be UTF-8, so a table with accented or other non-ASCII letters can fail this check; LibreOffice and Google Sheets can save tab-separated UTF-8.
 - **One line is one row.** Blank lines are skipped, and lines starting with `#` are comments, even above the header. The exception is a header that itself starts with `#`, as in NCBI's own tables (`#label` in Pathogen Detection metadata, `#assembly_accession` in `assembly_summary.txt`): the last `#` line above the first row is the header when it is tab-separated and names more columns `onehealth` reads than the line below it. A commented-out row, or a commented-out copy of the header, stays a comment.
 - **Quotes:** a cell wrapped in double quotes, as Excel and pandas write a cell that contains a quote, is unwrapped. Any other quote is kept as typed.
+- **Accents** are dropped when words are compared, so `pâté` is the word `pate`.
 - **Cells** are trimmed of surrounding spaces. A row with fewer cells than the header is padded with empty cells; a row with more stops with an error naming the line, unless the extra cells are empty.
 - **Column names** are matched in any case, so `Host` and `host` are the same column. A name that appears twice stops with an error naming both columns: only one of them could be kept, and a second `host` column would silently replace the first.
 - **Output tables** are written the same way. A cell that a spreadsheet would run as a formula (one starting with `=`, or with `+`, `-` or `@` and containing `(` or `|`) is written with a leading apostrophe, which Excel and LibreOffice show as text. Public BioSample records can contain such text. Ordinary values such as `-`, `-5` or `+ve` are left as they are.
@@ -26,6 +27,8 @@
 | host_disease | `host_disease`, `host disease` |
 
 A table with none of these columns stops with an error, because every row would go to review; see [`classify`](../commands/classify.md#what-the-classes-are-based-on), which also explains how the fields are used.
+
+**`source_type` is more than a field.** When that column names a class (`human`, `animal`, `food`, `environmental`), it is the row's class, whatever the other columns say; see [Definitions](definitions.md#1-a-records-own-source_type-is-its-class). If your own table has a column of that name with another meaning, rename it.
 
 `classify` also reads the BioSample package, from the first non-empty of `package`, `attribute_package`, `biosample_package` and `epi_type`. It is not evidence for a class; it only stops a specimen with no host from being called Human in a record filed as environmental, food or other.
 

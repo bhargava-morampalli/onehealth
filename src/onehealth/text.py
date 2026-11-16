@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from onehealth.constants import UNKNOWN_EXACT, UNKNOWN_GENERIC_TAILS
 
@@ -11,6 +12,8 @@ _SPLIT_RE = re.compile(r"[^a-z0-9]+")
 
 def normalize_text(value: str | None) -> str:
     text = (value or "").strip().lower()
+    # Accents are dropped, so "pâté" is the word "pate" and not the letters "p" and "t".
+    text = "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch))
     text = text.replace("_", " ")
     text = re.sub(r"\s+", " ", text)
     return text

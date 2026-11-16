@@ -88,9 +88,11 @@ def test_source_type_wins_over_material_sample_type(lexicon):
     assert result.l1 == "Animal"
 
 
-def test_source_type_disagreeing_with_host_is_conflict(lexicon):
+def test_source_type_disagreeing_with_host_is_settled_by_source_type(lexicon):
+    """Until v7 this went to review as host_source_conflict. NCBI's own category now decides."""
     result = _cls(lexicon, host="Homo sapiens", source_type="food")
-    assert result.classify_reason == "host_source_conflict"
+    assert (result.l1, result.classify_status, result.classify_reason) == ("Food", "ok", "source_type")
+    assert result.lexicon_suggestion == "Food|Human"  # what the free text left open
 
 
 @pytest.mark.parametrize(
@@ -102,7 +104,7 @@ def test_source_type_disagreeing_with_host_is_conflict(lexicon):
         ("retail chicken", "", "Food"),
         ("chicken air sac", "", "Animal"),
         ("marine fish", "", "Animal"),
-        ("dairy farm", "", "Animal"),
+        ("dairy farm", "", "Environmental"),  # v7: a farm is environmental, as NCBI records it; never Food
         ("dairy products", "", "Food"),
     ],
 )
@@ -159,16 +161,21 @@ def test_an_unknown_animal_is_still_an_animal(lexicon):
 
 
 def test_specimen_with_conflicting_non_host_source_type_goes_to_review(lexicon):
+    # The lexicon alone cannot settle these; until v7 they went to review as
+    # host_source_conflict. NCBI's own category now decides, and the open question stays
+    # in lexicon_suggestion.
     food = _cls(lexicon, "urine", host="Homo sapiens", source_type="food")
-    assert (food.classify_status, food.classify_reason, food.lexicon_suggestion) == (
-        "review",
-        "host_source_conflict",
+    assert (food.l1, food.classify_status, food.classify_reason, food.lexicon_suggestion) == (
+        "Food",
+        "ok",
+        "source_type",
         "Food|Human",
     )
     env = _cls(lexicon, "blood", source_type="environmental")
-    assert (env.classify_status, env.classify_reason, env.lexicon_suggestion) == (
-        "review",
-        "host_source_conflict",
+    assert (env.l1, env.classify_status, env.classify_reason, env.lexicon_suggestion) == (
+        "Environmental",
+        "ok",
+        "source_type",
         "Environmental|Human",
     )
 

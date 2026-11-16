@@ -214,6 +214,7 @@ def _local_view(row: dict[str, str]) -> dict[str, str]:
         "isolation_source": view["isolation_source"],
         "host_disease": view["host_disease"],
         "sample_type": view["sample_type"],
+        "source_type": view["source_type"],
         "package": view["package"],
         "geo_loc_name": get_field(row, ("geo_loc_name", "geo_loc", "country")),
         "collection_date": get_field(row, ("collection_date", "collection date")),

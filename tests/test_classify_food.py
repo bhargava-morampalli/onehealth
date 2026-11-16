@@ -43,9 +43,10 @@ def test_meat_cuts_and_foods_are_food_not_animal(lexicon, source):
 @pytest.mark.parametrize(
     "source, host, l1, reason",
     [
-        # The species on its own, or with a host, still means the animal.
-        ("chicken", "", "Animal", "animal-hosts"),
-        ("turkey", "", "Animal", "animal-hosts"),
+        # The species with a host, or with another word, still means the animal. On its
+        # own with no host, "chicken" is meat since v7 (test_ncbi_conventions.py).
+        ("chicken", "Gallus gallus", "Animal", "animal-hosts"),
+        ("live chicken", "", "Animal", "animal-hosts"),
         ("cecum", "Gallus gallus", "Animal", "animal-hosts"),
         # An organ is not a cut: retail giblets or a necropsy sample.
         ("chicken liver", "", "Animal", "animal-hosts"),
@@ -92,7 +93,7 @@ def test_swabs_of_food_premises_are_environmental_not_food(lexicon, source):
 def test_hospital_and_specimen_rules_still_outrank_environmental_sampling(lexicon):
     assert _classify(lexicon, "hospital surface environmental swab").healthcare_environment == "yes"
     assert _classify(lexicon, "environmental swab", "Homo sapiens").classify_reason == "host_source_conflict"
-    assert _classify(lexicon, "stool from food processing worker").classify_reason == "specimens+no_host"
+    assert _classify(lexicon, "stool from processing plant worker").classify_reason == "specimens+no_host"
 
 
 def test_a_food_handler_is_a_person(lexicon):

@@ -4,11 +4,11 @@
 
 ## Version
 
-`onehealth` ships one lexicon, [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). It is version **6**, and every classified row records the version that made the call in `lexicon_version`, so a table always says which rules it came from.
+`onehealth` ships one lexicon, [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). It is version **7**, and every classified row records the version that made the call in `lexicon_version`, so a table always says which rules it came from.
 
 When the lexicon changes, its version goes up, and the [changelog](../changelog.md) says what changed and what it did to the [benchmarks](../benchmarks.md). Earlier versions are not shipped. They are in the repository history, so results made with one can be reproduced by running the `onehealth` commit that made them, or by passing that version's YAML file to `--lexicon`.
 
-A lexicon of your own is recorded under the `version` it carries. A file with no `version` is recorded as `custom-` and the first 8 hex digits of the file's SHA-256, and an edited copy that still says version 6 is recorded as, say, `6-modified-1a2b3c4d`. So a table never claims the shipped lexicon when something else made it.
+A lexicon of your own is recorded under the `version` it carries. A file with no `version` is recorded as `custom-` and the first 8 hex digits of the file's SHA-256, and an edited copy that still says version 7 is recorded as, say, `7-modified-1a2b3c4d`. So a table never claims the shipped lexicon when something else made it.
 
 ## A rule
 
@@ -38,6 +38,9 @@ This is part of a rule, shortened.
 | `host_dependent` | no | `true` for a body site or specimen that occurs in any host; see below. |
 | `taxonomy` | no | `animal` or `human`: the rule also matches a field whose whole value is a name NCBI Taxonomy gives to an animal, or to people; see [Hosts by taxonomy](#hosts-by-taxonomy). |
 | `specimen_only` | no | `true` for a rule that only says whose specimen it is (`human`). It decides Human or Animal for a specimen rule on the same row, and is ignored otherwise. |
+| `no_host` | no | `true` for a rule that applies only to a row with no host (`chicken` on its own is meat). |
+| `setting_of` | no | `animal` for what animals leave behind (manure): an animal host is not a contradiction, and the row stays the rule's class. |
+| `yields_to_host` | no | `true` for a place (a farm): with a human or animal host, the host decides. |
 | `note` | no | Why the rule exists, for the next reader. |
 
 A rule with a missing `id` or `l1`, or an unknown class or field, stops with an error naming the rule. So does a phrase YAML reads as true or false, such as an unquoted `yes`, `no`, `on` or `off`: put it in quotes.
@@ -53,13 +56,14 @@ A rule with a missing `id` or `l1`, or an unknown class or field, stops with an 
 1. **Missing values** and **bare scientific names** in `isolation_source` are dropped; see [Missing values](input-files.md#missing-values).
 2. **The highest priority wins.** Rules of equal priority that disagree about the class or the healthcare flag send the row to review as `rule_conflict:<rules>`.
 3. **A rule with `l1: Unclassified`** sends the row to review with its id as the reason, such as `animal-feed` or `fixture-no-setting`. Such a rule names no class, so it only decides when it is the best match; it never counts as a conflict with the host.
-4. **A specimen rule** (`host_dependent: true`) lets the host decide: an animal host or animal word makes it Animal, a human host makes it Human, both is `host_source_conflict`, another field that names food, an environment or a laboratory (such as `source_type`) is `host_source_conflict` too, a host no rule recognises is `host_unrecognised`, and no host at all gives the rule's own `l1` with the reason `<rule>+no_host`. The one exception to that default is a record its submitter filed as environmental, food or other and not as clinical: it goes to review as `no_host_env_package`; see [`classify`](../commands/classify.md#specimens-follow-the-host).
-5. **Any other rule** decides, unless the host points to a different class than the source (`host_source_conflict`). The exception is a healthcare-environment source with a human host, which stays a healthcare environment: submitters often record *Homo sapiens* as the host of hospital sink and surface swabs.
+4. **A specimen rule** (`host_dependent: true`) lets the host decide: an animal host or animal word makes it Animal, a human host makes it Human, both is `host_source_conflict`, another field that names food, an environment or a laboratory is `host_source_conflict` too, a host no rule recognises is `host_unrecognised`, and no host at all gives the rule's own `l1` with the reason `<rule>+no_host`, unless the same text names a food (`specimen_or_food`). The one exception to that default is a record its submitter filed as environmental, food or other and not as clinical: it goes to review as `no_host_env_package`; see [`classify`](../commands/classify.md#specimens-follow-the-host).
+5. **Any other rule** decides, unless the host points to a different class than the source (`host_source_conflict`). Three exceptions: a healthcare-environment source with a human host stays a healthcare environment, since submitters often record *Homo sapiens* as the host of hospital sink and surface swabs; a `setting_of: animal` rule (manure) with an animal host keeps its class; and a `yields_to_host` rule (a farm) takes the class of the host.
 6. **No rule** sends the row to review as `missing_source`, `unknown_source`, `taxon_only_source` or `unmatched`; see [`classify`](../commands/classify.md#classify_reason).
+7. **Above all of this, a record's own `source_type` decides** when it names a class. That is not a lexicon rule but part of `classify`; see [Definitions](definitions.md#1-a-records-own-source_type-is-its-class).
 
 The paper rollup is not part of the lexicon. It follows from `l1` and `healthcare_environment`, as in [`classify`](../commands/classify.md#the-classes).
 
-## The rules in v6
+## The rules in v7
 
 | Priority | Rule | Class | Reads |
 |---|---|---|---|
@@ -72,14 +76,18 @@ The paper rollup is not part of the lexicon. It follows from `l1` and `healthcar
 | 85 | `healthcare-fixtures` | Environmental, healthcare | isolation source, sample type |
 | 80 | `clinical-sample` | specimen (host decides) | isolation source |
 | 80 | `specimens` | specimen (host decides) | isolation source, sample type |
+| 79 | `animal-sites` | Animal | isolation source, sample type |
 | 78 | `environmental-sampling` | Environmental | isolation source, sample type |
 | 78 | `food-handler` | Human | isolation source, sample type |
+| 77 | `farmed-food` | Food | isolation source, sample type |
+| 76 | `farm-environment` | Environmental; with a host, the host's class | isolation source, sample type |
 | 75 | `food-products` | Food | isolation source, sample type, host |
 | 75 | `food-items` | Food | isolation source, sample type |
 | 70 | `laboratory` | Laboratory | isolation source, sample type, host |
 | 70 | `environment-outdoor` | Environmental | isolation source, sample type |
-| 65 | `animal-sites` | Animal | isolation source, sample type |
+| 65 | `animal-waste` | Environmental | isolation source, sample type |
 | 60 | `environment-generic` | Environmental | isolation source, sample type |
+| 45 | `meat-species-no-host` | Food, with no host only | isolation source |
 | 40 | `animal-hosts` | Animal | host, isolation source, sample type |
 | 40 | `host-taxonomy` | Animal, by NCBI Taxonomy | host |
 | 30 | `fixture-no-setting` | review | isolation source, sample type |
@@ -88,7 +96,7 @@ The paper rollup is not part of the lexicon. It follows from `l1` and `healthcar
 | 20 | `human-word` | Human, for a specimen only | isolation source |
 | 20 | `human-source` | Human | isolation source |
 
-The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). What each version added is marked `v3`, `v4`, `v5` or `v6` there.
+The phrases of each rule, and a note on why it is there, are in [`src/onehealth/data/lexicon.yaml`](https://github.com/bhargava-morampalli/onehealth/blob/main/src/onehealth/data/lexicon.yaml). What each version added is marked `v3` to `v7` there.
 
 ### Hosts by taxonomy
 
@@ -110,7 +118,9 @@ A specimen follows its host, and an animal word in the specimen's own text count
 
 The rule is `specimen_only`, because the word decides nothing on its own: `human contact surface` is a surface and `human listeriosis` names no sample. `patient` is not listed, since a veterinary record has patients too.
 
-**Meat is food, the animal is not.** A species word on its own (`chicken`, `turkey`, `pig`) means the animal. How meat is sold or processed means food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. Before v5 all of these were Animal. `food-items` lists such words and the foods that NCBI records name most often; because it reads source text only, two-word foods such as `peanut butter` are not taken for species names. Three kinds of word are left out on purpose:
+**Farm settings and a bare `chicken` follow NCBI.** `animal-waste`, `farm-environment` and `meat-species-no-host` are new in v7 and change what manure, a farm and `chicken` on its own mean. [Definitions](definitions.md) has the numbers from NCBI's records behind each.
+
+**Meat is food, the animal is not.** A species word (`pig`, `duck`, `live chicken`) means the animal; `chicken` and `turkey` on their own, with no host, are the exception. How meat is sold or processed means food, whatever the species: `ground turkey`, `chicken breast`, `comminuted chicken`, `raw intact chicken`, `smoked salmon`. Before v5 all of these were Animal. `food-items` lists such words and the foods that NCBI records name most often; because it reads source text only, two-word foods such as `peanut butter` are not taken for species names. Three kinds of word are left out on purpose:
 
 - **A bare body part** (`breast`, `liver`, `thigh`) is as often a patient's, so cuts are listed with their animal (`chicken breast`).
 - **An organ** (`chicken liver`) is retail giblets or a necropsy sample, so it stays Animal unless the text says `giblets`.
@@ -120,14 +130,14 @@ A cut of meat with an animal host (`ground chicken`, host *Gallus gallus*) goes 
 
 **A swab of the premises is not the food.** `environmental-sampling` makes a swab or sponge of a surface, and a sample of the place where food is made, Environmental even when the text names the food or the animal: `environmental swab sponge non food contact surface`, `food processing environment`, `poultry processing plant`. Before v5 these were Food or Animal. It sits above the food rules and below the specimen rules. `food-handler` is a person, so `food handler` is Human, not Food.
 
-A fixture on its own, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says neither whose sample it is nor where the fixture is. Calling it a hospital fixture could be wrong, and a wrong healthcare flag would quietly move isolates into the report's healthcare-environment group. Calling it Human because the host is *Homo sapiens* is often wrong too, since submitters record that host for hospital fixture swabs. So `fixture-no-setting` sends it to review. Any rule above it still decides: `sink drain` and `hospital sink` are healthcare environment, `drain tip` is a specimen, and an animal host makes it Animal, as other farm settings do.
+A fixture on its own, such as `Rm 14 Drain`, `Sink swab` or `Shower 3`, says neither whose sample it is nor where the fixture is. Calling it a hospital fixture could be wrong, and a wrong healthcare flag would quietly move isolates into the report's healthcare-environment group. Calling it Human because the host is *Homo sapiens* is often wrong too, since submitters record that host for hospital fixture swabs. So `fixture-no-setting` sends it to review. Any rule above it still decides: `sink drain` and `hospital sink` are healthcare environment, `drain tip` is a specimen, and an animal host makes it Animal.
 
 ## Changing the lexicon
 
 Add words to a copy, not to the shipped file:
 
 1. Copy the shipped lexicon. In a clone of the repository it is `src/onehealth/data/lexicon.yaml`.
-2. Give the copy its own `version`, such as `"6-mylab"`, so its results are easy to tell apart. If you forget, they are still not mistaken for the shipped lexicon: an edited copy that keeps the version `6` is recorded as `6-modified-<digest>`, and a file without a `version` as `custom-<digest>`.
+2. Give the copy its own `version`, such as `"7-mylab"`, so its results are easy to tell apart. If you forget, they are still not mistaken for the shipped lexicon: an edited copy that keeps the version `7` is recorded as `7-modified-<digest>`, and a file without a `version` as `custom-<digest>`.
 3. Add phrases to a rule, or a rule of your own. For example, a study that sampled only hospital sinks can classify a bare `sink`:
 
     ```yaml
