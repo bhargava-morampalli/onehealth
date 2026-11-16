@@ -2,7 +2,7 @@
 
 What changed in `onehealth`, newest first, in terms of what you see as a user. It starts with the work after the October 2026 code review and the first version of `onehealth report`. Each entry links to its pull request, where the full reasoning and checks are.
 
-## Unreleased: 0.2.1, the statistics checked against R and scipy (branch `stats-reference-check-and-hostless-specimens-ncbi`)
+## 16 November 2026: 0.2.1, the statistics checked against R and scipy ([#15](https://github.com/bhargava-morampalli/onehealth/pull/15))
 
 No class changes: the lexicon is still version 7. One number in the report's tables changes in its fifth digit.
 
