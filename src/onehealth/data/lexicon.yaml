@@ -1,4 +1,4 @@
-version: "7"
+version: "8"
 description: >
   Seed lexicon for One Health L1 classification of isolation-source metadata.
   Unknown values are handled in code and never map to Environmental.
@@ -18,6 +18,11 @@ description: >
   (manure, a barn) is Environmental, "chicken" or "turkey" on its own with no host is
   Food, and a floor drain is not assumed to be in a hospital. It adds body sites, water
   bodies, food-premises equipment and hospital equipment; changes are marked "v7".
+  v8 (November 2026) takes the same step for every meat species: with no host, "fish",
+  "poultry", "salmon" or "beef" in the text is Food, as "chicken" already was. A carcass
+  with an animal host is the animal. An animal named in a specimen's own text ("stool
+  (Odocoileus hemionus)", "pigeon stool") is read with NCBI Taxonomy. It adds foods,
+  sampling materials and gut sites of animals; changes are marked "v8".
   This is the only lexicon that ships. Earlier versions are in the repository history;
   when this file changes, raise `version` here and SEED_LEXICON_VERSION in constants.py.
 
@@ -145,6 +150,14 @@ rules:
       # v7: an animal whose name holds an environment word.
       - water buffalo
       - water buffaloes
+      # v8: alive, so not meat, whatever the no-host rule for meat species says.
+      - live chicken
+      - live chickens
+      - live poultry
+      - live bird
+      - live birds
+      - live animal
+      - live animals
     l1: Animal
     healthcare_environment: "no"
     priority: 88
@@ -241,6 +254,9 @@ rules:
       - clinical samples
       - clinical specimen
       - clinical specimens
+      # v8: the whole value "hospital" is where a patient isolate came from: human in all
+      # 328 NCBI benchmark records, with or without a host. "hospital sink" is a fixture.
+      - hospital
     l1: Human
     healthcare_environment: "no"
     priority: 80
@@ -318,6 +334,11 @@ rules:
       - nasopharyngeal
       - oropharyngeal
       - endotracheal
+      # v8: body fluids and the placenta. With no host, human in 188 of 197 NCBI records.
+      - fluid
+      - fluids
+      - placenta
+      - placental
     l1: Human
     healthcare_environment: "no"
     priority: 80
@@ -370,6 +391,10 @@ rules:
       - drag swabs
       - boot swab
       - boot swabs
+      # v8: oysters taken from the sea by a monitoring programme, environmental in all
+      # 151 NCBI records. Here because "oyster" on its own is a food (75).
+      - marine oyster
+      - marine oysters
     l1: Environmental
     healthcare_environment: "no"
     priority: 78
@@ -404,7 +429,6 @@ rules:
       - retail
       - ground beef
       - minced beef
-      - carcass
       - lettuce
       - salad
       - cheese
@@ -424,6 +448,21 @@ rules:
     note: >
       Bare "dairy" is not used because "dairy farm" and "dairy cattle" are animal
       settings, not food products.
+
+  # --- v8: a carcass is meat, or the animal it was ---
+  - id: carcass
+    fields: [isolation_source, sample_type]
+    phrases:
+      - carcass
+      - carcasses
+    l1: Food
+    healthcare_environment: "no"
+    priority: 75
+    yields_to_host: true
+    note: >
+      v8. With no host a carcass is food (9,012 NCBI records of 9,070: carcass rinses and
+      sponges at slaughter). With an animal host it is the animal, in all 211 records
+      ("carcass swab", host porcine); until v8 that was a host_source_conflict.
 
   - id: food-items
     fields: [isolation_source, sample_type]
@@ -536,6 +575,81 @@ rules:
       - mushrooms
       - enoki
       - kratom
+      # v8: foods named in at least twenty NCBI records with a source_type, food in at
+      # least 95% of them, in several submitters' words. Shellfish and fish first.
+      - oyster
+      - oysters
+      - clam
+      - clams
+      - mussel
+      - mussels
+      - scallop
+      - scallops
+      - prawn
+      - prawns
+      - crab
+      - crabs
+      - lobster
+      - crawfish
+      - shellfish
+      - squid
+      - octopus
+      - tuna
+      - sushi
+      - venison
+      - jerky
+      - hot dog
+      - hot dogs
+      - pig ear
+      - pig ears
+      - pet treat
+      - pet treats
+      - dog chew
+      - dog chews
+      # Grains, produce, nuts and spices.
+      - grain
+      - grains
+      - cereal
+      - oatmeal
+      - rice
+      - corn
+      - noodles
+      - potato
+      - potatoes
+      - bean
+      - beans
+      - seed
+      - seeds
+      - almond
+      - almonds
+      - peach
+      - peaches
+      - squash
+      - zucchini
+      - kale
+      - carrot
+      - carrots
+      - beet
+      - beets
+      - strawberry
+      - strawberries
+      - cantaloupe
+      - canteloupe
+      - vegetables
+      - guacamole
+      - queso fresco
+      - ricotta
+      - cumin
+      - peppercorn
+      - peppercorns
+      - tea
+      - soy
+      - snack
+      - snacks
+      # How a food is kept or prepared: food in 1,155 of 1,168 records.
+      - frozen
+      - cooked
+      - dried
     l1: Food
     healthcare_environment: "no"
     priority: 75
@@ -544,8 +658,8 @@ rules:
       not taken for species names. Cuts are listed only with their animal ("chicken
       breast", not "breast"): a bare body part is as often a patient's. Organs are not
       listed at all: "chicken liver" is retail giblets or a necropsy sample.
-      Not listed because NCBI records with them are too mixed: bare "beef" (a quarter
-      are beef cattle), "egg", "seafood", "fish", "frozen", "raw".
+      Not listed because NCBI records with them are too mixed: "egg", "seafood", "raw".
+      "beef" and "fish" are food only when there is no host: see meat-species-no-host.
 
   # --- laboratory ---
   - id: laboratory
@@ -629,10 +743,28 @@ rules:
     phrases:
       - cloaca
       - cloacal
+      # v8: the gut of a slaughtered or necropsied animal, and what birds leave. Animal in
+      # every NCBI record with these words that has no host (20 of 23 with "dropping").
+      - cecal
+      - caecal
+      - cecum
+      - caecum
+      - ceca
+      - intestine
+      - intestines
+      - gut
+      - guts
+      - dropping
+      - droppings
     l1: Animal
     healthcare_environment: "no"
     priority: 79
-    note: v7. Above the farm and food-premises rules, so "cloaca swab, farm" is the bird.
+    yields_to_host: true
+    note: >
+      v7. Above the farm and food-premises rules, so "cloaca swab, farm" is the bird, and
+      above the foods, so "pork (cecal content)" and "chicken gut" are the animal. v8: a
+      person has an intestine too, so with a human host the host decides
+      ("intestines of patients", host Homo sapiens, is Human).
 
   # --- v7: what animals leave behind, and where they are kept ---
   - id: animal-waste
@@ -746,27 +878,72 @@ rules:
       - ruminant
       - ruminants
       - housefly
+      # v8: "pets" as a host (180 NCBI records, all animal).
+      - pet
+      - pets
+      - companion animal
+      - companion animals
     l1: Animal
     healthcare_environment: "no"
     priority: 40
 
-  # --- v7: a species that is also the name of its meat, with no host ---
+  # --- v7, v8: a species that is also the name of its meat, with no host ---
   - id: meat-species-no-host
     fields: [isolation_source]
-    exact: [chicken, turkey]
+    phrases:
+      - chicken
+      - turkey
+      # v8: the same holds for these, anywhere in the text.
+      - poultry
+      - fish
+      - salmon
+      - beef
+      - lamb
+      - bison
+      # Product classes of the US meat inspection service: "animal-cattle-steer".
+      - animal cattle
     l1: Food
     healthcare_environment: "no"
     priority: 45
     no_host: true
     note: >
-      v7. "chicken" names the animal and its meat. NCBI asks for a host when a sample is
-      from an animal, and where a record has no host and a source_type, "chicken" on its
-      own is food in 810 records of 867 and "turkey" in 255 of 256 (all four parts of the
-      benchmark; guides/definitions in the documentation). onehealth follows that:
-      with no host these two words are Food; with a host the rule does not apply and the
-      host decides, as before. Only words with that much evidence are listed: "duck" and
-      "fish" still mean the animal, and so does "live chicken". A veterinary study whose "chicken" is a
-      bird can say so in one line with --decisions.
+      "chicken" names the animal and its meat. NCBI asks for a host when a sample is from
+      an animal, so a meat species in the source text with no host is the meat. v7 applied
+      this to the whole values "chicken" and "turkey". v8 applies it to these words
+      anywhere in the text, because NCBI's records show the same for each: of the records
+      this rule decides, 96% are food (documentation, guides/definitions). With a host the
+      rule does not apply and the host decides. Above animal-hosts (40) and below
+      everything that says what was sampled: a specimen or a gut site ("chicken cecal
+      content") is the animal, a farm or a litter is environmental, "live chicken" is the
+      animal. Not listed, for want of evidence or because NCBI's records disagree: "duck",
+      "pig", "pork" (already a food), "cattle", "cow", "swine", "bovine". A veterinary
+      study whose "chicken" is a bird can say so in one line with --decisions.
+
+  # --- v8: what a swab or a sponge was taken from is not said ---
+  - id: sampling-material
+    fields: [isolation_source, sample_type]
+    phrases:
+      - sponge
+      - sponges
+      - wipe
+      - wipes
+      - dust
+      - dustbin
+      - fertilizer
+      - fertiliser
+      - cart
+      - carts
+    exact: [swab, swabs, canal, dam]
+    l1: Environmental
+    healthcare_environment: "no"
+    priority: 50
+    yields_to_host: true
+    note: >
+      v8. A sponge, a wipe or dust is a sample of a surface: environmental in 5,528 NCBI
+      records of 5,665 with "sponge". Below the foods (75), so "turkey carcass sponge" is
+      the carcass. A bare "swab" with no host is environmental in 246 records of 251; with
+      a host it is a swab of the host, so the host decides (yields_to_host). "canal" and
+      "dam" only as the whole value: "alimentary canal" is a gut.
 
   # --- v6: any other animal host, by its name in NCBI Taxonomy ---
   - id: host-taxonomy
@@ -858,6 +1035,24 @@ rules:
       environmental. specimen_only, because on its own the word decides nothing: "human
       contact surface" and "human listeriosis" are not specimens. "patient" is not
       listed: a veterinary record has patients too.
+
+  # --- v8: an animal named in a specimen's own text, by NCBI Taxonomy ---
+  - id: animal-name-in-specimen
+    fields: [isolation_source]
+    taxonomy: animal
+    within: true
+    l1: Animal
+    healthcare_environment: "no"
+    priority: 20
+    specimen_only: true
+    no_host: true
+    note: >
+      v8. "stool (Odocoileus hemionus)", "pigeon stool", "giant panda feces": the word
+      lists do not know the animal, and with no host the specimen was called Human. Any
+      name NCBI Taxonomy gives to an animal now says whose specimen it is. A single word
+      counts only when it names a vertebrate and is not also an ordinary word ("sole",
+      "monitor"); see onehealth.taxonomy.animal_name_within. Only with no host, and only
+      for a specimen: it is ignored everywhere else, as human-word is.
 
   - id: human-source
     fields: [isolation_source]

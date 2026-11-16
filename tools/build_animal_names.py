@@ -9,18 +9,29 @@ covers every species a pathogen is isolated from, so a host the list does not kn
 `taxonomy: animal` rule recognise any of them: it holds the names NCBI Taxonomy gives
 to animals.
 
-Two kinds of name are kept, one per line as `kind<TAB>name`, lower-case, punctuation
+Three kinds of name are kept, one per line as `kind<TAB>name`, lower-case, punctuation
 removed:
 
-* `s`  scientific names of chordates (vertebrates and their relatives) at every rank:
-       `larus dominicanus`, `macaca`, `cervidae`, `aves`.
-* `c`  common names of any animal: `gull`, `sika deer`, `rhesus macaque`, `mud crab`.
+* `s`  scientific names. Of chordates (vertebrates and their relatives) at every rank:
+       `larus dominicanus`, `macaca`, `cervidae`, `aves`. Of other animals, only names
+       of two or three words, which are species, and only of molluscs, of crustaceans,
+       and of species NCBI also gives a common name (the ones people sample):
+       `magallana gigas` (an oyster), `penaeus vannamei` (a shrimp), `musca domestica`.
+       Synonyms of two or three words are kept too (`litopenaeus vannamei`). All
+       quarter of a million insect species would make the table four times larger.
+* `v`  common names of chordates: `gull`, `sika deer`, `rhesus macaque`.
+* `c`  common names of other animals: `mud crab`, `house fly`.
 
-Why only chordates for scientific names: the matcher needs a whole name, and a genus on
-its own is a name. Invertebrate genera include Sepsis (a fly), Cancer (a crab), Colon,
-Trachea and Tibia, and a host field can say "sepsis" or "cancer". Chordate names were
-checked against the words used in 159,045 NCBI Pathogen Detection records. Almost every
-host of a pathogen isolate is a vertebrate; other animals are matched by common name.
+Why a genus on its own only for chordates: the matcher needs a whole name, and
+invertebrate genera include Sepsis (a fly), Cancer (a crab), Colon, Trachea and Tibia;
+a host field can say "sepsis" or "cancer". A two-word name is safe. Chordate names were
+checked against the words used in 159,045 NCBI Pathogen Detection records.
+
+Why common names are split: the English names of moths and butterflies are ordinary
+words ("the nun", "emperor", "white", "blue", "the uncertain"), and so are "sponge",
+"tick" and "bug". As a whole host value they are still names. Inside a longer text
+(onehealth.taxonomy.animal_name_within) a single word counts only when it names a
+vertebrate.
 
 Left out: people (the genus Homo; the lexicon's own rules and `taxonomy: human` handle
 them), names NCBI gives to groups that are not organisms ("environmental samples",
@@ -50,6 +61,9 @@ NOT_A_NAME = frozenset(
      "mixed", "synthetic", "sp", "cf", "aff", "x"}
 )
 COMMON = ("common name", "genbank common name")
+# Classes of crustaceans (NCBI has no rank for Crustacea itself in rankedlineage.dmp).
+CRUSTACEANS = frozenset({"Malacostraca", "Branchiopoda", "Hexanauplia", "Thecostraca", "Ostracoda", "Copepoda", "Maxillopoda"})
+SYNONYM = ("synonym", "equivalent name", "genbank synonym")
 
 
 def normalise(name: str) -> str:
@@ -70,24 +84,31 @@ def usable(name: str, max_words: int) -> bool:
     return bool(words) and len(words) <= max_words and not (set(words) & NOT_A_NAME) and not any(c.isdigit() for c in name)
 
 
-def build(data: bytes) -> tuple[set[str], set[str]]:
+def build(data: bytes) -> tuple[set[str], set[str], set[str]]:
+    """(scientific names, common names of chordates, common names of other animals)."""
     scientific: set[str] = set()
+    vertebrate: set[str] = set()
     common: set[str] = set()
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
         # tax_id, name, species, genus, family, order, class, phylum, kingdom, domain
-        lineage = {row[0]: (row[1], row[3], row[7], row[8]) for row in table(archive, "rankedlineage.dmp")}
-        for tax_id, name, _unique, name_class, *_ in table(archive, "names.dmp"):
-            if tax_id not in lineage:
-                continue
-            taxon, genus, phylum, kingdom = lineage[tax_id]
-            if kingdom != "Metazoa" or genus == "Homo" or taxon == "Homo":
-                continue
+        lineage = {row[0]: (row[1], row[3], row[6], row[7])
+                   for row in table(archive, "rankedlineage.dmp")
+                   if row[8] == "Metazoa" and row[3] != "Homo" and row[1] != "Homo"}
+        names = [row[:4] for row in table(archive, "names.dmp") if row[0] in lineage]
+        has_common_name = {tax_id for tax_id, _name, _unique, name_class in names if name_class in COMMON}
+        for tax_id, name, _unique, name_class in names:
+            _taxon, _genus, taxon_class, phylum = lineage[tax_id]
             text = normalise(name)
-            if name_class == "scientific name" and phylum == "Chordata" and usable(text, 3):
+            words = len(text.split())
+            chordate = phylum == "Chordata"
+            sampled = chordate or phylum == "Mollusca" or taxon_class in CRUSTACEANS or tax_id in has_common_name
+            if name_class == "scientific name" and usable(text, 3) and (chordate or (words >= 2 and sampled)):
+                scientific.add(text)
+            elif name_class in SYNONYM and usable(text, 3) and words >= 2 and sampled:
                 scientific.add(text)
             elif name_class in COMMON and usable(text, 4):
-                common.add(text)
-    return scientific, common
+                (vertebrate if chordate else common).add(text)
+    return scientific, vertebrate, common - vertebrate
 
 
 def main(argv: list[str]) -> int:
@@ -97,17 +118,19 @@ def main(argv: list[str]) -> int:
         print(f"downloading {URL}", file=sys.stderr)
         with urllib.request.urlopen(URL, timeout=900) as response:
             data, source = response.read(), URL
-    scientific, common = build(data)
+    scientific, vertebrate, common = build(data)
     lines = [
         "# Names NCBI Taxonomy gives to animals. Made by tools/build_animal_names.py; do not edit by hand.",
         f"# Source: {source}, md5 {hashlib.md5(data).hexdigest()}",
-        "# s = scientific name of a chordate at any rank; c = common name of any animal. People are not listed.",
+        "# s = scientific name (a chordate at any rank; any other animal by a name of two or three words);",
+        "# v = common name of a chordate; c = common name of another animal. People are not listed.",
     ]
     lines += [f"s\t{name}" for name in sorted(scientific)]
+    lines += [f"v\t{name}" for name in sorted(vertebrate)]
     lines += [f"c\t{name}" for name in sorted(common)]
     OUT.write_bytes(gzip.compress(("\n".join(lines) + "\n").encode("utf-8"), compresslevel=9, mtime=0))
-    print(f"wrote {OUT}: {len(scientific)} scientific and {len(common)} common names, "
-          f"{OUT.stat().st_size / 1e6:.2f} MB", file=sys.stderr)
+    print(f"wrote {OUT}: {len(scientific)} scientific names, {len(vertebrate)} common names of chordates and "
+          f"{len(common)} of other animals, {OUT.stat().st_size / 1e6:.2f} MB", file=sys.stderr)
     return 0
 
 
